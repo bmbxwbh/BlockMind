@@ -1,0 +1,23 @@
+{
+    "schemaVersion": 1,
+    "id": "blockmind",
+    "version": "1.0.0",
+    "name": "BlockMind",
+    "description": "BlockMind AI Companion - HTTP API for Minecraft automation",
+    "authors": ["BlockMind Team"],
+    "contact": {
+        "homepage": "https://github.com/bmbxwbh/BlockMind",
+        "sources": "https://github.com/bmbxwbh/BlockMind"
+    },
+    "license": "MIT",
+    "icon": "assets/blockmind/icon.png",
+    "environment": "server",
+    "entrypoints": {
+        "server": ["blockmind.BlockMindMod"]
+    },
+    "depends": {
+        "fabricloader": ">=0.15.0",
+        "fabric-api": "*",
+        "minecraft": ">=1.20.0"
+    }
+}
