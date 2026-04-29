@@ -10,9 +10,10 @@
 | 阶段 | 名称 | 工期 | 任务数 | 状态 |
 |------|------|------|--------|------|
 | P0 | 项目初始化 | 0.5天 | 6 | ✅ 已完成 |
-| P1 | Fabric Mod 开发 | 3天 | 8 | 🔲 待开始 |
+| P1 | Fabric Mod 开发 | 3天 | 8 | ✅ 已完成 |
 | P2 | Mod 通信客户端 | 1天 | 4 | 🔲 待开始 |
 | P3 | 游戏交互层 | 2天 | 7 | 🔲 待开始 |
+| P3.5 | **任务分类器** | 1天 | 4 | 🔲 待开始 |
 | P4 | Skill DSL 引擎 | 4天 | 12 | 🔲 待开始 |
 | P5 | AI 决策模块 | 3天 | 5 | 🔲 待开始 |
 | P6 | 安全校验层 | 2天 | 8 | 🔲 待开始 |
@@ -21,7 +22,7 @@
 | P9 | WebUI | 3天 | 10 | 🔲 待开始 |
 | P10 | 部署运维 | 1.5天 | 6 | 🔲 待开始 |
 | P11 | 测试优化 | 2天 | 7 | 🔲 待开始 |
-| **合计** | | **~25天** | **85** | |
+| **合计** | | **~26天** | **89** | |
 
 ---
 
@@ -383,6 +384,226 @@ class ActionResult(BaseModel): ...
 ### Task 3.7 — 游戏层测试
 
 **文件：** `tests/test_game.py`
+
+---
+
+## P3.5: 任务分类器（1 天）⭐ 新增
+
+> 核心问题：一个任务传进来，怎么判断它是"可重复固化"还是"需要 AI 每次推理"？
+
+### Task 3.5.1 — 任务分类器
+
+```
+目标：实现三维判断的任务分类系统
+工作目录：/root/projects/BlockMind/
+```
+
+**需要创建的文件：** `src/core/task_classifier.py`
+
+```python
+"""任务分类器 — 三维判断：步骤可预测性 / 输入复杂度 / 结果可验证性"""
+
+class TaskLevel:
+    """任务级别"""
+    L1_FIXED = "L1_fixed"          # 完全固定：步骤永远一样
+    L2_PARAMETER = "L2_parameter"  # 参数化：步骤相同，目标不同
+    L3_TEMPLATE = "L3_template"    # 模板化：结构类似，细节不同
+    L4_DYNAMIC = "L4_dynamic"      # 完全动态：每次不同
+
+class TaskClassifier:
+    """任务分类器"""
+
+    # 已知固定任务（精确匹配）
+    FIXED_TASKS = {
+        "吃东西": "eat_food",
+        "整理箱子": "organize_chest",
+        "存放物品": "deposit_items",
+        "进食": "eat_food",
+    }
+
+    # 参数化任务（流程固定，目标不同）
+    PARAMETERIZED_TASKS = {
+        "砍树": "chop_tree",
+        "挖矿": "mine_ore",
+        "种田": "farm_wheat",
+        "采集": "collect",
+    }
+
+    # 关键词判断
+    FIXED_KEYWORDS = ["砍", "挖", "种", "捡", "放", "吃", "存", "整理", "修补"]
+    DYNAMIC_KEYWORDS = ["建", "设计", "造", "装修", "规划", "布局", "探索", "打"]
+
+    def classify(self, task: str) -> str:
+        """
+        分类任务
+
+        判断维度：
+        1. 步骤是否可预测（每次相同？）
+        2. 输入是否简单（≤3个参数？）
+        3. 结果是否可验证（量化？）
+
+        Returns:
+            "L1_fixed" / "L2_parameter" / "L3_template" / "L4_dynamic"
+        """
+        # 1. 精确匹配已知固定任务
+        if task in self.FIXED_TASKS:
+            return TaskLevel.L1_FIXED
+
+        # 2. 精确匹配已知参数化任务
+        if task in self.PARAMETERIZED_TASKS:
+            return TaskLevel.L2_PARAMETER
+
+        # 3. 关键词分析
+        has_fixed = any(kw in task for kw in self.FIXED_KEYWORDS)
+        has_dynamic = any(kw in task for kw in self.DYNAMIC_KEYWORDS)
+
+        if has_dynamic:
+            return TaskLevel.L4_DYNAMIC
+        if has_fixed:
+            return TaskLevel.L2_PARAMETER
+
+        # 4. 兜底：默认为动态任务
+        return TaskLevel.L4_DYNAMIC
+
+    def classify_with_ai(self, task: str, ai_provider) -> str:
+        """AI 辅助分类（用于关键词无法判断的情况）"""
+        prompt = f"""判断任务分类，只返回 L1/L2/L3/L4：
+任务：{task}
+L1=完全固定（进食、存放）
+L2=参数化（砍树、挖矿）
+L3=模板化（建墙、铺路）
+L4=完全动态（建房子、探索）"""
+        result = await ai_provider.chat(prompt)
+        # 解析结果...
+```
+
+**验收：**
+```python
+c = TaskClassifier()
+assert c.classify("吃东西") == "L1_fixed"
+assert c.classify("砍树") == "L2_parameter"
+assert c.classify("建房子") == "L4_dynamic"
+```
+
+---
+
+### Task 3.5.2 — 任务路由器
+
+```
+目标：根据分类结果分发到对应处理器
+工作目录：/root/projects/BlockMind/
+```
+
+**需要创建的文件：** `src/core/task_router.py`
+
+```python
+"""任务路由器 — 根据分类结果分发执行"""
+
+class TaskRouter:
+    """任务路由器"""
+
+    def __init__(self, classifier, skill_runtime, ai_decider, action_executor):
+        self.classifier = classifier
+        self.skill_runtime = skill_runtime
+        self.ai_decider = ai_decider
+        self.action_executor = action_executor
+
+    async def route(self, task: str, context: dict = None):
+        """
+        路由任务到对应处理器
+
+        L1_fixed     → 直接执行缓存 Skill
+        L2_parameter → AI 填充参数 + 执行 Skill
+        L3_template  → AI 填充模板 + 执行
+        L4_dynamic   → AI 完全推理，不缓存
+        """
+        level = self.classifier.classify(task)
+
+        if level == "L1_fixed":
+            skill = self.skill_storage.get(task)
+            return await self.skill_runtime.execute(skill)
+
+        elif level == "L2_parameter":
+            params = await self.ai_decider.fill_params(task, context)
+            skill = self.skill_storage.get(task)
+            return await self.skill_runtime.execute(skill, params)
+
+        elif level == "L3_template":
+            filled = await self.ai_decider.fill_template(task, context)
+            return await self.skill_runtime.execute(filled)
+
+        else:  # L4_dynamic
+            actions = await self.ai_decider.reason(task, context)
+            return await self.action_executor.execute_sequence(actions)
+```
+
+---
+
+### Task 3.5.3 — 固定任务配置
+
+```
+目标：定义所有已知任务的分类配置
+工作目录：/root/projects/BlockMind/
+```
+
+**需要创建的文件：** `src/config/task_registry.py`
+
+```python
+"""任务注册表 — 预定义所有已知任务的分类"""
+
+TASK_REGISTRY = {
+    # L1 完全固定
+    "eat_food": {"level": "L1", "skill": "skills/builtin/survival/eat_food.yaml"},
+    "deposit_items": {"level": "L1", "skill": "skills/builtin/storage/deposit_items.yaml"},
+    "organize_chest": {"level": "L1", "skill": "skills/builtin/storage/organize_chest.yaml"},
+
+    # L2 参数化
+    "chop_tree": {"level": "L2", "skill": "skills/builtin/gathering/chop_tree.yaml", "params": ["tree_type"]},
+    "mine_ore": {"level": "L2", "skill": "skills/builtin/gathering/mine_ore.yaml", "params": ["ore_type"]},
+    "farm_wheat": {"level": "L2", "skill": "skills/builtin/farming/plant_wheat.yaml"},
+
+    # L3 模板化
+    "build_wall": {"level": "L3", "template": "build_wall"},
+    "build_path": {"level": "L3", "template": "build_path"},
+
+    # L4 动态（不注册，每次 AI 推理）
+}
+```
+
+---
+
+### Task 3.5.4 — 分类器测试
+
+**文件：** `tests/test_task_classifier.py`
+
+```python
+"""任务分类器测试"""
+import pytest
+from src.core.task_classifier import TaskClassifier, TaskLevel
+
+class TestTaskClassifier:
+    def setup(self):
+        self.classifier = TaskClassifier()
+
+    def test_fixed_tasks(self):
+        """L1 固定任务识别"""
+        assert self.classifier.classify("吃东西") == TaskLevel.L1_FIXED
+        assert self.classifier.classify("整理箱子") == TaskLevel.L1_FIXED
+
+    def test_parameterized_tasks(self):
+        """L2 参数化任务识别"""
+        assert self.classifier.classify("砍树") == TaskLevel.L2_PARAMETER
+        assert self.classifier.classify("挖矿") == TaskLevel.L2_PARAMETER
+
+    def test_dynamic_tasks(self):
+        """L4 动态任务识别"""
+        assert self.classifier.classify("建房子") == TaskLevel.L4_DYNAMIC
+        assert self.classifier.classify("设计花园") == TaskLevel.L4_DYNAMIC
+
+    def test_unknown_defaults_to_dynamic(self):
+        """未知任务默认为动态"""
+        assert self.classifier.classify("随便干点啥") == TaskLevel.L4_DYNAMIC
+```
 
 ---
 

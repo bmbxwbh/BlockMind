@@ -20,6 +20,7 @@
 - [项目结构](#-项目结构)
 - [Fabric Mod API](#-fabric-mod-api)
 - [核心模块](#-核心模块)
+- [任务分类系统](#-任务分类系统)
 - [Skill DSL 系统](#-skill-dsl-系统)
 - [安全体系](#-安全体系)
 - [故障容错](#-故障容错)
@@ -557,6 +558,116 @@ class EventBus:
     def unsubscribe(self, event_type: str, handler: Callable) -> None
     async def emit(self, event: Event) -> None
     def get_history(self, event_type: str = None, limit: int = 50) -> List[Event]
+```
+
+---
+
+## 🧠 任务分类系统
+
+> 不是所有任务都适合固化为 Skill。BlockMind 通过三维判断自动分类任务。
+
+### 核心问题
+
+```
+一个任务传进来，凭什么判断它是"可重复"还是"动态"？
+```
+
+### 三维判断标准
+
+| 维度 | 固定任务 | 动态任务 |
+|------|----------|----------|
+| **步骤** | 每次相同，可写死 | 每次不同，无法预测 |
+| **输入** | ≤3 个参数（目标、位置） | 需要描述性语言 |
+| **结果** | 可量化验证（物品数量） | 主观判断（美观、创意） |
+
+### 四级分类
+
+| 级别 | 名称 | 缓存策略 | 例子 |
+|------|------|----------|------|
+| **L1** | 完全固定 | 完整 Skill | 进食、存放物品 |
+| **L2** | 参数化 | Skill + 变量 | 砍树（哪棵树）、挖矿（挖什么） |
+| **L3** | 模板化 | 模板 + AI 填充 | 建墙（尺寸不同）、铺路（路线不同） |
+| **L4** | 完全动态 | AI 每次推理 | 建房子、探索洞穴、打Boss |
+
+### 分类流程
+
+```
+玩家指令
+    │
+    ▼
+┌──────────────────┐
+│ 1. 查固定任务库   │  精确匹配
+│    "砍树" → L2   │
+└────────┬─────────┘
+         │ 未命中
+         ▼
+┌──────────────────┐
+│ 2. 关键词分析     │
+│ "建/设计" → L4   │
+│ "砍/挖/种" → L2  │
+└────────┬─────────┘
+         │ 未命中
+         ▼
+┌──────────────────┐
+│ 3. AI 判断       │  兜底
+│ 步骤可预测？      │
+│ 输入简单？        │
+│ 结果可验证？      │
+└────────┬─────────┘
+         │
+         ▼
+    分类结果 → 路由到对应处理器
+```
+
+### 分类示例
+
+```python
+# ✅ L1 完全固定 — 步骤永远一样
+"吃东西" → eat_food Skill
+"整理箱子" → organize_chest Skill
+
+# ✅ L2 参数化 — 流程固定，目标不同
+"砍一棵橡树" → chop_tree Skill(target="oak_tree")
+"挖铁矿" → mine_ore Skill(target="iron_ore")
+
+# ⚠️ L3 模板化 — 结构类似，细节不同
+"建一面墙" → build_wall 模板 + AI 填充(长、宽、材料、位置)
+"铺一条路" → build_path 模板 + AI 填充(起点、终点、材料)
+
+# ❌ L4 完全动态 — 每次都不同
+"建个房子" → AI 完全推理（地形、材料、风格每次不同）
+"探索这个洞穴" → AI 完全推理（洞穴结构每次不同）
+```
+
+### 任务路由
+
+```python
+class TaskRouter:
+    """任务路由器 — 根据分类结果分发到对应处理器"""
+
+    async def route(self, task: str):
+        classification = self.classifier.classify(task)
+
+        if classification == "L1_fixed":
+            # 直接执行缓存的 Skill
+            skill = self.skill_storage.get(task)
+            return await self.skill_runtime.execute(skill)
+
+        elif classification == "L2_parameter":
+            # AI 填充参数，然后执行 Skill
+            params = await self.ai.fill_params(task)
+            skill = self.skill_storage.get(task.type)
+            return await self.skill_runtime.execute(skill, params)
+
+        elif classification == "L3_template":
+            # AI 填充模板细节，然后执行
+            filled = await self.ai.fill_template(task)
+            return await self.skill_runtime.execute(filled)
+
+        else:  # L4_dynamic
+            # AI 完全推理，不缓存
+            actions = await self.ai.reason(task)
+            return await self.action_executor.execute_sequence(actions)
 ```
 
 ---
