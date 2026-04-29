@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlockMind 控制面板</title>
+    <style>
+        :root {
+            --bg: #0d1117; --card: #161b22; --border: #30363d;
+            --text: #c9d1d9; --text-dim: #8b949e; --accent: #58a6ff;
+            --green: #3fb950; --red: #f85149; --yellow: #d29922;
+            --purple: #bc8cff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* 顶部栏 */
+        .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 20px; display: flex; align-items: center; gap: 8px; }
+        .header h1::before { content: '🧠'; }
+        .header-right { display: flex; gap: 12px; align-items: center; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .status-dot.online { background: var(--green); }
+        .status-dot.offline { background: var(--red); }
+
+        /* 布局 */
+        .container { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 56px); }
+        .sidebar { background: var(--card); border-right: 1px solid var(--border); padding: 16px 0; }
+        .sidebar a { display: block; padding: 10px 20px; color: var(--text-dim); text-decoration: none; font-size: 14px; transition: all 0.2s; }
+        .sidebar a:hover, .sidebar a.active { color: var(--text); background: rgba(88,166,255,0.1); border-left: 3px solid var(--accent); }
+        .main { padding: 24px; overflow-y: auto; }
+
+        /* 卡片 */
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        .card h2 { font-size: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        /* 仪表盘网格 */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+        .stat-value { font-size: 32px; font-weight: bold; color: var(--accent); }
+        .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+        /* 表格 */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-dim); font-weight: 500; }
+        tr:hover { background: rgba(88,166,255,0.05); }
+
+        /* 标签 */
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .tag-l1 { background: rgba(63,185,80,0.15); color: var(--green); }
+        .tag-l2 { background: rgba(88,166,255,0.15); color: var(--accent); }
+        .tag-l3 { background: rgba(210,153,34,0.15); color: var(--yellow); }
+        .tag-l4 { background: rgba(188,140,255,0.15); color: var(--purple); }
+
+        /* 按钮 */
+        .btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--text); cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .btn:hover { border-color: var(--accent); }
+        .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+
+        /* 输入框 */
+        .input-group { display: flex; gap: 8px; margin-bottom: 16px; }
+        .input-group input { flex: 1; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
+        .input-group input:focus { outline: none; border-color: var(--accent); }
+
+        /* 日志 */
+        .log-area { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 13px; line-height: 1.6; }
+        .log-entry { padding: 2px 0; }
+        .log-info { color: var(--accent); }
+        .log-warn { color: var(--yellow); }
+        .log-error { color: var(--red); }
+
+        /* 登录 */
+        .login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .login-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; width: 360px; text-align: center; }
+        .login-box h2 { margin-bottom: 24px; }
+        .login-box input { width: 100%; padding: 10px; margin-bottom: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
+
+        /* 命令行 */
+        .cmd-bar { display: flex; gap: 8px; margin-top: 16px; }
+        .cmd-bar input { flex: 1; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: monospace; }
+
+        /* 页面切换 */
+        .page { display: none; }
+        .page.active { display: block; }
+    </style>
+</head>
+<body>
+    <!-- 登录遮罩 -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>🧠 BlockMind</h2>
+            <input type="password" id="loginPassword" placeholder="输入密码" onkeydown="if(event.key==='Enter')doLogin()">
+            <button class="btn btn-primary" style="width:100%" onclick="doLogin()">登录</button>
+            <p id="loginError" style="color:var(--red);margin-top:12px;display:none"></p>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="app" style="display:none">
+        <div class="header">
+            <h1>BlockMind 控制面板</h1>
+            <div class="header-right">
+                <span><span class="status-dot" id="connDot"></span> <span id="connText">连接中...</span></span>
+                <button class="btn" onclick="doLogout()">退出</button>
+            </div>
+        </div>
+        <div class="container">
+            <div class="sidebar">
+                <a href="#" class="active" onclick="showPage('dashboard',this)">📊 仪表盘</a>
+                <a href="#" onclick="showPage('skills',this)">🛠️ Skill 管理</a>
+                <a href="#" onclick="showPage('safety',this)">🛡️ 安全设置</a>
+                <a href="#" onclick="showPage('logs',this)">📋 日志中心</a>
+                <a href="#" onclick="showPage('system',this)">⚙️ 系统</a>
+            </div>
+            <div class="main">
+                <!-- 仪表盘 -->
+                <div class="page active" id="page-dashboard">
+                    <div class="stats">
+                        <div class="stat-card"><div class="stat-value" id="sHealth">--</div><div class="stat-label">生命值 ❤️</div></div>
+                        <div class="stat-card"><div class="stat-value" id="sHunger">--</div><div class="stat-label">饥饿值 🍖</div></div>
+                        <div class="stat-card"><div class="stat-value" id="sPos">--</div><div class="stat-label">坐标 📍</div></div>
+                        <div class="stat-card"><div class="stat-value" id="sDim">--</div><div class="stat-label">维度 🌍</div></div>
+                    </div>
+                    <div class="card">
+                        <h2>🎮 快捷操作</h2>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn" onclick="sendCmd('status')">状态</button>
+                            <button class="btn" onclick="sendCmd('stop')">停止任务</button>
+                            <button class="btn" onclick="sendCmd('safe')">回安全点</button>
+                            <button class="btn" onclick="sendCmd('come')">传送过来</button>
+                        </div>
+                        <div class="cmd-bar">
+                            <input id="cmdInput" placeholder="输入指令 (如: !stop, !come)" onkeydown="if(event.key==='Enter')sendCustomCmd()">
+                            <button class="btn btn-primary" onclick="sendCustomCmd()">发送</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>📡 实时事件</h2>
+                        <div class="log-area" id="eventLog"></div>
+                    </div>
+                </div>
+
+                <!-- Skill 管理 -->
+                <div class="page" id="page-skills">
+                    <div class="card">
+                        <h2>🛠️ Skill 列表</h2>
+                        <div class="input-group">
+                            <input id="skillSearch" placeholder="搜索 Skill..." oninput="filterSkills()">
+                        </div>
+                        <table>
+                            <thead><tr><th>ID</th><th>名称</th><th>级别</th><th>优先级</th><th>使用次数</th><th>成功率</th><th>操作</th></tr></thead>
+                            <tbody id="skillTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 安全设置 -->
+                <div class="page" id="page-safety">
+                    <div class="card">
+                        <h2>🛡️ 安全配置</h2>
+                        <p style="color:var(--text-dim);margin-bottom:16px">五级安全体系：0=自动执行, 1=低风险, 2=中风险, 3=需授权, 4=默认禁止</p>
+                        <table>
+                            <thead><tr><th>等级</th><th>名称</th><th>策略</th><th>示例</th></tr></thead>
+                            <tbody>
+                                <tr><td><span class="tag tag-l1">0</span></td><td>完全安全</td><td>自动执行</td><td>移动、跳跃</td></tr>
+                                <tr><td><span class="tag tag-l1">1</span></td><td>低风险</td><td>自动执行</td><td>挖泥土、放火把</td></tr>
+                                <tr><td><span class="tag tag-l2">2</span></td><td>中风险</td><td>自动执行</td><td>挖矿石、攻击中立生物</td></tr>
+                                <tr><td><span class="tag tag-l3">3</span></td><td>高风险</td><td>需玩家授权</td><td>点燃TNT、放岩浆</td></tr>
+                                <tr><td><span class="tag tag-l4">4</span></td><td>致命风险</td><td>默认禁止</td><td>放命令方块</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card">
+                        <h2>📋 审计日志</h2>
+                        <div class="log-area" id="auditLog" style="max-height:300px">加载中...</div>
+                    </div>
+                </div>
+
+                <!-- 日志中心 -->
+                <div class="page" id="page-logs">
+                    <div class="card">
+                        <h2>📋 系统日志</h2>
+                        <div class="log-area" id="systemLog" style="max-height:500px">等待连接...</div>
+                    </div>
+                </div>
+
+                <!-- 系统设置 -->
+                <div class="page" id="page-system">
+                    <div class="card">
+                        <h2>⚙️ 系统状态</h2>
+                        <table>
+                            <tbody id="sysStatus">
+                                <tr><td>Mod 连接</td><td id="sysMod">检查中...</td></tr>
+                                <tr><td>AI 服务</td><td id="sysAI">检查中...</td></tr>
+                                <tr><td>WebUI</td><td id="sysWebUI">运行中</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+let token = localStorage.getItem('bm_token');
+let ws = null;
+let skills = [];
+
+// 登录
+async function doLogin() {
+    const pw = document.getElementById('loginPassword').value;
+    try {
+        const r = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw})});
+        if (r.ok) {
+            const d = await r.json();
+            token = d.token;
+            localStorage.setItem('bm_token', token);
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            init();
+        } else {
+            const err = document.getElementById('loginError');
+            err.textContent = '密码错误'; err.style.display = 'block';
+        }
+    } catch(e) { console.error(e); }
+}
+
+function doLogout() {
+    fetch('/api/logout', {method:'POST', headers:{'Authorization':'Bearer '+token}});
+    token = null; localStorage.removeItem('bm_token');
+    location.reload();
+}
+
+// 初始化
+function init() {
+    loadDashboard();
+    loadSkills();
+    loadSystemStatus();
+    connectWS();
+    setInterval(loadDashboard, 5000);
+}
+
+// API 请求
+async function api(path, opts={}) {
+    const r = await fetch(path, {...opts, headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}});
+    if (r.status===401) { doLogout(); return null; }
+    return r.json();
+}
+
+// 仪表盘
+async function loadDashboard() {
+    const d = await api('/api/dashboard');
+    if (!d) return;
+    document.getElementById('sHealth').textContent = d.health?.toFixed(1) || '--';
+    document.getElementById('sHunger').textContent = d.hunger || '--';
+    const p = d.position || {};
+    document.getElementById('sPos').textContent = p.x?.toFixed(0)+','+p.y?.toFixed(0)+','+p.z?.toFixed(0) || '--';
+    document.getElementById('sDim').textContent = d.dimension || '--';
+    const dot = document.getElementById('connDot');
+    const txt = document.getElementById('connText');
+    if (d.connected) { dot.className='status-dot online'; txt.textContent='已连接'; }
+    else { dot.className='status-dot offline'; txt.textContent='未连接'; }
+}
+
+// Skill 管理
+async function loadSkills() {
+    const d = await api('/api/skills');
+    if (!d) return;
+    skills = d.skills || [];
+    renderSkills(skills);
+}
+
+function renderSkills(list) {
+    const tbody = document.getElementById('skillTable');
+    tbody.innerHTML = list.map(s => `<tr>
+        <td><code>${s.skill_id}</code></td><td>${s.name}</td>
+        <td><span class="tag tag-${s.task_level?.toLowerCase()||'l2'}">${s.task_level||'L2'}</span></td>
+        <td>${s.priority}</td><td>${s.usage_count}</td><td>${(s.success_rate*100).toFixed(0)}%</td>
+        <td><button class="btn btn-danger" onclick="deleteSkill('${s.skill_id}')">删除</button></td>
+    </tr>`).join('');
+}
+
+function filterSkills() {
+    const q = document.getElementById('skillSearch').value.toLowerCase();
+    renderSkills(skills.filter(s => s.name.toLowerCase().includes(q) || s.skill_id.toLowerCase().includes(q)));
+}
+
+async function deleteSkill(id) {
+    if (!confirm('确定删除 '+id+'?')) return;
+    await api('/api/skills/'+id, {method:'DELETE'});
+    loadSkills();
+}
+
+// 系统状态
+async function loadSystemStatus() {
+    const d = await api('/api/system/status');
+    if (!d) return;
+    document.getElementById('sysMod').innerHTML = d.mod_connected ? '<span style="color:var(--green)">✓ 已连接</span>' : '<span style="color:var(--red)">✗ 未连接</span>';
+    document.getElementById('sysAI').innerHTML = d.ai_connected ? '<span style="color:var(--green)">✓ 已连接</span>' : '<span style="color:var(--red)">✗ 未连接</span>';
+}
+
+// 指令
+async function sendCmd(cmd) { await api('/api/command', {method:'POST', body:JSON.stringify({command:cmd})}); }
+
+async function sendCustomCmd() {
+    const input = document.getElementById('cmdInput');
+    let cmd = input.value.trim();
+    if (!cmd) return;
+    if (cmd.startsWith('!')) cmd = cmd.slice(1);
+    const parts = cmd.split(/\s+/);
+    await api('/api/command', {method:'POST', body:JSON.stringify({command:parts[0], args:parts.slice(1).join(' ')})});
+    input.value = '';
+}
+
+// WebSocket
+function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/ws`);
+    ws.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        const log = document.getElementById('eventLog');
+        const time = new Date().toLocaleTimeString();
+        log.innerHTML += `<div class="log-entry"><span style="color:var(--text-dim)">${time}</span> <span class="log-info">[${msg.type}]</span> ${JSON.stringify(msg.data||{})}</div>`;
+        log.scrollTop = log.scrollHeight;
+    };
+    ws.onclose = () => setTimeout(connectWS, 3000);
+}
+
+// 页面切换
+function showPage(id, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-'+id).classList.add('active');
+    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+    if (el) el.classList.add('active');
+}
+
+// 已有 Token 则自动登录
+if (token) { document.getElementById('loginOverlay').style.display='none'; document.getElementById('app').style.display='block'; init(); }
+</script>
+</body>
+</html>

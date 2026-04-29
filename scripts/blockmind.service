@@ -1,0 +1,29 @@
+[Unit]
+Description=BlockMind - Minecraft AI Companion Backend
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=blockmind
+Group=blockmind
+WorkingDirectory=/opt/blockmind
+Environment=PYTHONPATH=/opt/blockmind
+Environment=BLOCKMIND_CONFIG=/opt/blockmind/config.yaml
+ExecStart=/opt/blockmind/venv/bin/python -m src.main
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 资源限制
+MemoryMax=2G
+CPUQuota=80%
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/blockmind /data/blockmind
+
+[Install]
+WantedBy=multi-user.target
