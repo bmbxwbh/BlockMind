@@ -607,11 +607,519 @@ class TestTaskClassifier:
 
 ---
 
-## P4-P11: 后续模块
+## P4-P8: 详细规划
 
-> P4（Skill DSL）、P5（AI 决策）、P6（安全校验）、P7（故障监控）、
-> P8（空闲任务）、P9（WebUI）、P10（部署）、P11（测试）
-> 与原版相同，待后续展开。
+## P4: Skill DSL 引擎（4 天）⭐ 核心模块
+
+### Task 4.1 — DSL 数据模型
+
+**文件：** `src/skills/models.py`
+
+```python
+"""Skill DSL 数据模型（Pydantic）"""
+
+class WhenClause(BaseModel):
+    all: List[str] = []   # 所有条件满足
+    any: List[str] = []   # 任意条件满足
+
+class DoStep(BaseModel):
+    action: str
+    args: Dict[str, Any] = {}
+    loop: Optional['LoopBlock'] = None
+    condition: Optional[str] = None
+
+class LoopBlock(BaseModel):
+    while_condition: Optional[str] = None
+    over_variable: Optional[str] = None
+    do_steps: List[DoStep] = []
+    max_iterations: int = 1000
+
+class UntilClause(BaseModel):
+    any: List[str] = []
+
+class SkillDSL(BaseModel):
+    skill_id: str
+    name: str
+    tags: List[str] = []
+    priority: int = 5
+    when: WhenClause = WhenClause()
+    do_steps: List[DoStep] = []
+    until: UntilClause = UntilClause()
+    description: str = ""
+    author: str = "system"
+    version: int = 1
+    usage_count: int = 0
+    success_rate: float = 1.0
+    task_level: str = "L2"  # L1/L2/L3
+```
+
+---
+
+### Task 4.2 — DSL 解析器
+
+**文件：** `src/skills/dsl_parser.py`
+
+```python
+class DSLParser:
+    def parse_file(self, file_path: str) -> SkillDSL
+    def parse_yaml(self, yaml_content: str) -> SkillDSL
+    def parse_dict(self, data: dict) -> SkillDSL
+    def validate_syntax(self, skill: SkillDSL) -> List[str]
+```
+
+---
+
+### Task 4.3 — DSL 校验器
+
+**文件：** `src/skills/validator.py`
+
+```python
+class SkillValidator:
+    FORBIDDEN_PATTERNS = ["rm -rf", "suicide", "place_command_block"]
+
+    def validate_syntax(self, skill) -> ValidationResult
+    def validate_safety(self, skill) -> ValidationResult
+    def validate_logic(self, skill, game_state) -> ValidationResult
+    def validate_all(self, skill, game_state=None) -> ValidationResult
+```
+
+---
+
+### Task 4.4 — 状态管理器
+
+**文件：** `src/skills/state_manager.py`
+
+```python
+class SkillStateManager:
+    """Skill 运行时状态查询（映射到 Mod API）"""
+    async def health(self) -> float
+    async def hunger(self) -> float
+    async def position(self) -> tuple
+    async def inventory_count(self, item: str) -> int
+    async def world_time(self) -> int
+    async def world_any_entity(self, **kwargs) -> bool
+```
+
+---
+
+### Task 4.5 — 内置函数库
+
+**文件：** `src/skills/builtin_functions.py`
+
+```python
+BUILTIN_FUNCTIONS = {
+    # 状态查询
+    "self.health": lambda ctx: ctx.state.health(),
+    "self.hunger": lambda ctx: ctx.state.hunger(),
+    "self.position": lambda ctx: ctx.state.position(),
+    "inventory.count": lambda ctx, item: ctx.state.inventory_count(item),
+    "world.time": lambda ctx: ctx.state.world_time(),
+    "world.any_entity": lambda ctx, **kw: ctx.state.world_any_entity(**kw),
+
+    # 动作
+    "walk_to": lambda ctx, pos: ctx.executor.walk_to(*pos),
+    "dig_block": lambda ctx, pos: ctx.executor.dig_block(*pos),
+    "place_block": lambda ctx, item, pos: ctx.executor.place_block(item, *pos),
+    "attack": lambda ctx, eid: ctx.executor.attack(eid),
+    "eat": lambda ctx, item: ctx.executor.eat(item),
+
+    # 工具
+    "scan_entities": lambda ctx, **kw: ctx.perception.get_entities_in_radius(**kw),
+    "scan_blocks": lambda ctx, **kw: ctx.perception.get_blocks_by_type(**kw),
+    "wait": lambda ctx, sec: asyncio.sleep(sec),
+}
+```
+
+---
+
+### Task 4.6 — 控制流调度器
+
+**文件：** `src/skills/control_flow.py`
+
+```python
+class ControlFlowScheduler:
+    async def run_steps(self, steps: List[DoStep], ctx) -> bool
+    async def run_loop(self, loop: LoopBlock, ctx) -> bool
+    async def evaluate_condition(self, expr: str, ctx) -> bool
+```
+
+---
+
+### Task 4.7 — Skill 运行时引擎
+
+**文件：** `src/skills/runtime.py`
+
+```python
+class SkillRuntime:
+    def __init__(self, mod_client, state_manager, action_executor):
+        self.parser = DSLParser()
+        self.validator = SkillValidator()
+        self.control_flow = ControlFlowScheduler()
+
+    async def execute_skill(self, skill_path: str) -> SkillResult
+    async def execute_skill_object(self, skill: SkillDSL) -> SkillResult
+    def interrupt(self) -> None
+    @property
+    def is_running(self) -> bool
+```
+
+---
+
+### Task 4.8 — Skill 存储管理
+
+**文件：** `src/skills/storage.py`
+
+```python
+class SkillStorage:
+    def __init__(self, storage_path: str):
+        self.storage_path = Path(storage_path)
+
+    def save(self, skill: SkillDSL) -> None
+    def get(self, skill_id: str) -> Optional[SkillDSL]
+    def list_all(self) -> List[SkillDSL]
+    def delete(self, skill_id: str) -> None
+    def search(self, query: str) -> List[SkillDSL]
+    def update_stats(self, skill_id: str, success: bool) -> None
+```
+
+---
+
+### Task 4.9 — Skill 意图匹配器
+
+**文件：** `src/skills/matcher.py`
+
+```python
+class SkillMatcher:
+    def match(self, task: str, game_state: dict) -> Optional[SkillDSL]
+    def match_by_tags(self, tags: List[str]) -> List[SkillDSL]
+    def match_by_priority(self, skills: List[SkillDSL]) -> SkillDSL
+```
+
+---
+
+### Task 4.10 — 编写 15 个内置 Skill YAML
+
+**文件：** `skills/builtin/` 下 15 个 YAML 文件
+
+---
+
+### Task 4.11 — Skill 引擎测试
+
+**文件：** `tests/test_skill_engine.py`
+
+---
+
+### Task 4.12 — Skill 性能基准
+
+确保解析 < 10ms，执行开销 < 5ms/步骤
+
+---
+
+## P5: AI 决策模块（3 天）
+
+### Task 5.1 — AI 提供商抽象层
+
+**文件：** `src/ai/provider.py`
+
+```python
+class AIProvider(ABC):
+    async def chat(self, messages, temperature=0.7, max_tokens=4096) -> str
+    async def chat_stream(self, messages, **kwargs) -> AsyncIterator[str]
+    async def health_check(self) -> bool
+
+class OpenAIProvider(AIProvider): ...
+class AnthropicProvider(AIProvider): ...
+class LocalProvider(AIProvider): ...
+
+def create_provider(config: AIConfig) -> AIProvider
+```
+
+---
+
+### Task 5.2 — Prompt 模板管理
+
+**文件：** `src/ai/prompts.py`
+
+```python
+PROMPTS = {
+    "skill_generation": "...",   # 自然语言 → DSL
+    "parameter_fill": "...",     # L2 参数填充
+    "template_fill": "...",      # L3 模板填充
+    "emergency_takeover": "...", # 紧急接管
+    "error_analysis": "...",     # 错误分析
+    "skill_repair": "...",       # Skill 修复
+    "task_classification": "...", # 任务分类辅助
+}
+```
+
+---
+
+### Task 5.3 — DSL 生成器
+
+**文件：** `src/ai/generator.py`
+
+```python
+class DSLGenerator:
+    async def generate_skill(self, task: str, game_state: dict) -> SkillDSL
+    async def fill_params(self, task: str, skill: SkillDSL, context: dict) -> dict
+    async def fill_template(self, task: str, template: str, context: dict) -> SkillDSL
+    async def reason_dynamic(self, task: str, context: dict) -> List[dict]
+```
+
+---
+
+### Task 5.4 — 紧急接管模块
+
+**文件：** `src/ai/takeover.py`
+
+```python
+class EmergencyTakeover:
+    async def activate(self, context: dict) -> None
+    async def generate_actions(self, context: dict) -> List[dict]
+    async def deactivate(self) -> None
+```
+
+---
+
+### Task 5.5 — Skill 自动修复
+
+**文件：** `src/ai/auto_repair.py`
+
+```python
+class SkillAutoRepairer:
+    async def analyze_error(self, skill: SkillDSL, error: Exception) -> str
+    async def repair_skill(self, skill: SkillDSL, analysis: str) -> SkillDSL
+    async def validate_repair(self, original: SkillDSL, repaired: SkillDSL) -> bool
+```
+
+---
+
+## P6: 安全校验层（2 天）
+
+### Task 6.1 — 风险评估器
+
+**文件：** `src/safety/risk_assessor.py`
+
+```python
+class RiskAssessor:
+    DEFAULT_RISK_LEVELS = {
+        "move": 0, "jump": 0, "chat": 0,
+        "break_dirt": 1, "place_torch": 1,
+        "break_ore": 2, "attack_neutral": 2,
+        "ignite_tnt": 3, "place_lava": 3,
+        "suicide": 4, "place_command_block": 4,
+    }
+
+    def assess(self, action: str, context: dict) -> int  # 返回 0-4
+    def get_strategy(self, level: int) -> str  # auto/ask/deny
+```
+
+---
+
+### Task 6.2 — 权限管理器
+
+**文件：** `src/safety/permission.py`
+
+```python
+class PermissionManager:
+    def is_allowed(self, action: str) -> bool
+    def is_denied(self, action: str) -> bool
+    def add_rule(self, action: str, policy: str) -> None
+```
+
+---
+
+### Task 6.3 — 授权管理器
+
+**文件：** `src/safety/authorizer.py`
+
+```python
+class Authorizer:
+    async def request_approval(self, action: str, context: dict) -> bool
+    async def wait_for_response(self, timeout: int = 30) -> bool
+    def approve(self) -> None
+    def deny(self) -> None
+```
+
+---
+
+### Task 6.4 — 审计日志
+
+**文件：** `src/safety/audit.py`
+
+```python
+class AuditLogger:
+    def log(self, action: str, risk_level: int, result: str, details: dict = None) -> None
+    def query(self, start_time=None, end_time=None, level=None) -> List[dict]
+```
+
+---
+
+### Task 6.5 — 安全网关
+
+**文件：** `src/safety/gateway.py`
+
+```python
+class SafetyGateway:
+    """所有动作的统一入口"""
+    async def check(self, action: str, context: dict) -> bool
+    # 串联：风险评估 → 权限检查 → 授权 → 审计
+```
+
+---
+
+### Task 6.6 — 安全配置加载
+
+**文件：** `src/safety/config.py`
+
+---
+
+### Task 6.7 — 远程指令处理器
+
+**文件：** `src/safety/commands.py`
+
+---
+
+### Task 6.8 — 安全模块测试
+
+**文件：** `tests/test_safety.py`
+
+---
+
+## P7: 故障监控与降级（2 天）
+
+### Task 7.1 — 健康检查器
+
+**文件：** `src/monitoring/health.py`
+
+```python
+class HealthChecker:
+    async def check_all(self) -> HealthReport
+    async def check_connection(self) -> bool
+    async def check_ai(self) -> bool
+    async def check_mod(self) -> bool
+```
+
+---
+
+### Task 7.2 — 错误分级器
+
+**文件：** `src/monitoring/error_classifier.py`
+
+```python
+class ErrorClassifier:
+    def classify(self, error: Exception, context: dict) -> int  # 1/2/3 级
+```
+
+---
+
+### Task 7.3 — 告警通知器
+
+**文件：** `src/monitoring/alerter.py`
+
+```python
+class Alerter:
+    async def alert(self, level: int, message: str) -> None
+    # 1级: §e[提示]  2级: §6[警告]  3级: §c§l[紧急]
+```
+
+---
+
+### Task 7.4 — 降级管理器
+
+**文件：** `src/monitoring/fallback.py`
+
+```python
+class FallbackManager:
+    async def handle(self, error_level: int, context: dict) -> None
+    # 1级 → 重试3次
+    # 2级 → 终止回安全点
+    # 3级 → 触发熔断
+```
+
+---
+
+### Task 7.5 — 熔断器
+
+**文件：** `src/monitoring/circuit_breaker.py`
+
+```python
+class CircuitBreaker:
+    async def trip(self) -> None     # 触发熔断
+    async def reset(self) -> None    # 重置
+    @property
+    def is_open(self) -> bool
+```
+
+---
+
+### Task 7.6 — 自动修复器
+
+**文件：** `src/monitoring/auto_repair.py`
+
+```python
+class AutoReparer:
+    async def repair(self, failed_skill: SkillDSL, error: Exception) -> SkillDSL
+```
+
+---
+
+### Task 7.7 — 监控测试
+
+**文件：** `tests/test_monitoring.py`
+
+---
+
+## P8: 空闲自主任务（1 天）
+
+### Task 8.1 — 空闲检测器
+
+**文件：** `src/core/idle_detector.py`
+
+```python
+class IdleDetector:
+    def is_idle(self) -> bool
+    # 条件：无玩家指令 + 无危险 + 无待执行任务
+```
+
+---
+
+### Task 8.2 — 任务池管理
+
+**文件：** `src/core/task_pool.py`
+
+```python
+class TaskPool:
+    def get_next_task(self) -> Optional[str]
+    def add_task(self, name: str, priority: int) -> None
+    def remove_task(self, name: str) -> None
+```
+
+---
+
+### Task 8.3 — 任务调度器
+
+**文件：** `src/core/idle_scheduler.py`
+
+```python
+class IdleTaskScheduler:
+    async def start(self) -> None
+    async def stop(self) -> None
+    async def _schedule_loop(self) -> None
+    # 空闲时：选任务 → 执行 → 休息30秒 → 选下一个
+```
+
+---
+
+### Task 8.4 — 任务状态持久化
+
+**文件：** `src/core/idle_history.py`
+
+---
+
+### Task 8.5 — 空闲任务测试
+
+**文件：** `tests/test_idle_tasks.py`
 
 ---
 
