@@ -1,4 +1,4 @@
-# 🎮 Minecraft 云常驻 AI 智能玩伴系统
+# 🎮 BlockMind — 智能 Minecraft AI 玩伴系统
 
 > **Skill 固化复用版** · v1.0 · 2026-04-29
 
@@ -20,6 +20,7 @@
 - [Skill DSL 系统](#-skill-dsl-系统)
 - [安全体系](#-安全体系)
 - [故障容错](#-故障容错)
+- [空闲自主任务](#-空闲自主任务系统)
 - [WebUI 控制面板](#-webui-控制面板)
 - [部署指南](#-部署指南)
 - [开发指南](#-开发指南)
@@ -125,8 +126,8 @@ AI 决策一次，生成 DSL Skill 文件，之后 **零 token 反复执行**。
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/your-username/minecraft-ai-companion.git
-cd minecraft-ai-companion
+git clone https://github.com/your-username/BlockMind.git
+cd BlockMind
 
 # 2. 创建虚拟环境
 python3 -m venv venv
@@ -169,7 +170,7 @@ webui:
 ## 📁 项目结构
 
 ```
-minecraft-ai-companion/
+BlockMind/
 ├── src/
 │   ├── core/               # 核心引擎
 │   │   ├── engine.py       # 主引擎入口
@@ -516,6 +517,117 @@ async def auto_repair_skill(failed_skill: SkillDSL, error: Exception) -> SkillDS
 
 ---
 
+## 🤖 空闲自主任务系统
+
+> 当没有玩家指令、没有危险、没有待执行任务时，机器人自动进入"自由活动"模式，像真人玩家一样自主生存。
+
+### 触发条件
+
+```
+┌──────────────────────────────────────────────────────┐
+│  空闲状态判定（三个条件同时满足）                       │
+│                                                      │
+│  ✅ 无玩家指令（最近 N 秒内无 ! 前缀指令）             │
+│  ✅ 无危险（附近无敌对生物，血量 > 50%）               │
+│  ✅ 无待执行任务（当前任务队列为空）                    │
+│                                                      │
+│  → 进入空闲模式，从任务池中选择下一个任务               │
+└──────────────────────────────────────────────────────┘
+```
+
+### 空闲任务池
+
+| 优先级 | 任务名称 | 描述 | 预估耗时 |
+|--------|----------|------|----------|
+| 5 | 🌾 自动种田 | 播种 → 等待成熟 → 收割 → 重新种植 | 2-5 分钟 |
+| 5 | ⛏️ 自主挖矿 | 寻找矿脉，挖掘铁矿/煤矿/金矿 | 3-8 分钟 |
+| 5 | 🌲 自主砍树 | 收集木材，补充建筑材料 | 1-3 分钟 |
+| 5 | 📦 整理箱子 | 将背包物品分类存入储物箱 | 1-2 分钟 |
+| 5 | 🏠 修补房屋 | 修复被破坏的方块，填补缺口 | 2-5 分钟 |
+| 4 | 🔦 点亮区域 | 在黑暗处放置火把，防止怪物生成 | 1-3 分钟 |
+| 5 | 🚶 巡逻区域 | 在基地周围巡视，标记资源点 | 3-5 分钟 |
+| 5 | 💰 存放物资 | 背包满时自动回仓存放 | 1 分钟 |
+
+### 调度逻辑
+
+```python
+class IdleTaskScheduler:
+    """
+    空闲任务调度器
+    
+    调度策略：
+    1. 每个任务执行完成后休息 30 秒（可配置）
+    2. 从任务池中按优先级 + 随机组合选择下一个任务
+    3. 优先级相同的任务随机轮转，避免单一重复
+    4. 支持通过配置文件开启/关闭每种自主行动
+    5. 执行过程中如果收到玩家指令，立即中断当前任务
+    """
+
+    async def schedule_loop(self):
+        """主调度循环"""
+        while self.running:
+            if self._is_idle():
+                task = self._select_task()
+                await self._execute_with_interrupt(task)
+                await asyncio.sleep(self.config.idle_tasks.interval)
+            else:
+                await asyncio.sleep(5)  # 非空闲状态，5秒后再检查
+```
+
+### 配置项
+
+```yaml
+# config.yaml
+idle_tasks:
+  enabled: true              # 总开关
+  interval: 30               # 任务间休息间隔（秒）
+
+  actions:
+    - name: "farm_wheat"
+      enabled: true          # 可单独关闭某种任务
+      priority: 5
+    - name: "mine_resources"
+      enabled: true
+      priority: 5
+    - name: "chop_tree"
+      enabled: true
+      priority: 5
+    - name: "organize_chest"
+      enabled: true
+      priority: 5
+    - name: "repair_building"
+      enabled: true
+      priority: 4
+    - name: "place_torches"
+      enabled: true
+      priority: 4
+    - name: "patrol_area"
+      enabled: false         # 默认关闭巡逻
+      priority: 5
+    - name: "deposit_items"
+      enabled: true
+      priority: 5
+```
+
+### 自主行为示例
+
+```
+[14:00:00] 🤖 进入空闲模式
+[14:00:01] 🌾 选择任务：自动种田
+[14:00:03] 🚶 走向农田 (128, 64, -256)
+[14:00:08] 🌱 开始播种... 已播种 12/16 格
+[14:00:15] ✅ 播种完成，休息 30 秒...
+[14:00:45] 🤖 选择任务：整理箱子
+[14:00:47] 🚶 走向储物室 (130, 64, -260)
+[14:00:52] 📦 开始整理... 钻石×3 → 矿石箱
+[14:00:58] 📦 木头×16 → 木材箱
+[14:01:02] ✅ 整理完成，休息 30 秒...
+[14:01:32] ⚠️ 检测到玩家指令 "!come"，中断空闲任务
+[14:01:33] 🚶 前往玩家身边...
+```
+
+---
+
 ## 🖥️ WebUI 控制面板
 
 ### 功能概览
@@ -785,8 +897,8 @@ After=network.target
 [Service]
 Type=simple
 User=mc-ai
-WorkingDirectory=/opt/minecraft-ai-companion
-ExecStart=/opt/minecraft-ai-companion/venv/bin/python -m src.main
+WorkingDirectory=/opt/BlockMind
+ExecStart=/opt/BlockMind/venv/bin/python -m src.main
 Restart=always
 RestartSec=5
 StandardOutput=journal
@@ -808,8 +920,8 @@ WantedBy=multi-user.target
 
 ```bash
 # 克隆并安装
-git clone https://github.com/your-username/minecraft-ai-companion.git
-cd minecraft-ai-companion
+git clone https://github.com/your-username/BlockMind.git
+cd BlockMind
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

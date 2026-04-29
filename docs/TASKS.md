@@ -1,7 +1,7 @@
 # 📋 开发任务清单 — Claude Code 优化版
 
 > 每个任务 = 一个 Claude Code 会话，包含：精确文件路径、函数签名、验收标准
-> 项目根目录：`/root/projects/minecraft-ai-companion/`
+> 项目根目录：`/root/projects/BlockMind/`
 
 ---
 
@@ -21,7 +21,7 @@
 
 ```
 目标：创建所有 src/ 下的 __init__.py 和核心入口文件
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：**
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
 **验收命令：**
 ```bash
-cd /root/projects/minecraft-ai-companion && python -c "from src.main import main; print('✅ 框架搭建成功')"
+cd /root/projects/BlockMind && python -c "from src.main import main; print('✅ 框架搭建成功')"
 ```
 
 ---
@@ -81,7 +81,7 @@ cd /root/projects/minecraft-ai-companion && python -c "from src.main import main
 
 ```
 目标：实现配置文件加载与校验
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：**
@@ -186,7 +186,7 @@ def load_config(path: str = "config.yaml") -> AppConfig:
 
 **验收命令：**
 ```bash
-cd /root/projects/minecraft-ai-companion && python -c "
+cd /root/projects/BlockMind && python -c "
 from src.config.loader import load_config, AppConfig
 print('✅ 配置加载器完成')
 print('  - load_config() 函数已定义')
@@ -201,7 +201,7 @@ print('  - 支持所有配置项的类型校验')
 
 ```
 目标：实现统一日志工具
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：**
@@ -256,7 +256,7 @@ def setup_logger(config: LoggingConfig) -> logging.Logger:
 
 **验收命令：**
 ```bash
-cd /root/projects/minecraft-ai-companion && python -c "
+cd /root/projects/BlockMind && python -c "
 from src.utils.logger import setup_logger
 from src.config.loader import LoggingConfig
 logger = setup_logger(LoggingConfig())
@@ -271,7 +271,7 @@ print('✅ 日志系统完成')
 
 ```
 目标：实现发布/订阅事件总线（模块间解耦通信）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：**
@@ -359,7 +359,7 @@ class EventBus:
 
 **验收命令：**
 ```bash
-cd /root/projects/minecraft-ai-companion && python -c "
+cd /root/projects/BlockMind && python -c "
 import asyncio
 from src.core.event_bus import EventBus, Event
 
@@ -387,7 +387,7 @@ asyncio.run(test())
 
 ```
 目标：实现 Minecraft 服务器连接（支持正版/离线，断线自动重连）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/config/loader.py (GameConfig), src/utils/logger.py
 ```
 
@@ -492,7 +492,7 @@ class MCConnection:
 
 ```
 目标：实现实时游戏状态采集（地形、实体、时间、天气）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/connection.py
 ```
 
@@ -597,7 +597,7 @@ class StateCollector:
 
 ```
 目标：实现背包物品查询与整理
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/connection.py
 ```
 
@@ -691,7 +691,7 @@ class InventoryManager:
 
 ```
 目标：实现所有游戏动作（移动、挖掘、放置、攻击、进食等）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/connection.py, src/safety/gateway.py (桩)
 ```
 
@@ -773,7 +773,7 @@ class ActionExecutor:
 
 ```
 目标：实现动作排队、超时控制、取消机制
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/actions.py
 ```
 
@@ -792,7 +792,7 @@ class ActionExecutor:
 
 ```
 目标：实现 MC 聊天消息监听和 ! 指令解析
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/connection.py, src/core/event_bus.py
 ```
 
@@ -822,7 +822,7 @@ COMMANDS = {
 
 ```
 目标：实现 A* 寻路（支持避障、跳跃攀爬、安全落点检测）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/perception.py
 ```
 
@@ -854,7 +854,7 @@ class Pathfinder:
 
 ```
 目标：编写游戏连接模块的单元测试
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/ 下所有文件
 ```
 
@@ -916,7 +916,7 @@ class TestActionExecutor:
 
 ```
 目标：定义 Skill DSL 的完整数据模型（Pydantic）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：** `src/skills/models.py`
@@ -973,7 +973,7 @@ class SkillDSL(BaseModel):
 
 ```
 目标：将 YAML 文件解析为 SkillDSL 对象
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/skills/models.py
 ```
 
@@ -1041,7 +1041,7 @@ class DSLParser:
 
 ```
 目标：实现语法校验 + 安全校验 + 逻辑合理性校验
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/skills/models.py, src/skills/dsl_parser.py
 ```
 
@@ -1090,7 +1090,7 @@ class SkillValidator:
 
 ```
 目标：实现 Skill 运行时的游戏状态查询函数
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/game/perception.py, src/game/inventory.py
 ```
 
@@ -1104,7 +1104,7 @@ class SkillValidator:
 
 ```
 目标：实现 Skill DSL 的全部内置函数
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/skills/state_manager.py, src/game/actions.py
 ```
 
@@ -1149,7 +1149,7 @@ class SkillValidator:
 
 ```
 目标：实现 if/loop/break/wait 等控制流逻辑
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/skills/models.py, src/skills/builtin_functions.py
 ```
 
@@ -1161,7 +1161,7 @@ class SkillValidator:
 
 ```
 目标：串联解析→状态→控制流→执行的完整流程
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：2.2-2.6 全部
 ```
 
@@ -1209,7 +1209,7 @@ class SkillRuntime:
 
 ```
 目标：实现 Skill 文件的 CRUD、索引、版本控制
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/skills/models.py
 ```
 
@@ -1221,7 +1221,7 @@ class SkillRuntime:
 
 ```
 目标：根据玩家指令/当前状态匹配最合适的 Skill
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/skills/storage.py
 ```
 
@@ -1233,7 +1233,7 @@ class SkillRuntime:
 
 ```
 目标：编写全部内置 Skill 的 YAML 文件
-工作目录：/root/projects/minecraft-ai-companion/skills/builtin/
+工作目录：/root/projects/BlockMind/skills/builtin/
 ```
 
 **需要创建的文件列表：**
@@ -1309,7 +1309,7 @@ until:
 
 ```
 目标：编写 Skill 引擎的完整测试
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：** `tests/test_skill_engine.py`
@@ -1322,7 +1322,7 @@ until:
 
 ```
 目标：实现统一的 AI 调用接口（支持 OpenAI/Anthropic/本地模型）
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/config/loader.py (AIConfig)
 ```
 
@@ -1385,7 +1385,7 @@ def create_provider(config: AIConfig) -> AIProvider:
 
 ```
 目标：管理所有 AI Prompt 模板
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 ```
 
 **需要创建的文件：** `src/ai/prompts.py`
@@ -1474,7 +1474,7 @@ PROMPTS = {
 
 ```
 目标：将自然语言任务转换为标准 DSL YAML
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/ai/provider.py, src/ai/prompts.py, src/skills/validator.py
 ```
 
@@ -1486,7 +1486,7 @@ PROMPTS = {
 
 ```
 目标：3级错误时 AI 直接控制机器人
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/ai/provider.py, src/game/actions.py
 ```
 
@@ -1498,7 +1498,7 @@ PROMPTS = {
 
 ```
 目标：AI 分析 Skill 失败原因并自动修复
-工作目录：/root/projects/minecraft-ai-companion/
+工作目录：/root/projects/BlockMind/
 输入依赖：src/ai/generator.py, src/skills/storage.py
 ```
 
