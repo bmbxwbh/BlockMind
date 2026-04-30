@@ -1,0 +1,17 @@
+skill_id: go_home
+name: 回家
+tags: ["回家", "回基地", "导航"]
+priority: 2
+task_level: L1
+
+when:
+  all: []
+
+do:
+  - action: walk_to
+    args: {x: "home_x", y: "home_y", z: "home_z"}
+
+until:
+  any:
+    - "self.position() near home"
+    - "task_interrupted()"

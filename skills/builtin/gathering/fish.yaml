@@ -1,0 +1,22 @@
+skill_id: fish
+name: 钓鱼
+tags: ["钓鱼", "捕鱼"]
+priority: 5
+task_level: L2
+
+when:
+  all:
+    - "inventory.has('fishing_rod')"
+
+do:
+  - action: walk_to
+    args: {x: "water_x", y: "water_y", z: "water_z"}
+  - action: look_at
+    args: {x: "water_x", y: "water_y", z: "water_z"}
+  - action: wait
+    args: {seconds: 30}
+
+until:
+  any:
+    - "inventory.count('raw_cod') >= 16"
+    - "task_interrupted()"

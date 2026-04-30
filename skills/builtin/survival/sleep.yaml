@@ -1,0 +1,21 @@
+skill_id: sleep
+name: 睡觉
+tags: ["睡觉", "睡一觉", "生存"]
+priority: 2
+task_level: L1
+
+when:
+  all:
+    - "world.time() > 13000"
+    - "not world.any_entity(type='monster', radius=16)"
+
+do:
+  - action: walk_to
+    args: {x: "bed_x", y: "bed_y", z: "bed_z"}
+  - action: wait
+    args: {seconds: 5}
+
+until:
+  any:
+    - "world.time() < 1000"
+    - "task_interrupted()"

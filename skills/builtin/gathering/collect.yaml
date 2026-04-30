@@ -1,0 +1,21 @@
+skill_id: collect
+name: 采集
+tags: ["采集", "收集", "捡东西"]
+priority: 4
+task_level: L2
+
+when:
+  all: []
+
+do:
+  - action: scan_blocks
+    args: {radius: 16, sort_by: "distance"}
+  - action: walk_to
+    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  - action: dig_block
+    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+
+until:
+  any:
+    - "inventory.is_full()"
+    - "task_interrupted()"

@@ -1,0 +1,17 @@
+skill_id: organize_chest
+name: 整理箱子
+tags: ["整理箱子", "整理仓库"]
+priority: 4
+task_level: L1
+
+when:
+  all:
+    - "self.position() near home"
+
+do:
+  - action: walk_to
+    args: {x: "home_x", y: "home_y", z: "home_z"}
+
+until:
+  any:
+    - "task_interrupted()"

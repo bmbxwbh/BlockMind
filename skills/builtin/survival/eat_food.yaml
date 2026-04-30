@@ -1,0 +1,25 @@
+skill_id: eat_food
+name: 进食
+tags: ["吃东西", "进食", "生存"]
+priority: 2
+task_level: L1
+
+when:
+  all:
+    - "self.hunger() < 15"
+    - "inventory.count('bread') > 0 or inventory.count('cooked_beef') > 0"
+
+do:
+  - if:
+      condition: "inventory.count('bread') > 0"
+      then:
+        - action: eat
+          args: {item: "bread"}
+      else:
+        - action: eat
+          args: {item: "cooked_beef"}
+
+until:
+  any:
+    - "self.hunger() >= 18"
+    - "task_interrupted()"

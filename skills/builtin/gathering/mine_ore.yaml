@@ -1,0 +1,23 @@
+skill_id: mine_ore
+name: 挖矿
+tags: ["挖矿", "采矿", "开矿"]
+priority: 4
+task_level: L2
+
+when:
+  all:
+    - "inventory.has('iron_pickaxe') or inventory.has('diamond_pickaxe')"
+
+do:
+  - action: scan_blocks
+    args: {radius: 32, filter: "type contains 'ore'", sort_by: "distance"}
+  - action: walk_to
+    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  - action: dig_block
+    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+
+until:
+  any:
+    - "inventory.count('iron_ore') >= 32"
+    - "inventory.count('diamond') >= 5"
+    - "task_interrupted()"

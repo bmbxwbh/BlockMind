@@ -1,0 +1,25 @@
+skill_id: farm_wheat
+name: 种田
+tags: ["种田", "种小麦", "农业"]
+priority: 5
+task_level: L2
+
+when:
+  all:
+    - "inventory.has('wheat_seeds')"
+
+do:
+  - action: walk_to
+    args: {x: "farm_x", y: "farm_y", z: "farm_z"}
+  - loop:
+      while: "inventory.count('wheat_seeds') > 0"
+      do:
+        - action: place_block
+          args: {item: "wheat_seeds", x: "next_farm_pos"}
+        - action: wait
+          args: {seconds: 0.5}
+
+until:
+  any:
+    - "inventory.count('wheat_seeds') == 0"
+    - "task_interrupted()"

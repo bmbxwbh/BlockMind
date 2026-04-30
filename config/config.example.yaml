@@ -1,0 +1,117 @@
+# BlockMind 配置文件
+# 复制为 config.yaml 并修改
+
+game:
+  server_ip: "localhost"
+  server_port: 25565
+  username: "BlockMind"
+  version: "1.20.4"
+  auth_mode: "offline"
+  reconnect:
+    enabled: true
+    interval: 5
+    max_retries: 10
+
+mod:
+  host: "localhost"
+  port: 25580
+
+ai:
+  provider: "openai"
+  api_key: "your-api-key-here"
+  model: "gpt-4o"
+  base_url: ""
+  temperature: 0.7
+  max_tokens: 4096
+  stream: false
+  thinking:
+    enabled: false
+    max_tokens: 2048
+
+skills:
+  storage_path: "./skills"
+  validation:
+    syntax_check: true
+    safety_check: true
+    logic_check: true
+    max_retries: 3
+  auto_repair:
+    enabled: true
+    max_attempts: 3
+  versioning:
+    max_versions: 10
+
+safety:
+  audit_log:
+    retention_days: 30
+  authorization:
+    timeout: 30
+    timeout_action: "deny"
+  emergency_takeover:
+    enabled: true
+  risk_levels: {}
+
+monitoring:
+  health_check:
+    interval: 10
+  fallback:
+    retry_count: 3
+    safe_point: [0, 64, 0]
+  alert:
+    chat_notify: true
+    log_level: "INFO"
+
+idle_tasks:
+  enabled: true
+  interval: 30
+  actions:
+    - name: "自动种田"
+      enabled: true
+      priority: 5
+    - name: "自主挖矿"
+      enabled: true
+      priority: 5
+    - name: "自主砍树"
+      enabled: true
+      priority: 5
+    - name: "整理箱子"
+      enabled: true
+      priority: 5
+    - name: "修补房屋"
+      enabled: false
+      priority: 4
+    - name: "点亮区域"
+      enabled: true
+      priority: 4
+    - name: "巡逻区域"
+      enabled: false
+      priority: 5
+
+webui:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  auth:
+    password: "blockmind"
+    session_timeout: 3600
+  security:
+    allow_remote: false
+    allowed_ips: ["127.0.0.1"]
+    enable_https: false
+  websocket:
+    ping_interval: 30
+
+logging:
+  level: "INFO"
+  file: "logs/blockmind.log"
+  max_size: 10485760
+  backup_count: 5
+  format: "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
+
+ops:
+  process:
+    pid_file: "/tmp/blockmind.pid"
+    daemon: false
+  limits:
+    max_memory: 2048
+    max_cpu_percent: 80

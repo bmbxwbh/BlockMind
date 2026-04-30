@@ -1,0 +1,28 @@
+skill_id: chop_tree
+name: 砍树
+tags: ["砍树", "伐木", "收集木材"]
+priority: 4
+task_level: L2
+
+when:
+  all:
+    - "inventory.has('wooden_axe') or inventory.has('stone_axe') or inventory.has('iron_axe')"
+    - "world.any_entity(type='oak_log', radius=32)"
+
+do:
+  - action: scan_blocks
+    args: {radius: 32, filter: "type == 'oak_log'", sort_by: "distance"}
+  - action: walk_to
+    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  - loop:
+      while: "world.entity_exists(scanned.id)"
+      do:
+        - action: dig_block
+          args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+        - action: wait
+          args: {seconds: 1}
+
+until:
+  any:
+    - "inventory.count('oak_log') >= 64"
+    - "task_interrupted()"

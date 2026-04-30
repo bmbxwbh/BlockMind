@@ -1,0 +1,20 @@
+skill_id: deposit_items
+name: 存放物品
+tags: ["存东西", "存放物品", "仓库"]
+priority: 3
+task_level: L1
+
+when:
+  all:
+    - "inventory.count('oak_log') > 0 or inventory.count('cobblestone') > 0"
+
+do:
+  - action: walk_to
+    args: {x: "home_x", y: "home_y", z: "home_z"}
+  - action: place_block
+    args: {item: "chest", x: "chest_x", y: "chest_y", z: "chest_z"}
+
+until:
+  any:
+    - "inventory.empty_slots() >= 20"
+    - "task_interrupted()"

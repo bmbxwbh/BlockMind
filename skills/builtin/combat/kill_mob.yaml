@@ -1,0 +1,24 @@
+skill_id: kill_mob
+name: 杀怪
+tags: ["杀怪", "打怪", "战斗"]
+priority: 3
+task_level: L2
+
+when:
+  all:
+    - "self.health() > 10"
+    - "inventory.has('iron_sword') or inventory.has('diamond_sword')"
+
+do:
+  - action: scan_entities
+    args: {radius: 16, filter: "hostile == true", sort_by: "distance"}
+  - action: walk_to
+    args: {x: "entity.position.x", y: "entity.position.y", z: "entity.position.z"}
+  - action: attack
+    args: {entity_id: "entity.id"}
+
+until:
+  any:
+    - "not world.any_entity(type='monster', radius=16)"
+    - "self.health() < 6"
+    - "task_interrupted()"
