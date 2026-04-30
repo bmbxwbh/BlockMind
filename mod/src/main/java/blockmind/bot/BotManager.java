@@ -3,20 +3,18 @@ package blockmind.bot;
 import blockmind.BlockMindMod;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkSide;
+import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
+import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -66,9 +64,10 @@ public class BotManager {
             // 创建 GameProfile
             GameProfile profile = new GameProfile(BOT_UUID, botName);
 
-            // 创建 FakePlayer
+            // 创建 FakePlayer（MC 1.20.4 需要 SyncedClientOptions）
             ServerWorld world = server.getOverworld();
-            botPlayer = new ServerPlayerEntity(server, world, profile);
+            SyncedClientOptions clientOptions = SyncedClientOptions.createDefault();
+            botPlayer = new ServerPlayerEntity(server, world, profile, clientOptions);
 
             // 设置初始位置（世界出生点）
             BlockPos spawnPos = world.getSpawnPos();
@@ -81,7 +80,14 @@ public class BotManager {
 
             // 使用假的 ClientConnection 注册到服务器
             ClientConnection fakeConnection = new ClientConnection(NetworkSide.CLIENTBOUND);
-            server.getPlayerManager().onPlayerConnect(fakeConnection, botPlayer);
+            ConnectedClientData clientData = new ConnectedClientData(
+                profile, 0, clientOptions
+            );
+            server.getPlayerManager().onPlayerConnect(fakeConnection, botPlayer, clientData);
+
+            // 广播加入消息
+            Text joinMsg = Text.literal("§a[BlockMind] §e" + botName + " §ajoined the game");
+            server.getPlayerManager().broadcast(joinMsg, false);
 
             BlockMindMod.LOGGER.info("[BlockMind] ✅ Bot '{}' spawned at ({}, {}, {})",
                     botName,
@@ -121,6 +127,10 @@ public class BotManager {
 
         try {
             String name = botName;
+
+            // 广播离开消息
+            Text quitMsg = Text.literal("§a[BlockMind] §e" + name + " §cleft the game");
+            server.getPlayerManager().broadcast(quitMsg, false);
 
             // 从服务器移除
             server.getPlayerManager().remove(botPlayer);
