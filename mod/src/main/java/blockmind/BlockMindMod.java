@@ -67,7 +67,7 @@ public class BlockMindMod implements DedicatedServerModInitializer {
         return running;
     }
 
-    public static HttpServer getHttpServer() {
+    public static BlockMindHttpServer getHttpServer() {
         return httpServer;
     }
 }
