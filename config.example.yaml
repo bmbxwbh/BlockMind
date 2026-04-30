@@ -130,7 +130,7 @@ navigation:
 
 ops:
   process:
-    pid_file: /tmp/blockmind.pid
+    pid_file: data/blockmind.pid
     daemon: false
   limits:
     max_memory: 2048

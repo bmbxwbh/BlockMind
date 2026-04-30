@@ -341,6 +341,8 @@ SmartNavigator.goto(x, y, z)
 
 ### 安装
 
+#### Linux / macOS
+
 ```bash
 # 克隆
 git clone https://github.com/bmbxwbh/BlockMind.git
@@ -360,6 +362,25 @@ cd .. && cp config/config.example.yaml config.yaml
 # 启动
 python -m src.main
 ```
+
+#### Windows
+
+```cmd
+# 克隆
+git clone https://github.com/bmbxwbh/BlockMind.git
+cd BlockMind
+
+# 一键安装（双击 install.bat 或命令行运行）
+install.bat
+
+# 编辑配置
+notepad config.yaml
+
+# 一键启动（MC 服务端 + BlockMind）
+start_all.bat
+```
+
+> 详细步骤参见 [Windows 部署指南](docs/WINDOWS.md)
 
 ### 配置示例
 
