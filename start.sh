@@ -111,10 +111,24 @@ else
     warn "${T_JAVA_NOT}"
 fi
 
-# ── 安装依赖（如果需要） ──
+# ── 安装依赖（自动处理无 pip + 镜像加速） ──
 if ! $PYTHON -c "import fastapi" 2>/dev/null; then
-    info "${T_INSTALL_DEPS}"
-    $PYTHON -m pip install -r requirements.txt -q
+    # Check if we have a venv from install.sh
+    if [ -f ".venv/bin/python3" ]; then
+        PYTHON=".venv/bin/python3"
+        source .venv/bin/activate 2>/dev/null
+    fi
+    if ! $PYTHON -c "import fastapi" 2>/dev/null; then
+        info "${T_INSTALL_DEPS}"
+        PIP_OPTS=""
+        PIP_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
+        if curl -s --connect-timeout 3 "$PIP_MIRROR" >/dev/null 2>&1; then
+            PIP_OPTS="-i $PIP_MIRROR --trusted-host mirrors.aliyun.com"
+        fi
+        $PYTHON -m pip install -r requirements.txt -q $PIP_OPTS 2>/dev/null || \
+        $PYTHON -m pip install -r requirements.txt -q --break-system-packages $PIP_OPTS 2>/dev/null || \
+        $PYTHON -m pip install -r requirements.txt $PIP_OPTS
+    fi
 fi
 
 # ── 初始化配置 ──

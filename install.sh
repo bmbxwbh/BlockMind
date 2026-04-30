@@ -10,14 +10,16 @@ YELLOW="\033[1;33m"
 CYAN="\033[0;36m"
 NC="\033[0m"
 
+PYTHON="python3"
+USE_VENV=false
+
 info()  { echo -e "${GREEN}[✓]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
 error() { echo -e "${RED}[✗]${NC} $*"; exit 1; }
 
 # ── Language Selection ──
 select_lang() {
-    # Allow env override: LANG=zh or LANG=en
-    case "${LANG:-}" in
+    case "${BLOCKMIND_LANG:-${LANG:-}}" in
         zh|ZH) BM_LANG=zh ;;
         en|EN) BM_LANG=en ;;
         *)
@@ -46,6 +48,11 @@ load_strings() {
         T_INVALID="无效选择"
         T_DEPS_MISSING="缺少依赖"
         T_DEPS_INSTALL="请先安装 Python 3.10+"
+        T_INSTALL_PIP="未找到 pip，正在自动安装..."
+        T_PIP_INSTALLED="pip 安装成功"
+        T_PIP_FAIL="pip 安装失败，请手动安装: sudo apt install python3-pip"
+        T_USE_VENV="创建虚拟环境 (.venv)..."
+        T_VENV_DONE="虚拟环境已创建"
         T_PYTHON_VER="Python 版本"
         T_INSTALL_DEPS="安装 Python 依赖..."
         T_DEPS_DONE="依赖安装完成"
@@ -70,6 +77,11 @@ load_strings() {
         T_INVALID="Invalid choice"
         T_DEPS_MISSING="Missing dependencies"
         T_DEPS_INSTALL="Please install Python 3.10+ first"
+        T_INSTALL_PIP="pip not found, installing automatically..."
+        T_PIP_INSTALLED="pip installed successfully"
+        T_PIP_FAIL="pip install failed, please install manually: sudo apt install python3-pip"
+        T_USE_VENV="Creating virtual environment (.venv)..."
+        T_VENV_DONE="Virtual environment created"
         T_PYTHON_VER="Python version"
         T_INSTALL_DEPS="Installing Python dependencies..."
         T_DEPS_DONE="Dependencies installed"
@@ -89,21 +101,62 @@ load_strings() {
     fi
 }
 
-# ── 检查依赖 ──
+# ── 检查依赖（自动处理无 pip 情况） ──
 check_deps() {
-    local missing=()
-    command -v python3 >/dev/null || missing+=("python3")
-    command -v pip3 >/dev/null || command -v pip >/dev/null || missing+=("pip3")
-    if [ ${#missing[@]} -gt 0 ]; then
-        error "${T_DEPS_MISSING}: ${missing[*]}\n${T_DEPS_INSTALL}"
-    fi
+    command -v python3 >/dev/null || error "${T_DEPS_MISSING}: python3\n${T_DEPS_INSTALL}"
     info "${T_PYTHON_VER}: $(python3 --version 2>&1 | cut -d' ' -f2)"
+
+    # Check pip availability
+    if command -v pip3 >/dev/null 2>&1 || command -v pip >/dev/null 2>&1 || python3 -m pip --version >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # Try ensurepip
+    warn "${T_INSTALL_PIP}"
+    if python3 -m ensurepip --user 2>/dev/null; then
+        info "${T_PIP_INSTALLED}"
+        return 0
+    fi
+
+    # Fallback: create venv (with pip)
+    warn "${T_USE_VENV}"
+    if python3 -m venv .venv 2>/dev/null; then
+        USE_VENV=true
+        PYTHON=".venv/bin/python3"
+        info "${T_VENV_DONE}"
+        return 0
+    fi
+
+    # Last resort: venv without pip, then bootstrap
+    python3 -m venv --without-pip .venv 2>/dev/null
+    (
+        . .venv/bin/activate
+        curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py 2>/dev/null
+        python3 /tmp/get-pip.py 2>/dev/null
+    )
+    if [ -f .venv/bin/pip3 ] || [ -f .venv/bin/pip ]; then
+        USE_VENV=true
+        PYTHON=".venv/bin/python3"
+        info "${T_VENV_DONE}"
+        return 0
+    fi
+
+    error "${T_PIP_FAIL}"
 }
 
 # ── 安装 Python 依赖 ──
 install_deps() {
     info "${T_INSTALL_DEPS}"
-    pip3 install -r requirements.txt --quiet 2>/dev/null || pip install -r requirements.txt --quiet
+    local PIP_OPTS=""
+    # Auto-detect China region and use mirror
+    local PIP_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
+    local TRUSTED_HOST="mirrors.aliyun.com"
+    if curl -s --connect-timeout 3 "$PIP_MIRROR" >/dev/null 2>&1; then
+        PIP_OPTS="-i $PIP_MIRROR --trusted-host $TRUSTED_HOST"
+    fi
+    $PYTHON -m pip install -r requirements.txt --quiet $PIP_OPTS 2>/dev/null || \
+    $PYTHON -m pip install -r requirements.txt -q --break-system-packages $PIP_OPTS 2>/dev/null || \
+    $PYTHON -m pip install -r requirements.txt $PIP_OPTS
     info "${T_DEPS_DONE}"
 }
 
@@ -128,9 +181,12 @@ init_data() {
 start_service() {
     local port=${BLOCKMIND_PORT:-19951}
     info "${T_STARTING} (${T_PORT} $port)..."
-    BLOCKMIND_PORT=$port python3 -m src.main &
+    if [ "$USE_VENV" = true ]; then
+        source .venv/bin/activate 2>/dev/null
+    fi
+    BLOCKMIND_PORT=$port $PYTHON -m src.main &
     sleep 2
-    if ss -tlnp | grep -q ":$port"; then
+    if ss -tlnp 2>/dev/null | grep -q ":$port"; then
         info "${T_STARTED}"
         info "  ${T_WEBUI}: http://localhost:$port"
         info "  ${T_PASSWORD}: $(grep 'password:' config.yaml 2>/dev/null | head -1 | awk '{print $2}' || echo 'see config.yaml')"

@@ -15,7 +15,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 DEFAULT_MC_VERSION="1.20.4"
-FABRIC_VERSION="0.15.3"
+FABRIC_INSTALLER_VER="1.1.1"
+FABRIC_LOADER_VER="0.19.2"
 
 info()  { echo -e "${GREEN}[✓]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
@@ -258,7 +259,7 @@ if [ "$USE_EXISTING" = false ]; then
     INSTALLER="$MC_DIR/fabric-installer.jar"
     if [ ! -f "$INSTALLER" ]; then
         info "${T_DL_INSTALLER}"
-        URL="https://maven.fabricmc.net/net/fabricmc/fabric-installer/${FABRIC_VERSION}/fabric-installer-${FABRIC_VERSION}.jar"
+        URL="https://maven.fabricmc.net/net/fabricmc/fabric-installer/${FABRIC_INSTALLER_VER}/fabric-installer-${FABRIC_INSTALLER_VER}.jar"
         curl -L -o "$INSTALLER" "$URL" || error "Download failed: $URL"
         info "${T_DL_DONE}"
     fi
@@ -266,7 +267,7 @@ if [ "$USE_EXISTING" = false ]; then
     # 安装 Fabric 服务端
     if [ ! -f "$MC_DIR/fabric-server-launch.jar" ]; then
         info "${T_INSTALL_FABRIC} (MC $MC_VERSION)..."
-        java -jar "$INSTALLER" server -dir "$MC_DIR" -mcversion "$MC_VERSION" -loader "$FABRIC_VERSION" -downloadMinecraft
+        java -jar "$INSTALLER" server -dir "$MC_DIR" -mcversion "$MC_VERSION" -loader "$FABRIC_LOADER_VER" -downloadMinecraft
         info "${T_INSTALL_DONE}"
     fi
 fi
@@ -279,14 +280,19 @@ mkdir -p "$MODS_DIR"
 
 if ! ls "$MODS_DIR"/blockmind-mod-*.jar >/dev/null 2>&1; then
     info "${T_DL_MOD}"
-    RELEASE_JSON=$(curl -sL "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest")
-    MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod[^"]*"' | head -1 | cut -d'"' -f4)
-    if [ -n "$MOD_URL" ]; then
-        curl -L -o "$MODS_DIR/blockmind-mod.jar" "$MOD_URL"
-        info "${T_MOD_DONE}"
-    else
-        warn "${T_MOD_FAIL}: https://github.com/bmbxwbh/BlockMind/releases"
+    # 尝试从 GitHub API 获取最新 Mod URL
+    MOD_URL=""
+    RELEASE_JSON=$(curl -sL --connect-timeout 10 "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest" 2>/dev/null)
+    if echo "$RELEASE_JSON" | grep -q "browser_download_url"; then
+        MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod[^"]*"' | head -1 | cut -d'"' -f4)
     fi
+    # Fallback: 直接用最新 release 的固定 URL 模式
+    if [ -z "$MOD_URL" ]; then
+        MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod.jar"
+    fi
+    curl -sL -o "$MODS_DIR/blockmind-mod.jar" "$MOD_URL" && \
+        info "${T_MOD_DONE}" || \
+        warn "${T_MOD_FAIL}: https://github.com/bmbxwbh/BlockMind/releases"
 else
     info "${T_MOD_EXIST}"
 fi
