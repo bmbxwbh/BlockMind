@@ -20,20 +20,69 @@ class GameConfig(BaseModel):
     reconnect: GameReconnectConfig = GameReconnectConfig()
 
 
-class AIThinkingConfig(BaseModel):
-    enabled: bool = True
-    max_tokens: int = 8192
-
-
-class AIConfig(BaseModel):
+class AgentConfig(BaseModel):
+    """单个 Agent 的模型配置"""
     provider: str = "openai"
     api_key: str = ""
     model: str = "gpt-4o"
-    base_url: Optional[str] = None
+    base_url: str = ""
     temperature: float = 0.7
     max_tokens: int = 4096
-    stream: bool = True
-    thinking: AIThinkingConfig = AIThinkingConfig()
+
+
+class AIConfig(BaseModel):
+    """AI 配置 — 双 Agent 架构"""
+    # 主 Agent（玩家聊天，需要好的对话能力）
+    main_agent: AgentConfig = AgentConfig(
+        provider="openai",
+        model="gpt-4o",
+        temperature=0.7,
+        max_tokens=512,
+    )
+    # 操作 Agent（任务执行，需要精准的代码生成能力）
+    operation_agent: AgentConfig = AgentConfig(
+        provider="openai",
+        model="gpt-4o",
+        temperature=0.3,
+        max_tokens=4096,
+    )
+    # 兼容旧配置（如果只填了 ai.provider 等，两个 Agent 共用）
+    provider: str = ""
+    api_key: str = ""
+    model: str = ""
+    base_url: str = ""
+    temperature: float = 0.7
+    max_tokens: int = 4096
+
+    def get_main_agent(self) -> AgentConfig:
+        """获取主 Agent 配置（优先用 main_agent，否则用顶层配置）"""
+        if self.main_agent.api_key or self.provider:
+            if not self.main_agent.api_key and self.api_key:
+                return AgentConfig(
+                    provider=self.provider or self.main_agent.provider,
+                    api_key=self.api_key,
+                    model=self.model or self.main_agent.model,
+                    base_url=self.base_url or self.main_agent.base_url,
+                    temperature=self.main_agent.temperature,
+                    max_tokens=self.main_agent.max_tokens,
+                )
+            return self.main_agent
+        return self.main_agent
+
+    def get_operation_agent(self) -> AgentConfig:
+        """获取操作 Agent 配置（优先用 operation_agent，否则用顶层配置）"""
+        if self.operation_agent.api_key or self.provider:
+            if not self.operation_agent.api_key and self.api_key:
+                return AgentConfig(
+                    provider=self.provider or self.operation_agent.provider,
+                    api_key=self.api_key,
+                    model=self.model or self.operation_agent.model,
+                    base_url=self.base_url or self.operation_agent.base_url,
+                    temperature=self.operation_agent.temperature,
+                    max_tokens=self.operation_agent.max_tokens,
+                )
+            return self.operation_agent
+        return self.operation_agent
 
 
 class SkillsValidationConfig(BaseModel):

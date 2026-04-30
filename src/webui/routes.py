@@ -229,3 +229,104 @@ async def execute_command(req: CommandRequest, request: Request, _=Depends(requi
         ))
         return {"success": True, "details": f"指令已发送: {req.command}"}
     return {"success": False, "error": "引擎未初始化"}
+
+
+# ── 模型配置接口 ──
+
+class AgentConfigUpdate(BaseModel):
+    provider: str = ""
+    api_key: str = ""
+    model: str = ""
+    base_url: str = ""
+    temperature: float = 0.7
+    max_tokens: int = 4096
+
+
+class ModelConfigUpdate(BaseModel):
+    main_agent: Optional[AgentConfigUpdate] = None
+    operation_agent: Optional[AgentConfigUpdate] = None
+
+
+@router.get("/api/config/model")
+async def get_model_config(request: Request, _=Depends(require_auth)):
+    """获取当前模型配置"""
+    engine = get_engine(request)
+    config = engine.config
+
+    def agent_to_dict(agent_cfg):
+        return {
+            "provider": agent_cfg.provider,
+            "model": agent_cfg.model,
+            "base_url": agent_cfg.base_url or "",
+            "temperature": agent_cfg.temperature,
+            "max_tokens": agent_cfg.max_tokens,
+            "has_key": bool(agent_cfg.api_key),
+        }
+
+    return {
+        "main_agent": agent_to_dict(config.ai.get_main_agent()),
+        "operation_agent": agent_to_dict(config.ai.get_operation_agent()),
+        "providers": ["openai", "anthropic", "deepseek", "openrouter", "mimo", "local"],
+    }
+
+
+@router.post("/api/config/model")
+async def update_model_config(req: ModelConfigUpdate, request: Request, _=Depends(require_auth)):
+    """更新模型配置（热更新，无需重启）"""
+    engine = get_engine(request)
+    config = engine.config
+
+    if req.main_agent:
+        cfg = req.main_agent
+        if cfg.provider:
+            config.ai.main_agent.provider = cfg.provider
+        if cfg.api_key:
+            config.ai.main_agent.api_key = cfg.api_key
+        if cfg.model:
+            config.ai.main_agent.model = cfg.model
+        if cfg.base_url:
+            config.ai.main_agent.base_url = cfg.base_url
+        if cfg.temperature != 0.7:
+            config.ai.main_agent.temperature = cfg.temperature
+        if cfg.max_tokens != 4096:
+            config.ai.main_agent.max_tokens = cfg.max_tokens
+
+    if req.operation_agent:
+        cfg = req.operation_agent
+        if cfg.provider:
+            config.ai.operation_agent.provider = cfg.provider
+        if cfg.api_key:
+            config.ai.operation_agent.api_key = cfg.api_key
+        if cfg.model:
+            config.ai.operation_agent.model = cfg.model
+        if cfg.base_url:
+            config.ai.operation_agent.base_url = cfg.base_url
+        if cfg.temperature != 0.7:
+            config.ai.operation_agent.temperature = cfg.temperature
+        if cfg.max_tokens != 4096:
+            config.ai.operation_agent.max_tokens = cfg.max_tokens
+
+    # 热更新 Provider
+    try:
+        from src.ai.provider import create_provider
+        main_provider = create_provider(config.ai.get_main_agent())
+        op_provider = create_provider(config.ai.get_operation_agent())
+        engine.main_agent.provider = main_provider
+        engine.operation_agent.provider = op_provider
+        return {"success": True, "details": "模型配置已更新"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/api/config/model/test")
+async def test_model_config(request: Request, _=Depends(require_auth)):
+    """测试模型连接"""
+    engine = get_engine(request)
+    try:
+        result = await engine.main_agent.provider.chat(
+            [{"role": "user", "content": "回复 OK"}],
+            max_tokens=10,
+        )
+        return {"success": True, "response": result.strip()}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
