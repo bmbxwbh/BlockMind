@@ -288,7 +288,7 @@ if ! ls "$MODS_DIR"/blockmind-mod-*.jar >/dev/null 2>&1; then
     fi
     # Fallback: 直接用最新 release 的固定 URL 模式
     if [ -z "$MOD_URL" ]; then
-        MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod.jar"
+        MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod-1.0.0.jar"
     fi
     curl -sL -o "$MODS_DIR/blockmind-mod.jar" "$MOD_URL" && \
         info "${T_MOD_DONE}" || \
