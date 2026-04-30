@@ -11,9 +11,11 @@
 import json
 import logging
 import time
+import math
+from collections import defaultdict
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from enum import Enum
 
 logger = logging.getLogger("blockmind.memory")
@@ -110,6 +112,18 @@ class StrategyRecord:
         total = self.success_count + self.fail_count
         return self.success_count / total if total > 0 else 0.0
 
+    @property
+    def score(self) -> float:
+        """策略综合评分 (0~1): 成功率 + 使用频率 + 时效性"""
+        total = self.success_count + self.fail_count
+        if total == 0:
+            return 0.0
+        rate_score = self.success_rate * 0.6
+        freq_score = min(math.log1p(total) / math.log1p(20), 1.0) * 0.2
+        age_days = (time.time() - self.last_used) / 86400 if self.last_used else 999
+        recency = max(0.0, 1.0 - age_days / 60.0) * 0.2
+        return rate_score + freq_score + recency
+
 
 @dataclass
 class PlayerMemory:
@@ -155,6 +169,12 @@ class GameMemory:
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
+        # 容量配置
+        self.max_paths: int = 2000
+        self.max_strategies: int = 500
+        self.max_zones: int = 500
+        self.capacity_warning_threshold: float = 0.85
+
         # 记忆存储
         self.zones: Dict[str, Zone] = {}
         self.paths: Dict[str, CachedPath] = {}
@@ -166,6 +186,9 @@ class GameMemory:
         self._spatial_index: Dict[str, List[str]] = {}  # "chunk_key" -> [zone_ids]
         self._path_index: Dict[str, List[str]] = {}     # "start_end" -> [path_ids]
 
+        # 容量警告回调
+        self._capacity_callbacks: List = []
+
         # 加载持久化数据
         self._load_all()
 
@@ -174,6 +197,8 @@ class GameMemory:
                      f"{len(self.paths)} 路径, "
                      f"{len(self.strategies)} 策略, "
                      f"{len(self.players)} 玩家")
+
+        self._check_capacity()
 
     # ── 空间记忆 ──────────────────────────────────────
 
@@ -236,7 +261,7 @@ class GameMemory:
             self._save_zones()
 
     def register_building(self, name: str, center: Tuple[int, int, int],
-                          radius: int = 10, metadata: Dict = None) -> Zone:
+                          radius: int = 10, metadata: Optional[Dict] = None) -> Zone:
         """注册玩家建筑（自动设为保护区）"""
         zone = Zone(
             zone_id=f"building_{name.lower().replace(' ', '_')}",
@@ -307,7 +332,7 @@ class GameMemory:
                    waypoints: List[Tuple[int, int, int]],
                    success: bool = True,
                    duration: float = 0.0,
-                   obstacles: List[str] = None) -> CachedPath:
+                   obstacles: Optional[List[str]] = None) -> CachedPath:
         """缓存路径"""
         path_id = self._make_path_id(start, end)
 
@@ -381,7 +406,7 @@ class GameMemory:
                         action_sequence: List[Dict],
                         success: bool = True,
                         duration: float = 0.0,
-                        context_tags: List[str] = None) -> StrategyRecord:
+                        context_tags: Optional[List[str]] = None) -> StrategyRecord:
         """记录策略（成功或失败）"""
         # 基于任务类型+动作序列生成 ID
         strategy_id = self._make_strategy_id(task_type, action_sequence)
@@ -416,7 +441,7 @@ class GameMemory:
         return strategy
 
     def get_best_strategy(self, task_type: str,
-                          context_tags: List[str] = None) -> Optional[StrategyRecord]:
+                          context_tags: Optional[List[str]] = None) -> Optional[StrategyRecord]:
         """获取最佳策略（成功率最高 + 最近使用）"""
         candidates = [
             s for s in self.strategies.values()
@@ -486,8 +511,8 @@ class GameMemory:
             logger.info(f"🛡️ 安全点添加: {location}")
 
     def record_event(self, event_type: str, description: str,
-                     location: Tuple[int, int, int] = None,
-                     metadata: Dict = None) -> None:
+                     location: Optional[Tuple[int, int, int]] = None,
+                     metadata: Optional[Dict] = None) -> None:
         """记录重要事件"""
         event = {
             "type": event_type,
@@ -506,9 +531,202 @@ class GameMemory:
         """获取最近的安全点"""
         if not self.world.safe_points:
             return self.world.spawn_point
-        import math
         return min(self.world.safe_points,
                    key=lambda p: math.sqrt((p[0]-x)**2 + (p[1]-y)**2 + (p[2]-z)**2))
+
+    # ── 记忆管理功能 ────────────────────────────────
+
+    def cleanup_old_paths(self, max_age_days: int = 30) -> int:
+        """清理超过 max_age_days 天未使用的旧路径（保留可靠路径）。返回删除数量。"""
+        cutoff = time.time() - max_age_days * 86400
+        to_remove = [
+            pid for pid, p in self.paths.items()
+            if p.last_used < cutoff and not p.is_reliable
+        ]
+        for pid in to_remove:
+            del self.paths[pid]
+        if to_remove:
+            self._save_paths()
+            logger.info(f"🧹 清理旧路径: 删除 {len(to_remove)} 条 (>{max_age_days} 天)")
+        return len(to_remove)
+
+    def cleanup_low_scoring_strategies(self, min_score: float = 0.15) -> int:
+        """自动清理低评分策略。返回删除数量。"""
+        to_remove = [
+            sid for sid, s in self.strategies.items()
+            if s.score < min_score and (s.success_count + s.fail_count) >= 3
+        ]
+        for sid in to_remove:
+            del self.strategies[sid]
+        if to_remove:
+            self._save_strategies()
+            logger.info(f"🧹 清理低评分策略: 删除 {len(to_remove)} 个 (score<{min_score})")
+        return len(to_remove)
+
+    def compress_similar_paths(self, distance_threshold: int = 10) -> int:
+        """合并相似路径（起点和终点在阈值范围内）。返回合并次数。"""
+        if len(self.paths) < 2:
+            return 0
+        path_list = list(self.paths.values())
+        merged_ids: Set[str] = set()
+        merge_count = 0
+        for i in range(len(path_list)):
+            if path_list[i].path_id in merged_ids:
+                continue
+            for j in range(i + 1, len(path_list)):
+                if path_list[j].path_id in merged_ids:
+                    continue
+                a, b = path_list[i], path_list[j]
+                if (self._close_enough(a.start, b.start, distance_threshold) and
+                        self._close_enough(a.end, b.end, distance_threshold)):
+                    keeper, loser = (a, b) if a.success_rate >= b.success_rate else (b, a)
+                    keeper.success_count += loser.success_count
+                    keeper.fail_count += loser.fail_count
+                    keeper.avg_time = (keeper.avg_time + loser.avg_time) / 2
+                    keeper.obstacles_encountered.extend(loser.obstacles_encountered)
+                    if loser.last_used > keeper.last_used:
+                        keeper.waypoints = loser.waypoints
+                    keeper.last_used = max(keeper.last_used, loser.last_used)
+                    merged_ids.add(loser.path_id)
+                    merge_count += 1
+        for pid in merged_ids:
+            del self.paths[pid]
+        if merge_count:
+            self._save_paths()
+            logger.info(f"🗜️ 路径压缩: 合并 {merge_count} 对相似路径")
+        return merge_count
+
+    def export_memory(self) -> Dict[str, Any]:
+        """导出全部记忆为 JSON 可序列化字典"""
+        data: Dict[str, Any] = {
+            "version": 1,
+            "exported_at": time.time(),
+            "zones": {}, "paths": {}, "strategies": {}, "players": {}, "world": {},
+        }
+        for k, v in self.zones.items():
+            d = asdict(v)
+            d["center"] = list(v.center)
+            d["zone_type"] = v.zone_type.value
+            data["zones"][k] = d
+        for k, v in self.paths.items():
+            d = asdict(v)
+            d["start"] = list(v.start)
+            d["end"] = list(v.end)
+            d["waypoints"] = [list(w) for w in v.waypoints]
+            data["paths"][k] = d
+        for k, v in self.strategies.items():
+            data["strategies"][k] = asdict(v)
+        for k, v in self.players.items():
+            d = asdict(v)
+            if v.home_location:
+                d["home_location"] = list(v.home_location)
+            data["players"][k] = d
+        wd = asdict(self.world)
+        if self.world.spawn_point:
+            wd["spawn_point"] = list(self.world.spawn_point)
+        wd["safe_points"] = [list(p) for p in self.world.safe_points]
+        data["world"] = wd
+        logger.info(f"📦 记忆导出: {self.get_stats()}")
+        return data
+
+    def import_memory(self, data: Dict[str, Any], merge: bool = True) -> Dict[str, int]:
+        """从 JSON 字典导入记忆。merge=True 合并，False 覆盖。返回导入统计。"""
+        stats: Dict[str, int] = {"zones": 0, "paths": 0, "strategies": 0, "players": 0}
+        if not merge:
+            self.zones.clear()
+            self.paths.clear()
+            self.strategies.clear()
+            self.players.clear()
+            self._spatial_index.clear()
+        for k, v in data.get("zones", {}).items():
+            if merge and k in self.zones:
+                continue
+            v["center"] = tuple(v["center"])
+            v["zone_type"] = ZoneType(v["zone_type"])
+            self.zones[k] = Zone(**v)
+            self._update_spatial_index(self.zones[k])
+            stats["zones"] += 1
+        for k, v in data.get("paths", {}).items():
+            if merge and k in self.paths:
+                continue
+            v["start"] = tuple(v["start"])
+            v["end"] = tuple(v["end"])
+            v["waypoints"] = [tuple(w) for w in v["waypoints"]]
+            self.paths[k] = CachedPath(**v)
+            stats["paths"] += 1
+        for k, v in data.get("strategies", {}).items():
+            if merge and k in self.strategies:
+                continue
+            self.strategies[k] = StrategyRecord(**v)
+            stats["strategies"] += 1
+        for k, v in data.get("players", {}).items():
+            if merge and k in self.players:
+                continue
+            if v.get("home_location"):
+                v["home_location"] = tuple(v["home_location"])
+            self.players[k] = PlayerMemory(**v)
+            stats["players"] += 1
+        wd = data.get("world")
+        if wd:
+            if wd.get("spawn_point"):
+                wd["spawn_point"] = tuple(wd["spawn_point"])
+            wd["safe_points"] = [tuple(p) for p in wd.get("safe_points", [])]
+            if not merge:
+                self.world = WorldMemory(**wd)
+            else:
+                for sp in wd.get("safe_points", []):
+                    if sp not in self.world.safe_points:
+                        self.world.safe_points.append(sp)
+                self.world.notable_events.extend(wd.get("notable_events", []))
+                if not self.world.spawn_point and wd.get("spawn_point"):
+                    self.world.spawn_point = wd["spawn_point"]
+        self._save_zones()
+        self._save_paths()
+        self._save_strategies()
+        self._save_players()
+        self._save_world()
+        logger.info(f"📥 记忆导入完成: {stats}")
+        return stats
+
+    def register_capacity_callback(self, callback) -> None:
+        """注册容量警告回调 callback(message: str)"""
+        self._capacity_callbacks.append(callback)
+
+    def _check_capacity(self) -> None:
+        """检查容量，接近上限时发出警告"""
+        warnings = []
+        if self.max_paths:
+            r = len(self.paths) / self.max_paths
+            if r >= self.capacity_warning_threshold:
+                warnings.append(f"路径记忆已达 {r:.0%} ({len(self.paths)}/{self.max_paths})")
+        if self.max_strategies:
+            r = len(self.strategies) / self.max_strategies
+            if r >= self.capacity_warning_threshold:
+                warnings.append(f"策略记忆已达 {r:.0%} ({len(self.strategies)}/{self.max_strategies})")
+        if self.max_zones:
+            r = len(self.zones) / self.max_zones
+            if r >= self.capacity_warning_threshold:
+                warnings.append(f"区域记忆已达 {r:.0%} ({len(self.zones)}/{self.max_zones})")
+        if warnings:
+            msg = "⚠️ 记忆容量警告: " + "; ".join(warnings)
+            logger.warning(msg)
+            for cb in self._capacity_callbacks:
+                try:
+                    cb(msg)
+                except Exception:
+                    pass
+
+    def get_capacity_report(self) -> Dict[str, Any]:
+        """获取容量报告"""
+        return {
+            "paths": {"count": len(self.paths), "max": self.max_paths,
+                      "ratio": round(len(self.paths) / self.max_paths, 3) if self.max_paths else 0},
+            "strategies": {"count": len(self.strategies), "max": self.max_strategies,
+                           "ratio": round(len(self.strategies) / self.max_strategies, 3) if self.max_strategies else 0},
+            "zones": {"count": len(self.zones), "max": self.max_zones,
+                      "ratio": round(len(self.zones) / self.max_zones, 3) if self.max_zones else 0},
+            "warning_threshold": self.capacity_warning_threshold,
+        }
 
     # ── Baritone 集成：生成排除区域 ──────────────────
 
@@ -624,6 +842,7 @@ class GameMemory:
             "strategies": len(self.strategies),
             "players": len(self.players),
             "events": len(self.world.notable_events),
+            "capacity": self.get_capacity_report(),
         }
 
     # ── 持久化 ────────────────────────────────────────
@@ -692,11 +911,13 @@ class GameMemory:
             v["end"] = tuple(v["end"])
             v["waypoints"] = [tuple(w) for w in v["waypoints"]]
             self.paths[k] = CachedPath(**v)
+        self._check_capacity()
 
     def _load_strategies(self) -> None:
         data = self._read_json("strategies.json")
         for k, v in data.items():
             self.strategies[k] = StrategyRecord(**v)
+        self._check_capacity()
 
     def _load_players(self) -> None:
         data = self._read_json("players.json")
@@ -731,6 +952,47 @@ class GameMemory:
         except Exception as e:
             logger.error(f"加载记忆失败 [{filename}]: {e}")
             return {}
+
+    # ── 备份 ──────────────────────────────────────────
+
+    def backup(self) -> str:
+        """备份记忆数据到 data/backups/，返回备份路径"""
+        import shutil
+        from datetime import datetime
+
+        backup_dir = self.storage_path.parent / "backups"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        dest = backup_dir / timestamp
+
+        try:
+            shutil.copytree(str(self.storage_path), str(dest), dirs_exist_ok=True)
+            logger.info(f"记忆备份完成: {dest}")
+
+            # 清理旧备份，只保留最近 10 个
+            backups = sorted(backup_dir.iterdir())
+            while len(backups) > 10:
+                oldest = backups.pop(0)
+                if oldest.is_dir():
+                    shutil.rmtree(oldest)
+                    logger.info(f"清理旧备份: {oldest}")
+
+            return str(dest)
+        except Exception as e:
+            logger.error(f"记忆备份失败: {e}")
+            return ""
+
+    def get_backup_list(self) -> list:
+        """获取备份列表"""
+        backup_dir = self.storage_path.parent / "backups"
+        if not backup_dir.exists():
+            return []
+        return sorted(
+            [{"name": d.name, "path": str(d), "size": sum(f.stat().st_size for f in d.rglob("*") if f.is_file())}
+             for d in backup_dir.iterdir() if d.is_dir()],
+            key=lambda x: x["name"], reverse=True
+        )
 
     # ── 内部工具 ──────────────────────────────────────
 

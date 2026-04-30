@@ -23,7 +23,27 @@ async def main():
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, lambda: asyncio.create_task(engine.shutdown()))
 
-    await engine.start()
+    # 启动 WebUI（如果启用）
+    webui_task = None
+    if config.webui.enabled:
+        import uvicorn
+        from src.webui.app import create_app
+        app = create_app(engine=engine, config=config.webui)
+        webui_config = uvicorn.Config(
+            app,
+            host=config.webui.host,
+            port=config.webui.port,
+            log_level="info",
+        )
+        webui_server = uvicorn.Server(webui_config)
+        webui_task = asyncio.create_task(webui_server.serve())
+        logger.info(f"🌐 WebUI 启动于 http://{config.webui.host}:{config.webui.port}")
+
+    # 启动引擎
+    engine_task = asyncio.create_task(engine.start())
+
+    # 等待任一任务完成（优雅退出时）
+    await asyncio.gather(engine_task, webui_task)
 
 
 if __name__ == "__main__":

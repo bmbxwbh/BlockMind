@@ -1,4 +1,11 @@
-"""Mod WebSocket 客户端 — 接收 Mod 推送的实时游戏事件"""
+"""Mod WebSocket 客户端 — 接收 Mod 推送的实时游戏事件
+
+Features:
+- Automatic reconnection with exponential backoff
+- Configurable backoff parameters
+- Backoff reset on successful connection
+- Connection attempt tracking
+"""
 
 import asyncio
 import json
@@ -18,16 +25,37 @@ class ModWebSocketClient:
 
     连接 Mod 的 /ws/events 端点，接收实时游戏事件（聊天、伤害、方块变化等），
     并将事件转发到 Python 端的 EventBus。
+
+    Supports automatic reconnection with exponential backoff:
+    - Initial delay starts at `initial_backoff` seconds
+    - Each consecutive failure multiplies the delay by `backoff_multiplier`
+    - Delay is capped at `max_backoff` seconds
+    - Backoff resets to initial on any successful connection
     """
 
-    def __init__(self, host: str, port: int, event_bus: EventBus, reconnect_interval: float = 5.0):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        event_bus: EventBus,
+        reconnect_interval: float = 5.0,
+        initial_backoff: float = 2.0,
+        max_backoff: float = 120.0,
+        backoff_multiplier: float = 2.0,
+    ):
         self.url = f"ws://{host}:{port}/ws/events"
         self.event_bus = event_bus
-        self.reconnect_interval = reconnect_interval
+        # Keep legacy param for backwards compat but prefer backoff params
+        self.initial_backoff = initial_backoff
+        self.max_backoff = max_backoff
+        self.backoff_multiplier = backoff_multiplier
         self._session: Optional[aiohttp.ClientSession] = None
         self._ws: Optional[aiohttp.ClientWebSocketResponse] = None
         self._listen_task: Optional[asyncio.Task] = None
         self._running = False
+        self._current_backoff: float = 0.0
+        self._reconnect_attempts: int = 0
+        self._total_reconnects: int = 0
         logger.info(f"ModWebSocketClient 初始化: {self.url}")
 
     async def connect(self) -> None:
@@ -35,6 +63,8 @@ class ModWebSocketClient:
         if self._running:
             return
         self._running = True
+        self._current_backoff = 0.0  # Will be set to initial on first retry
+        self._reconnect_attempts = 0
         self._listen_task = asyncio.create_task(self._listen_loop())
         logger.info("WebSocket 监听任务已启动")
 
@@ -59,19 +89,58 @@ class ModWebSocketClient:
     def is_connected(self) -> bool:
         return self._ws is not None and not self._ws.closed
 
+    @property
+    def reconnect_attempts(self) -> int:
+        """Current consecutive reconnect attempt count."""
+        return self._reconnect_attempts
+
+    @property
+    def total_reconnects(self) -> int:
+        """Total number of reconnections since start."""
+        return self._total_reconnects
+
+    def _next_backoff(self) -> float:
+        """Calculate the next backoff delay using exponential strategy.
+
+        Returns the delay in seconds, capped at max_backoff.
+        """
+        if self._current_backoff <= 0:
+            self._current_backoff = self.initial_backoff
+        else:
+            self._current_backoff = min(
+                self._current_backoff * self.backoff_multiplier,
+                self.max_backoff,
+            )
+        return self._current_backoff
+
+    def _reset_backoff(self) -> None:
+        """Reset backoff state after a successful connection."""
+        self._current_backoff = 0.0
+        self._reconnect_attempts = 0
+
     async def _listen_loop(self) -> None:
-        """持续监听 WebSocket 消息，支持自动重连"""
+        """持续监听 WebSocket 消息，支持自动重连（指数退避）"""
         while self._running:
             try:
                 await self._connect_ws()
+                # Connection succeeded — reset backoff
+                self._reset_backoff()
                 await self._receive_messages()
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 logger.error(f"WebSocket 异常: {e}")
+
             if self._running:
-                logger.info(f"将在 {self.reconnect_interval}s 后重连...")
-                await asyncio.sleep(self.reconnect_interval)
+                delay = self._next_backoff()
+                self._reconnect_attempts += 1
+                self._total_reconnects += 1
+                logger.info(
+                    f"将在 {delay:.1f}s 后重连 "
+                    f"(第 {self._reconnect_attempts} 次连续重试，"
+                    f"累计 {self._total_reconnects} 次重连)..."
+                )
+                await asyncio.sleep(delay)
 
     async def _connect_ws(self) -> None:
         """建立 WebSocket 连接"""

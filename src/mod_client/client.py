@@ -1,6 +1,10 @@
 """Fabric Mod HTTP 客户端 — 与 Mod API 通信的核心客户端"""
 
+import json
 import logging
+import time
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional, List
 
 import aiohttp
@@ -12,19 +16,80 @@ from src.mod_client.models import (
 
 logger = logging.getLogger("blockmind.mod_client")
 
+# Expected mod version — update when the Python side requires a newer mod API
+EXPECTED_MOD_VERSION = "1.0.0"
+
+# Connection state persistence path
+CONNECTION_STATE_PATH = Path("data/connection_state.json")
+
 
 class ModClient:
     """Fabric Mod HTTP 客户端
 
     通过 HTTP API 与 Minecraft 服务端的 BlockMind Fabric Mod 通信。
     Mod 暴露 RESTful API（端口 25580），提供状态查询和动作执行。
+
+    Features:
+    - Connection state persistence across restarts
+    - Mod version detection and compatibility check
+    - Health-check based connection validation
     """
 
     def __init__(self, host: str = "localhost", port: int = 25580, timeout: float = 10.0):
         self.base_url = f"http://{host}:{port}"
         self.timeout = aiohttp.ClientTimeout(total=timeout)
         self._session: Optional[aiohttp.ClientSession] = None
+        self._mod_version: Optional[str] = None
+        self._connection_state: dict = self._load_connection_state()
         logger.info(f"ModClient 初始化: {self.base_url}")
+
+    # ── Connection State Persistence ──
+
+    @staticmethod
+    def _load_connection_state() -> dict:
+        """Load persisted connection state from disk."""
+        try:
+            if CONNECTION_STATE_PATH.exists():
+                with open(CONNECTION_STATE_PATH, "r", encoding="utf-8") as f:
+                    state = json.load(f)
+                logger.debug(f"已加载连接状态: {CONNECTION_STATE_PATH}")
+                return state
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"读取连接状态失败: {e}")
+        return {
+            "last_connected_at": None,
+            "last_disconnected_at": None,
+            "last_health_status": None,
+            "last_error": None,
+            "total_connections": 0,
+            "mod_version": None,
+        }
+
+    def _save_connection_state(self) -> None:
+        """Persist current connection state to disk."""
+        try:
+            CONNECTION_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(CONNECTION_STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(self._connection_state, f, indent=2, ensure_ascii=False)
+            logger.debug("连接状态已保存")
+        except OSError as e:
+            logger.warning(f"保存连接状态失败: {e}")
+
+    def _update_state(self, **kwargs) -> None:
+        """Update and persist connection state fields."""
+        self._connection_state.update(kwargs)
+        self._save_connection_state()
+
+    @property
+    def connection_state(self) -> dict:
+        """Return a copy of the current persisted connection state."""
+        return dict(self._connection_state)
+
+    @property
+    def last_connected_at(self) -> Optional[str]:
+        return self._connection_state.get("last_connected_at")
+
+    # ── Connection Lifecycle ──
 
     async def connect(self) -> bool:
         """建立 HTTP 连接会话"""
@@ -36,13 +101,30 @@ class ModClient:
             healthy = await self.health_check()
             if healthy:
                 logger.info("Mod API 连接成功")
+                total = self._connection_state.get("total_connections", 0) + 1
+                self._update_state(
+                    last_connected_at=datetime.now(timezone.utc).isoformat(),
+                    last_health_status="ok",
+                    last_error=None,
+                    total_connections=total,
+                )
+                # Check mod version after successful connection
+                await self._check_mod_version()
                 return True
             else:
                 logger.warning("Mod API 健康检查失败")
+                self._update_state(
+                    last_health_status="fail",
+                    last_error="health_check_failed",
+                )
                 await self.disconnect()
                 return False
         except Exception as e:
             logger.error(f"Mod API 连接失败: {e}")
+            self._update_state(
+                last_error=str(e),
+                last_health_status="error",
+            )
             await self.disconnect()
             return False
 
@@ -52,6 +134,9 @@ class ModClient:
             await self._session.close()
             logger.info("Mod API 连接已关闭")
         self._session = None
+        self._update_state(
+            last_disconnected_at=datetime.now(timezone.utc).isoformat(),
+        )
 
     @property
     def is_connected(self) -> bool:
@@ -61,6 +146,49 @@ class ModClient:
         """确保会话可用"""
         if not self.is_connected:
             await self.connect()
+
+    # ── Mod Version Detection ──
+
+    @property
+    def mod_version(self) -> Optional[str]:
+        """Return the detected mod version, or None if not yet detected."""
+        return self._mod_version
+
+    async def _check_mod_version(self) -> None:
+        """Query the mod version and compare with expected version."""
+        try:
+            result = await self._get("/api/version")
+            if "error" in result:
+                logger.debug("Mod 版本端点不可用（可能为旧版 Mod）")
+                return
+
+            self._mod_version = result.get("version", "unknown")
+            self._update_state(mod_version=self._mod_version)
+            logger.info(f"Mod 版本: {self._mod_version} (期望: {EXPECTED_MOD_VERSION})")
+
+            if self._mod_version != EXPECTED_MOD_VERSION:
+                logger.warning(
+                    f"⚠️ Mod 版本不匹配! 检测到 {self._mod_version}，"
+                    f"期望 {EXPECTED_MOD_VERSION}。部分功能可能不兼容。"
+                )
+        except Exception as e:
+            logger.debug(f"Mod 版本检测跳过: {e}")
+
+    async def get_mod_version_info(self) -> dict:
+        """Public method to get mod version information.
+
+        Returns:
+            {"detected": str|None, "expected": str, "match": bool}
+        """
+        if self._mod_version is None and self.is_connected:
+            await self._check_mod_version()
+        return {
+            "detected": self._mod_version,
+            "expected": EXPECTED_MOD_VERSION,
+            "match": self._mod_version == EXPECTED_MOD_VERSION if self._mod_version else None,
+        }
+
+    # ── HTTP Helpers ──
 
     async def _get(self, path: str, params: dict = None) -> dict:
         """GET 请求"""

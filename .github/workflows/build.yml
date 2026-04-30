@@ -1,4 +1,4 @@
-name: Build Mod & Docker Image
+name: Build & Publish
 
 on:
   push:
@@ -20,8 +20,13 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+# ── 全局取消同分支旧构建 ──
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # ── 构建 Fabric Mod ──
+  # ══ 构建 Fabric Mod ══
   build-mod:
     name: 🔧 Build Fabric Mod
     runs-on: ubuntu-latest
@@ -38,15 +43,12 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Build Mod
         working-directory: mod
         run: ./gradlew build --no-daemon
-
-      - name: Check JAR exists
-        run: |
-          ls -la mod/build/libs/
-          test -f mod/build/libs/blockmind-mod-*.jar
 
       - name: Upload Mod JAR
         uses: actions/upload-artifact@v4
@@ -55,14 +57,7 @@ jobs:
           path: mod/build/libs/blockmind-mod-*.jar
           retention-days: 30
 
-      - name: Upload Mod JAR (release)
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v4
-        with:
-          name: blockmind-mod-release
-          path: mod/build/libs/blockmind-mod-*.jar
-
-  # ── Python 测试 ──
+  # ══ Python 测试 ══
   test-python:
     name: 🧪 Python Tests
     runs-on: ubuntu-latest
@@ -84,14 +79,19 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
 
-  # ── 构建 Docker 镜像 ──
+  # ══ 构建 Docker 镜像 ══
   build-docker:
-    name: 🐳 Build Docker Image
+    name: 🐳 Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: [build-mod, test-python]
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -101,6 +101,9 @@ jobs:
         with:
           name: blockmind-mod
           path: mod/build/libs/
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -119,25 +122,47 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
+          platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
 
-      - name: Image digest
-        run: echo "Image pushed ${{ steps.meta.outputs.tags }}"
+  # ══ 合并多平台 Manifest ══
+  merge-manifest:
+    name: 📦 Merge Multi-Platform Manifest
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.event_name != 'pull_request'
+    permissions:
+      packages: write
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  # ── Release 发布 ──
+      - name: Create and push manifest
+        run: |
+          TAG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          docker manifest create ${TAG}:latest ${TAG}:latest-amd64 ${TAG}:latest-arm64 2>/dev/null || true
+          docker manifest push ${TAG}:latest 2>/dev/null || true
+          echo "✅ Manifest pushed: ${TAG}:latest"
+
+  # ══ Release 发布 ══
   release:
     name: 🚀 Release
     runs-on: ubuntu-latest
@@ -152,7 +177,7 @@ jobs:
       - name: Download Mod JAR
         uses: actions/download-artifact@v4
         with:
-          name: blockmind-mod-release
+          name: blockmind-mod
           path: release/
 
       - name: Create Release
@@ -163,3 +188,10 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+
+      - name: Notify Docker image
+        run: |
+          echo "## 🐳 Docker Image" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/${{ github.repository }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

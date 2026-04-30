@@ -3,6 +3,7 @@
 import hashlib
 import hmac
 import logging
+import os
 import secrets
 import time
 from typing import Optional
@@ -17,7 +18,10 @@ class AuthManager:
     """
 
     def __init__(self, password: str = "blockmind", session_timeout: int = 3600):
-        self.password_hash = self._hash_password(password)
+        # 优先读取环境变量
+        env_password = os.environ.get("BLOCKMIND_PASSWORD")
+        effective_password = env_password if env_password else password
+        self.password_hash = self._hash_password(effective_password)
         self.session_timeout = session_timeout
         self._sessions: dict[str, float] = {}  # token → 创建时间
 

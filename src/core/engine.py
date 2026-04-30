@@ -20,6 +20,7 @@ from src.skills.runtime import SkillRuntime
 from src.skills.storage import SkillStorage
 from src.skills.matcher import SkillMatcher
 from src.ai.provider import create_provider
+from src.ai.token_tracker import TokenTracker
 from src.ai.main_agent import MainAgent
 from src.ai.operation_agent import OperationAgent
 from src.ai.takeover import EmergencyTakeover
@@ -59,8 +60,21 @@ class CompanionEngine:
         self._running = False
 
         # ── 通信层 ──
-        self.mod_client = ModClient(host="localhost", port=25580)
-        self.ws_client = ModWebSocketClient(host="localhost", port=25580, event_bus=self.event_bus)
+        mod_cfg = config.mod
+        self._no_mod_mode = mod_cfg.no_mod_mode
+        self.mod_client = ModClient(
+            host=mod_cfg.host,
+            port=mod_cfg.port,
+            timeout=mod_cfg.timeout,
+        )
+        self.ws_client = ModWebSocketClient(
+            host=mod_cfg.host,
+            port=mod_cfg.port,
+            event_bus=self.event_bus,
+            initial_backoff=mod_cfg.ws_backoff.initial_backoff,
+            max_backoff=mod_cfg.ws_backoff.max_backoff,
+            backoff_multiplier=mod_cfg.ws_backoff.backoff_multiplier,
+        )
 
         # ── 记忆系统（核心新增）──
         self.memory = GameMemory(storage_path=config.memory.storage_path)
@@ -92,6 +106,10 @@ class CompanionEngine:
         # ── 双 Agent 架构 ──
         main_provider = create_provider(config.ai.get_main_agent())
         op_provider = create_provider(config.ai.get_operation_agent())
+
+        # ── Token 使用统计 ──
+        self.main_provider = main_provider
+        self.op_provider = op_provider
 
         self.main_agent = MainAgent(main_provider)
         self.operation_agent = OperationAgent(op_provider, self.skill_storage)
@@ -127,16 +145,29 @@ class CompanionEngine:
         self._running = True
         self.logger.info("🚀 BlockMind 引擎启动")
 
-        # 连接 Mod API
-        connected = await self.mod_client.connect()
-        if connected:
-            self.logger.info("✅ Mod API 连接成功")
-            await self.ws_client.connect()
-
-            # 初始化世界记忆
-            await self._init_world_memory()
+        # Check if no-mod mode is enabled
+        if self._no_mod_mode:
+            self.logger.info("🔧 no_mod_mode 已启用，跳过 Mod 连接")
+            self.logger.info("   部分功能（状态查询、动作执行、实时事件）将不可用")
         else:
-            self.logger.warning("⚠️ Mod API 连接失败，部分功能不可用")
+            # 连接 Mod API
+            connected = await self.mod_client.connect()
+            if connected:
+                self.logger.info("✅ Mod API 连接成功")
+                await self.ws_client.connect()
+
+                # 检查 Mod 版本兼容性
+                version_info = await self.mod_client.get_mod_version_info()
+                if version_info["match"] is False:
+                    self.logger.warning(
+                        f"⚠️ Mod 版本不兼容: 检测到 {version_info['detected']}，"
+                        f"期望 {version_info['expected']}"
+                    )
+
+                # 初始化世界记忆
+                await self._init_world_memory()
+            else:
+                self.logger.warning("⚠️ Mod API 连接失败，部分功能不可用")
 
         # 注册系统指令
         self._register_commands()

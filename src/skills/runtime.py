@@ -2,7 +2,7 @@
 import time
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from src.skills.models import SkillDSL, SkillResult
 from src.skills.dsl_parser import DSLParser
 from src.skills.validator import SkillValidator
@@ -12,7 +12,8 @@ from src.skills.control_flow import ControlFlowScheduler, SkillContext
 class SkillRuntime:
     """Skill 执行引擎"""
 
-    def __init__(self, mod_client, state_manager, action_executor, perception):
+    def __init__(self, mod_client: Any, state_manager: Any,
+                 action_executor: Any, perception: Any) -> None:
         self.mod_client = mod_client
         self.state_manager = state_manager
         self.action_executor = action_executor

@@ -11,6 +11,27 @@ class GameReconnectConfig(BaseModel):
     max_retries: int = -1
 
 
+class ModWSBackoffConfig(BaseModel):
+    """WebSocket auto-reconnect backoff settings."""
+    initial_backoff: float = 2.0
+    max_backoff: float = 120.0
+    backoff_multiplier: float = 2.0
+
+
+class ModConfig(BaseModel):
+    """Mod connection configuration.
+
+    Set no_mod_mode=true to skip Mod connection entirely
+    (for standalone/testing mode without a Minecraft server).
+    """
+    host: str = "localhost"
+    port: int = 25580
+    timeout: float = 10.0
+    no_mod_mode: bool = False
+    expected_version: str = "1.0.0"
+    ws_backoff: ModWSBackoffConfig = ModWSBackoffConfig()
+
+
 class GameConfig(BaseModel):
     server_ip: str = "localhost"
     server_port: int = 25565
@@ -28,6 +49,7 @@ class AgentConfig(BaseModel):
     base_url: str = ""
     temperature: float = 0.7
     max_tokens: int = 4096
+    fallback_models: List[str] = Field(default_factory=list)
 
 
 class AIConfig(BaseModel):
@@ -65,6 +87,7 @@ class AIConfig(BaseModel):
                     base_url=self.base_url or self.main_agent.base_url,
                     temperature=self.main_agent.temperature,
                     max_tokens=self.main_agent.max_tokens,
+                    fallback_models=self.main_agent.fallback_models,
                 )
             return self.main_agent
         return self.main_agent
@@ -80,6 +103,7 @@ class AIConfig(BaseModel):
                     base_url=self.base_url or self.operation_agent.base_url,
                     temperature=self.operation_agent.temperature,
                     max_tokens=self.operation_agent.max_tokens,
+                    fallback_models=self.operation_agent.fallback_models,
                 )
             return self.operation_agent
         return self.operation_agent
@@ -186,7 +210,7 @@ class WebUISecurityConfig(BaseModel):
 class WebUIConfig(BaseModel):
     enabled: bool = True
     host: str = "0.0.0.0"
-    port: int = 8080
+    port: int = 19951
     auth: WebUIAuthConfig = WebUIAuthConfig()
     security: WebUISecurityConfig = WebUISecurityConfig()
 
@@ -223,6 +247,7 @@ class NavigationConfig(BaseModel):
 
 class AppConfig(BaseModel):
     game: GameConfig = GameConfig()
+    mod: ModConfig = ModConfig()
     ai: AIConfig = AIConfig()
     skills: SkillsConfig = SkillsConfig()
     safety: SafetyConfig = SafetyConfig()

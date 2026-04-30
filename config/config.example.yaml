@@ -8,22 +8,30 @@ game:
     enabled: true
     interval: 5
     max_retries: 10
+
 mod:
   host: localhost
   port: 25580
+  timeout: 10.0
+  no_mod_mode: false
+  expected_version: "1.0.0"
+  ws_backoff:
+    initial_backoff: 2.0
+    max_backoff: 120.0
+    backoff_multiplier: 2.0
 ai:
   main_agent:
     provider: openai
     api_key: your-api-key-here
-    model: gpt-4o
-    base_url: ''
+    model: gpt-5.4-mini
+    base_url: 'http://38.246.244.201:8317/v1'
     temperature: 0.7
     max_tokens: 512
   operation_agent:
     provider: openai
     api_key: your-api-key-here
-    model: gpt-4o
-    base_url: ''
+    model: gpt-5.4-mini
+    base_url: 'http://38.246.244.201:8317/v1'
     temperature: 0.3
     max_tokens: 4096
 skills:
@@ -52,10 +60,7 @@ monitoring:
     interval: 10
   fallback:
     retry_count: 3
-    safe_point:
-    - 0
-    - 64
-    - 0
+    safe_point: "0,64,0"
   alert:
     chat_notify: true
     log_level: INFO
@@ -87,7 +92,7 @@ idle_tasks:
 webui:
   enabled: true
   host: 0.0.0.0
-  port: 8080
+  port: 19951
   auth:
     password: blockmind
     session_timeout: 3600
@@ -101,7 +106,7 @@ webui:
 logging:
   level: INFO
   file: logs/blockmind.log
-  max_size: 10485760
+  max_size: "10MB"
   backup_count: 5
   format: '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
 memory:

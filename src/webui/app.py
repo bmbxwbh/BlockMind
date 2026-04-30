@@ -10,7 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.webui.routes import router
 from src.webui.auth import AuthManager
+from src.webui.middleware import RateLimitMiddleware, RequestLoggingMiddleware
 from src.webui.websocket import WSManager
+from src.utils.errors import register_error_handlers
 
 logger = logging.getLogger("blockmind.webui")
 
@@ -51,8 +53,15 @@ def create_app(engine=None, config=None) -> FastAPI:
     )
     app.state.engine = engine
 
+    # 限流 + 日志中间件
+    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(RequestLoggingMiddleware)
+
     # 注册路由
     app.include_router(router)
+
+    # 统一异常处理
+    register_error_handlers(app)
 
     # 静态文件
     static_dir = Path(__file__).parent / "static"
@@ -80,6 +89,8 @@ def create_app(engine=None, config=None) -> FastAPI:
 
     @app.on_event("startup")
     async def startup():
+        import time as _time
+        app.state._start_time = _time.time()
         logger.info("WebUI 启动")
         app.state.ws_manager.start_event_listener()
 

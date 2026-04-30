@@ -2,11 +2,42 @@
 
 import logging
 from typing import Optional
-
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+import yaml
 
 logger = logging.getLogger("blockmind.webui.routes")
+
+_CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config.yaml"
+
+
+def save_config_to_yaml(config) -> None:
+    """Read config.yaml, merge in-memory config changes, and write back."""
+    if _CONFIG_PATH.exists():
+        with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+    else:
+        data = {}
+
+    # Build the ai section from in-memory config
+    ai = data.setdefault("ai", {})
+
+    def _agent_to_dict(agent_cfg):
+        return {
+            "provider": agent_cfg.provider,
+            "api_key": agent_cfg.api_key,
+            "model": agent_cfg.model,
+            "base_url": agent_cfg.base_url or "",
+            "temperature": agent_cfg.temperature,
+            "max_tokens": agent_cfg.max_tokens,
+        }
+
+    ai["main_agent"] = _agent_to_dict(config.ai.get_main_agent())
+    ai["operation_agent"] = _agent_to_dict(config.ai.get_operation_agent())
+
+    with open(_CONFIG_PATH, "w", encoding="utf-8") as f:
+        yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 router = APIRouter()
 
@@ -26,6 +57,9 @@ class CommandRequest(BaseModel):
 
 class SkillEditRequest(BaseModel):
     skill_id: str
+    content: str
+
+class SkillContentRequest(BaseModel):
     content: str
 
 class ConfigUpdateRequest(BaseModel):
@@ -163,6 +197,54 @@ async def delete_skill(skill_id: str, request: Request, _=Depends(require_auth))
     raise HTTPException(status_code=500, detail="Skill 存储未初始化")
 
 
+@router.get("/api/skills/{skill_id}/content")
+async def get_skill_content(skill_id: str, request: Request, _=Depends(require_auth)):
+    """获取 Skill 的 YAML 内容"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'skill_storage') or not engine.skill_storage:
+        raise HTTPException(status_code=500, detail="Skill 存储未初始化")
+    skill = engine.skill_storage.get(skill_id)
+    if not skill:
+        raise HTTPException(status_code=404, detail="Skill 未找到")
+    # Serialize skill back to YAML-friendly dict
+    content = {
+        "skill_id": skill.skill_id,
+        "name": skill.name,
+        "tags": skill.tags,
+        "priority": skill.priority,
+        "task_level": skill.task_level,
+        "when": {"all": skill.when.all, "any": skill.when.any},
+        "do_steps": [{"action": s.action, "args": s.args} for s in skill.do_steps],
+        "until": {"any": skill.until.any},
+    }
+    yaml_content = yaml.dump(content, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    return {"skill_id": skill_id, "content": yaml_content}
+
+
+@router.put("/api/skills/{skill_id}/content")
+async def update_skill_content(skill_id: str, req: SkillContentRequest, request: Request, _=Depends(require_auth)):
+    """更新 Skill 的 YAML 内容"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'skill_storage') or not engine.skill_storage:
+        raise HTTPException(status_code=500, detail="Skill 存储未初始化")
+    # Validate YAML
+    try:
+        data = yaml.safe_load(req.content)
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f"YAML 解析错误: {e}")
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="YAML 根元素必须是字典")
+    # Store the skill content (update via skill_storage if available)
+    try:
+        if hasattr(engine.skill_storage, 'update_from_yaml'):
+            engine.skill_storage.update_from_yaml(skill_id, data)
+        elif hasattr(engine.skill_storage, 'save'):
+            engine.skill_storage.save(skill_id, data)
+        return {"success": True, "message": f"Skill {skill_id} 已更新"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── 安全设置接口 ──
 
 @router.get("/api/safety/config")
@@ -177,22 +259,39 @@ async def get_safety_config(request: Request, _=Depends(require_auth)):
 
 
 @router.get("/api/safety/audit")
-async def get_audit_log(request: Request, _=Depends(require_auth), limit: int = 50):
+async def get_audit_log(
+    request: Request,
+    _=Depends(require_auth),
+    offset: int = 0,
+    limit: int = 50,
+):
     """获取审计日志"""
     engine = get_engine(request)
     if hasattr(engine, 'safety_gateway') and engine.safety_gateway:
         audit = getattr(engine.safety_gateway, '_audit', None)
         if audit:
-            entries = audit.query(limit=limit)
-            return {"entries": [
+            total = len(audit._entries)
+            # Request enough from query to cover offset+limit
+            all_entries = audit.query(limit=offset + limit)
+            page = all_entries[offset:offset + limit]
+            entries = [
                 {
                     "timestamp": e.timestamp.isoformat(),
                     "action": e.action,
                     "risk_level": e.risk_level,
                     "result": e.result,
                 }
-                for e in entries
-            ]}
+                for e in page
+            ]
+            return {
+                "entries": entries,
+                "pagination": {
+                    "offset": offset,
+                    "limit": limit,
+                    "total": total,
+                    "has_more": offset + limit < total,
+                },
+            }
     return {"entries": []}
 
 
@@ -201,18 +300,186 @@ async def get_audit_log(request: Request, _=Depends(require_auth), limit: int = 
 @router.get("/api/system/health")
 async def system_health(request: Request):
     """系统健康检查（无需认证）"""
-    return {"status": "ok", "service": "blockmind-webui"}
+    import time
+    engine = request.app.state.engine
+    components = {}
+    # Mod 检查
+    if hasattr(engine, 'mod_client') and engine.mod_client:
+        components["mod"] = "ok" if getattr(engine.mod_client, 'is_connected', False) else "disconnected"
+    else:
+        components["mod"] = "unavailable"
+    # AI 检查
+    if hasattr(engine, 'main_agent') and engine.main_agent:
+        components["ai"] = "ok" if hasattr(engine.main_agent, 'provider') else "not_configured"
+    else:
+        components["ai"] = "unavailable"
+    # Memory 检查
+    if hasattr(engine, 'memory') and engine.memory:
+        components["memory"] = "ok"
+    else:
+        components["memory"] = "unavailable"
+    return {
+        "status": "ok",
+        "service": "blockmind-webui",
+        "version": "2.0.0",
+        "uptime": int(time.time() - getattr(request.app.state, '_start_time', time.time())),
+        "components": components,
+    }
 
 
 @router.get("/api/system/status")
 async def system_status(request: Request, _=Depends(require_auth)):
     """系统状态"""
     engine = get_engine(request)
+    mod_ok = False
+    ai_ok = False
+    if hasattr(engine, 'mod_client') and engine.mod_client:
+        mod_ok = getattr(engine.mod_client, 'is_connected', False)
+    if hasattr(engine, 'main_agent') and engine.main_agent:
+        ai_ok = hasattr(engine.main_agent, 'provider') and engine.main_agent.provider is not None
     return {
-        "mod_connected": getattr(engine, 'mod_client', None) is not None,
-        "ai_connected": getattr(engine, 'ai_provider', None) is not None,
+        "mod_connected": mod_ok,
+        "ai_connected": ai_ok,
         "webui_running": True,
     }
+
+
+@router.get("/api/system/resources")
+async def system_resources(request: Request, _=Depends(require_auth)):
+    """获取系统资源使用情况（CPU、内存、磁盘、网络）"""
+    from src.monitoring.resources import get_system_stats
+    return get_system_stats()
+
+
+# ── Token 统计接口 ──
+
+@router.get("/api/stats/tokens")
+async def token_stats(request: Request, _=Depends(require_auth)):
+    """Token 使用统计"""
+    engine = get_engine(request)
+
+    # Aggregate stats from both providers
+    main_stats = {}
+    op_stats = {}
+    if hasattr(engine, 'main_provider') and engine.main_provider:
+        main_stats = engine.main_provider.token_tracker.get_stats()
+    if hasattr(engine, 'op_provider') and engine.op_provider:
+        op_stats = engine.op_provider.token_tracker.get_stats()
+
+    # Combined totals
+    combined = {
+        "total_tokens_in": main_stats.get("total_tokens_in", 0) + op_stats.get("total_tokens_in", 0),
+        "total_tokens_out": main_stats.get("total_tokens_out", 0) + op_stats.get("total_tokens_out", 0),
+        "calls_count": main_stats.get("calls_count", 0) + op_stats.get("calls_count", 0),
+        "cost_estimate": round(
+            main_stats.get("cost_estimate", 0) + op_stats.get("cost_estimate", 0), 6
+        ),
+    }
+
+    return {
+        "combined": combined,
+        "main_agent": main_stats,
+        "operation_agent": op_stats,
+    }
+
+
+# ── 记忆系统接口 ──
+
+class MemoryImportRequest(BaseModel):
+    data: dict
+    merge: bool = True
+
+
+@router.get("/api/memory")
+async def get_memory(request: Request, _=Depends(require_auth)):
+    """获取记忆系统数据"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'memory') or not engine.memory:
+        return {"zones": [], "paths": [], "strategies": [], "players": []}
+
+    mem = engine.memory
+    zones = []
+    for z in mem.zones.values():
+        zones.append({
+            "id": z.zone_id,
+            "name": z.name,
+            "type": z.zone_type.value,
+            "center": z.center,
+            "radius": z.radius,
+        })
+
+    paths = []
+    for key, p in mem.cached_paths.items():
+        paths.append({
+            "start": str(p.start),
+            "end": str(p.end),
+            "success_count": p.success_count,
+            "fail_count": p.fail_count,
+            "success_rate": p.success_rate,
+        })
+
+    strategies = []
+    for key, s in mem.strategies.items():
+        strategies.append({
+            "task_type": s.task_type,
+            "description": s.description,
+            "success_count": s.success_count,
+            "success_rate": s.success_rate,
+        })
+
+    players = []
+    for name, p in mem.players.items():
+        players.append({
+            "name": p.player_name,
+            "home": p.home_location,
+            "interaction_count": p.interaction_count,
+        })
+
+    return {
+        "zones": zones,
+        "paths": paths,
+        "strategies": strategies,
+        "players": players,
+        "stats": mem.get_stats(),
+    }
+
+
+@router.post("/api/memory/cleanup")
+async def memory_cleanup(request: Request, _=Depends(require_auth)):
+    """清理旧路径、低评分策略并压缩相似路径"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'memory') or not engine.memory:
+        raise HTTPException(status_code=500, detail="记忆系统未初始化")
+    mem = engine.memory
+    old_paths = mem.cleanup_old_paths()
+    low_strats = mem.cleanup_low_scoring_strategies()
+    compressed = mem.compress_similar_paths()
+    return {
+        "success": True,
+        "removed_paths": old_paths,
+        "removed_strategies": low_strats,
+        "compressed_paths": compressed,
+        "stats": mem.get_stats(),
+    }
+
+
+@router.get("/api/memory/export")
+async def memory_export(request: Request, _=Depends(require_auth)):
+    """导出全部记忆为 JSON"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'memory') or not engine.memory:
+        raise HTTPException(status_code=500, detail="记忆系统未初始化")
+    return engine.memory.export_memory()
+
+
+@router.post("/api/memory/import")
+async def memory_import(req: MemoryImportRequest, request: Request, _=Depends(require_auth)):
+    """导入记忆 JSON（支持合并或覆盖）"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'memory') or not engine.memory:
+        raise HTTPException(status_code=500, detail="记忆系统未初始化")
+    stats = engine.memory.import_memory(req.data, merge=req.merge)
+    return {"success": True, "imported": stats}
 
 
 @router.post("/api/command")
@@ -253,6 +520,12 @@ async def get_model_config(request: Request, _=Depends(require_auth)):
     engine = get_engine(request)
     config = engine.config
 
+    def _mask_key(key: str) -> str:
+        """Mask API key, returning only the last 4 characters."""
+        if not key or len(key) <= 4:
+            return "****" if key else ""
+        return "*" * (len(key) - 4) + key[-4:]
+
     def agent_to_dict(agent_cfg):
         return {
             "provider": agent_cfg.provider,
@@ -261,12 +534,13 @@ async def get_model_config(request: Request, _=Depends(require_auth)):
             "temperature": agent_cfg.temperature,
             "max_tokens": agent_cfg.max_tokens,
             "has_key": bool(agent_cfg.api_key),
+            "api_key_masked": _mask_key(agent_cfg.api_key),
         }
 
     return {
         "main_agent": agent_to_dict(config.ai.get_main_agent()),
         "operation_agent": agent_to_dict(config.ai.get_operation_agent()),
-        "providers": ["openai", "anthropic", "deepseek", "openrouter", "mimo", "local"],
+        "providers": ["openai", "anthropic"],
     }
 
 
@@ -284,11 +558,11 @@ async def update_model_config(req: ModelConfigUpdate, request: Request, _=Depend
             config.ai.main_agent.api_key = cfg.api_key
         if cfg.model:
             config.ai.main_agent.model = cfg.model
-        if cfg.base_url:
+        if cfg.base_url is not None:
             config.ai.main_agent.base_url = cfg.base_url
-        if cfg.temperature != 0.7:
+        if cfg.temperature is not None:
             config.ai.main_agent.temperature = cfg.temperature
-        if cfg.max_tokens != 4096:
+        if cfg.max_tokens is not None:
             config.ai.main_agent.max_tokens = cfg.max_tokens
 
     if req.operation_agent:
@@ -299,11 +573,11 @@ async def update_model_config(req: ModelConfigUpdate, request: Request, _=Depend
             config.ai.operation_agent.api_key = cfg.api_key
         if cfg.model:
             config.ai.operation_agent.model = cfg.model
-        if cfg.base_url:
+        if cfg.base_url is not None:
             config.ai.operation_agent.base_url = cfg.base_url
-        if cfg.temperature != 0.7:
+        if cfg.temperature is not None:
             config.ai.operation_agent.temperature = cfg.temperature
-        if cfg.max_tokens != 4096:
+        if cfg.max_tokens is not None:
             config.ai.operation_agent.max_tokens = cfg.max_tokens
 
     # 热更新 Provider
@@ -313,6 +587,8 @@ async def update_model_config(req: ModelConfigUpdate, request: Request, _=Depend
         op_provider = create_provider(config.ai.get_operation_agent())
         engine.main_agent.provider = main_provider
         engine.operation_agent.provider = op_provider
+        # 持久化到 config.yaml
+        save_config_to_yaml(config)
         return {"success": True, "details": "模型配置已更新"}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -320,13 +596,108 @@ async def update_model_config(req: ModelConfigUpdate, request: Request, _=Depend
 
 @router.post("/api/config/model/test")
 async def test_model_config(request: Request, _=Depends(require_auth)):
-    """测试模型连接"""
+    """测试模型连接（带详细诊断）"""
     engine = get_engine(request)
+    provider = engine.main_agent.provider
+    config = engine.config.ai.get_main_agent()
+
+    diagnostics = {
+        "provider": config.provider,
+        "model": config.model,
+        "base_url": config.base_url or "(默认)",
+        "has_key": bool(config.api_key),
+    }
+
     try:
-        result = await engine.main_agent.provider.chat(
+        result = await provider.chat(
             [{"role": "user", "content": "回复 OK"}],
             max_tokens=10,
         )
-        return {"success": True, "response": result.strip()}
+        return {"success": True, "response": result.strip(), "diagnostics": diagnostics}
+    except Exception as e:
+        error_msg = str(e)
+        # 解析常见错误
+        if "Invalid API key" in error_msg or "401" in error_msg:
+            hint = "API Key 无效，请检查 Key 是否正确"
+        elif "Cannot connect" in error_msg or "111" in error_msg:
+            hint = f"无法连接到 {config.base_url}，请检查 URL 是否正确"
+        elif "404" in error_msg:
+            hint = f"模型 '{config.model}' 不存在，请检查模型名称"
+        elif "429" in error_msg:
+            hint = "请求过于频繁，请稍后重试"
+        else:
+            hint = "未知错误，请检查配置"
+        diagnostics["error"] = error_msg
+        diagnostics["hint"] = hint
+        return {"success": False, "error": error_msg, "hint": hint, "diagnostics": diagnostics}
+
+
+# ── 记忆备份接口 ──
+
+@router.post("/api/memory/backup")
+async def backup_memory(request: Request, _=Depends(require_auth)):
+    """手动触发记忆备份"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'memory') or not engine.memory:
+        raise HTTPException(status_code=500, detail="记忆系统未初始化")
+    path = engine.memory.backup()
+    if path:
+        return {"success": True, "path": path}
+    return {"success": False, "error": "备份失败"}
+
+
+@router.get("/api/memory/backups")
+async def list_backups(request: Request, _=Depends(require_auth)):
+    """获取备份列表"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'memory') or not engine.memory:
+        return {"backups": []}
+    return {"backups": engine.memory.get_backup_list()}
+
+
+# ── 任务队列接口 ──
+
+@router.get("/api/tasks/queue")
+async def task_queue(request: Request, _=Depends(require_auth)):
+    """获取当前任务队列状态"""
+    engine = get_engine(request)
+    queue_info = {"pending": [], "running": [], "completed_count": 0, "failed_count": 0}
+    if hasattr(engine, 'task_pool') and engine.task_pool:
+        pool = engine.task_pool
+        if hasattr(pool, 'pending_tasks'):
+            queue_info["pending"] = [{"id": t.task_id, "name": t.name} for t in pool.pending_tasks[:20]]
+        if hasattr(pool, 'active_task') and pool.active_task:
+            queue_info["running"] = [{"id": pool.active_task.task_id, "name": pool.active_task.name}]
+        queue_info["completed_count"] = getattr(pool, 'completed_count', 0)
+        queue_info["failed_count"] = getattr(pool, 'failed_count', 0)
+    return queue_info
+
+
+# ── 命令面板接口 ──
+
+class CommandPanelRequest(BaseModel):
+    message: str
+
+
+@router.post("/api/command/panel")
+async def command_panel(req: CommandPanelRequest, request: Request, _=Depends(require_auth)):
+    """命令面板 — 发送自然语言指令给 AI"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'main_agent') or not engine.main_agent:
+        raise HTTPException(status_code=500, detail="AI 未初始化")
+    try:
+        result = await engine.main_agent.chat(req.message)
+        return {"success": True, "response": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+# ── 对话历史接口 ──
+
+@router.get("/api/chat/history")
+async def chat_history(request: Request, limit: int = 50, _=Depends(require_auth)):
+    """获取对话历史"""
+    engine = get_engine(request)
+    if hasattr(engine, 'chat_history'):
+        return {"history": engine.chat_history[-limit:]}
+    return {"history": []}

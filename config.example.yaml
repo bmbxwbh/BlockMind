@@ -1,171 +1,137 @@
-# Minecraft AI Companion 配置文件
-# 复制此文件为 config.yaml 并填入你的配置
-
-# ==================== 游戏连接 ====================
 game:
-  server_ip: "your-server.com"
+  server_ip: localhost
   server_port: 25565
-  username: "AI_Companion"
-  version: "1.20.4"
-  auth_mode: "offline"  # offline / microsoft
-
-  # 断线重连
+  username: BlockMind
+  version: 1.20.4
+  auth_mode: offline
   reconnect:
     enabled: true
-    interval: 5        # 重连间隔（秒）
-    max_retries: -1    # 最大重试次数，-1 为无限
+    interval: 5
+    max_retries: 10
 
-# ==================== AI 模型 ====================
+mod:
+  host: localhost
+  port: 25580
+  timeout: 10.0
+  no_mod_mode: false
+  expected_version: "1.0.0"
+  ws_backoff:
+    initial_backoff: 2.0
+    max_backoff: 120.0
+    backoff_multiplier: 2.0
 ai:
-  provider: "openai"   # openai / anthropic / local
-  api_key: "your-api-key"
-  model: "gpt-4o"
-  base_url: null       # 自定义 API 地址（可选）
-
-  # 生成参数
-  temperature: 0.7
-  max_tokens: 4096
-  stream: true
-
-  # 思考模式（用于复杂决策）
-  thinking:
-    enabled: true
-    max_tokens: 8192
-
-# ==================== Skill 系统 ====================
+  main_agent:
+    provider: openai
+    api_key: your-api-key-here
+    model: gpt-5.4-mini
+    base_url: 'http://38.246.244.201:8317/v1'
+    temperature: 0.7
+    max_tokens: 512
+  operation_agent:
+    provider: openai
+    api_key: your-api-key-here
+    model: gpt-5.4-mini
+    base_url: 'http://38.246.244.201:8317/v1'
+    temperature: 0.3
+    max_tokens: 4096
 skills:
-  # Skill 存储路径
-  storage_path: "./skills"
-
-  # AI 生成 Skill 的校验
+  storage_path: ./skills
   validation:
-    syntax_check: true       # 语法校验
-    safety_check: true       # 安全性校验
-    logic_check: true        # 逻辑合理性校验
-    max_retries: 3           # 校验失败重试次数
-
-  # 自动修复
+    syntax_check: true
+    safety_check: true
+    logic_check: true
+    max_retries: 3
   auto_repair:
-    enabled: true            # 故障后自动修复 Skill
-
-  # 版本控制
+    enabled: true
+    max_attempts: 3
   versioning:
-    enabled: true
-    max_versions: 10        # 每个 Skill 最多保留版本数
-
-# ==================== 安全设置 ====================
+    max_versions: 10
 safety:
-  # 审计日志
   audit_log:
-    enabled: true
     retention_days: 30
-
-  # 高风险操作授权
   authorization:
-    enabled: true
-    timeout: 30             # 等待授权超时（秒）
-    timeout_action: "deny"  # 超时动作：deny / approve
-
-  # AI 紧急接管
+    timeout: 30
+    timeout_action: deny
   emergency_takeover:
     enabled: true
-    auto_repair: true       # 接管后自动修复 Skill
-
-  # 操作风险等级（覆盖默认配置）
-  risk_levels:
-    # move: 0
-    # jump: 0
-    # chat: 0
-    # break_dirt: 1
-    # place_torch: 1
-    # break_ore: 2
-    # attack_neutral: 2
-    # ignite_tnt: 3
-    # place_lava: 3
-    # break_chest: 3
-    # suicide: 4
-    # place_command_block: 4
-
-# ==================== 故障监控 ====================
+  risk_levels: {}
 monitoring:
-  # 健康检查
   health_check:
-    enabled: true
-    interval: 10            # 检查间隔（秒）
-
-  # 降级策略
+    interval: 10
   fallback:
-    retry_count: 3          # 自动重试次数
-    safe_point: "spawn"     # 安全点：spawn / bed / custom
-    custom_safe_point: null # 自定义安全点坐标 {x, y, z}
-
-  # 告警
+    retry_count: 3
+    safe_point: "0,64,0"
   alert:
-    chat_notify: true       # 聊天框通知
-    log_level: "INFO"       # 日志级别
-
-# ==================== 空闲自主任务 ====================
+    chat_notify: true
+    log_level: INFO
 idle_tasks:
   enabled: true
-  interval: 30              # 任务间隔（秒）
-
-  # 自主行动类型
+  interval: 30
   actions:
-    - name: "organize_chest"
-      enabled: true
-      priority: 5
-    - name: "farm_wheat"
-      enabled: true
-      priority: 5
-    - name: "mine_resources"
-      enabled: true
-      priority: 5
-    - name: "patrol_area"
-      enabled: false
-      priority: 5
-    - name: "repair_building"
-      enabled: true
-      priority: 4
-
-# ==================== WebUI 控制面板 ====================
+  - name: 自动种田
+    enabled: true
+    priority: 5
+  - name: 自主挖矿
+    enabled: true
+    priority: 5
+  - name: 自主砍树
+    enabled: true
+    priority: 5
+  - name: 整理箱子
+    enabled: true
+    priority: 5
+  - name: 修补房屋
+    enabled: false
+    priority: 4
+  - name: 点亮区域
+    enabled: true
+    priority: 4
+  - name: 巡逻区域
+    enabled: false
+    priority: 5
 webui:
   enabled: true
-  host: "0.0.0.0"
-  port: 8080
-
-  # 认证
+  host: 0.0.0.0
+  port: 19951
   auth:
-    enabled: true
-    password: "change-me-to-a-strong-password"
-    session_timeout: 3600   # 会话超时（秒）
-
-  # 安全
+    password: blockmind
+    session_timeout: 3600
   security:
-    allow_remote: true      # 允许远程访问
-    allowed_ips: ["0.0.0.0/0"]  # 允许的 IP 段
-    enable_https: false     # 是否启用 HTTPS
-
-  # WebSocket
+    allow_remote: false
+    allowed_ips:
+    - 127.0.0.1
+    enable_https: false
   websocket:
-    enabled: true
     ping_interval: 30
-
-# ==================== 日志 ====================
 logging:
-  level: "INFO"             # DEBUG / INFO / WARNING / ERROR
-  file: "logs/companion.log"
-  max_size: "100MB"
+  level: INFO
+  file: logs/blockmind.log
+  max_size: "10MB"
   backup_count: 5
-  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+  format: '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+memory:
+  enabled: true
+  storage_path: data/memory
+  auto_detect_zones: true         # 自动检测建筑/危险/资源区域
+  auto_detect_radius: 32
+  max_cached_paths: 500
+  max_strategies: 200
+  path_success_threshold: 0.8    # 路径成功率 > 80% 才复用
+  strategy_success_threshold: 0.6
+  protect_buildings: true         # 自动保护玩家建筑
 
-# ==================== 运维 ====================
+navigation:
+  prefer_baritone: true           # 优先 Baritone 高级寻路
+  fallback_to_basic: true         # 不可用时回退到基础 A*
+  allow_break_default: false      # 默认不破坏方块
+  allow_place_default: false      # 默认不放置方块
+  sprint_default: false
+  max_path_length: 200
+
 ops:
-  # 进程管理
   process:
-    pid_file: "companion.pid"
-    daemon: false           # 是否守护进程运行
-
-  # 资源限制
+    pid_file: /tmp/blockmind.pid
+    daemon: false
   limits:
-    max_memory: "1GB"
-    max_cpu_percent: 50
+    max_memory: 2048
+    max_cpu_percent: 80

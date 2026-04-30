@@ -287,7 +287,7 @@ class SmartNavigator:
     def learn_from_action(self, task_type: str, description: str,
                           actions: List[Dict], success: bool,
                           duration: float = 0.0,
-                          context_tags: List[str] = None) -> None:
+                          context_tags: Optional[List[str]] = None) -> None:
         """从动作执行中学习策略
 
         对标 Hermes 的 skill_manage(action='create') —
