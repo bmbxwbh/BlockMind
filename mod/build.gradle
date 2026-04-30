@@ -21,10 +21,12 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.92.0+1.20.4"
     modImplementation "net.fabricmc:fabric-loader:0.15.3"
 
-    // Baritone — 可选依赖，运行时检测
-    // 如果服务器安装了 Baritone mod，自动启用高级寻路
+    // Baritone — 运行时可选依赖
+    // 在 CI 环境中 JitPack 可能不可用，所以不作为编译依赖
+    // 如果服务器安装了 Baritone mod，运行时自动检测并启用高级寻路
     // 如果没有，回退到基础直线移动
-    compileOnly "com.github.cabaletta:baritone:1.19.4"
+    // 本地开发时可取消注释以下行：
+    // compileOnly "com.github.cabaletta:baritone:1.19.4"
 }
 
 java {
