@@ -1,6 +1,7 @@
 package blockmind;
 
 import blockmind.api.BlockMindHttpServer;
+import blockmind.bot.BotManager;
 import blockmind.collector.StateCollector;
 import blockmind.executor.ActionExecutor;
 import blockmind.event.EventListener;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
  * 1. 启动 HTTP API 服务（端口 25580）
  * 2. 注册游戏事件监听
  * 3. 管理 Mod 生命周期
+ * 4. 管理 Bot（FakePlayer）生命周期
  */
 public class BlockMindMod implements DedicatedServerModInitializer {
 
@@ -29,22 +31,33 @@ public class BlockMindMod implements DedicatedServerModInitializer {
     @Override
     public void onInitializeServer() {
         LOGGER.info("========================================");
-        LOGGER.info("  BlockMind Mod v1.0.0 Loading...");
+        LOGGER.info("  BlockMind Mod v1.1.0 Loading...");
+        LOGGER.info("  [NEW] FakePlayer Bot Support");
         LOGGER.info("========================================");
 
         // 注册服务器启动/停止事件
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             LOGGER.info("[BlockMind] Server started, launching HTTP API...");
+
+            // 初始化所有模块
             StateCollector.setServer(server);
             ActionExecutor.setServer(server);
+            BotManager.setServer(server);
+
             startHttpServer();
             new EventListener().register();
             running = true;
+
             LOGGER.info("[BlockMind] ✅ BlockMind Mod ready! API on port {}", HTTP_PORT);
+            LOGGER.info("[BlockMind] Bot management: POST /api/bot/spawn to create a bot");
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            LOGGER.info("[BlockMind] Server stopping, shutting down...");
+            LOGGER.info("[BlockMind] Server stopping...");
+            // 先清理 Bot
+            if (BotManager.isSpawned()) {
+                BotManager.despawn();
+            }
             stopHttpServer();
             running = false;
         });

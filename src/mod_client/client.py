@@ -17,7 +17,7 @@ from src.mod_client.models import (
 logger = logging.getLogger("blockmind.mod_client")
 
 # Expected mod version — update when the Python side requires a newer mod API
-EXPECTED_MOD_VERSION = "1.0.0"
+EXPECTED_MOD_VERSION = "1.1.0"
 
 # Connection state persistence path
 CONNECTION_STATE_PATH = Path("data/connection_state.json")
@@ -33,6 +33,7 @@ class ModClient:
     - Connection state persistence across restarts
     - Mod version detection and compatibility check
     - Health-check based connection validation
+    - Bot (FakePlayer) lifecycle management
     """
 
     def __init__(self, host: str = "localhost", port: int = 25580, timeout: float = 10.0):
@@ -41,6 +42,7 @@ class ModClient:
         self._session: Optional[aiohttp.ClientSession] = None
         self._mod_version: Optional[str] = None
         self._connection_state: dict = self._load_connection_state()
+        self._bot_spawned: bool = False
         logger.info(f"ModClient 初始化: {self.base_url}")
 
     # ── Connection State Persistence ──
@@ -130,6 +132,13 @@ class ModClient:
 
     async def disconnect(self) -> None:
         """关闭连接"""
+        # 先尝试 despawn bot
+        if self._bot_spawned:
+            try:
+                await self.despawn_bot()
+            except Exception:
+                pass
+
         if self._session and not self._session.closed:
             await self._session.close()
             logger.info("Mod API 连接已关闭")
@@ -187,6 +196,42 @@ class ModClient:
             "expected": EXPECTED_MOD_VERSION,
             "match": self._mod_version == EXPECTED_MOD_VERSION if self._mod_version else None,
         }
+
+    # ── Bot (FakePlayer) Management ──
+
+    async def spawn_bot(self, name: str = "BlockMind_Bot") -> dict:
+        """生成 Bot（FakePlayer）
+
+        Args:
+            name: Bot 名字，可选
+
+        Returns:
+            {"success": bool, "name": str, "position": {...}}
+        """
+        result = await self._post("/api/bot/spawn", {"name": name})
+        if result.get("success"):
+            self._bot_spawned = True
+            logger.info(f"✅ Bot '{name}' 已生成: {result.get('position', {})}")
+        else:
+            logger.warning(f"Bot 生成失败: {result.get('error', 'unknown')}")
+        return result
+
+    async def despawn_bot(self) -> dict:
+        """移除 Bot"""
+        result = await self._post("/api/bot/despawn")
+        if result.get("success"):
+            self._bot_spawned = False
+            logger.info("✅ Bot 已移除")
+        return result
+
+    async def get_bot_status(self) -> dict:
+        """获取 Bot 状态"""
+        return await self._get("/api/bot/status")
+
+    @property
+    def bot_spawned(self) -> bool:
+        """Bot 是否已生成"""
+        return self._bot_spawned
 
     # ── HTTP Helpers ──
 

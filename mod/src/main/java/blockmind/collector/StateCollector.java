@@ -1,5 +1,6 @@
 package blockmind.collector;
 
+import blockmind.bot.BotManager;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.minecraft.server.MinecraftServer;
@@ -15,6 +16,7 @@ import net.minecraft.world.World;
 /**
  * 游戏状态采集器
  * 从 Minecraft 服务器内部 API 采集状态数据
+ * 优先采集 Bot 数据（如果已 spawn）
  */
 public class StateCollector {
 
@@ -22,6 +24,17 @@ public class StateCollector {
 
     public static void setServer(MinecraftServer srv) {
         server = srv;
+    }
+
+    /**
+     * 获取目标玩家：优先 Bot，回退到第一个在线玩家
+     */
+    private static ServerPlayerEntity getTarget() {
+        if (BotManager.isSpawned()) {
+            ServerPlayerEntity bot = BotManager.getBot();
+            if (bot != null && bot.isAlive()) return bot;
+        }
+        return getFirstPlayer();
     }
 
     /**
@@ -34,38 +47,41 @@ public class StateCollector {
             return json;
         }
 
-        ServerPlayerEntity player = getFirstPlayer();
-        if (player == null) {
+        ServerPlayerEntity target = getTarget();
+        if (target == null) {
             json.addProperty("connected", false);
+            json.addProperty("bot_spawned", BotManager.isSpawned());
             return json;
         }
 
         json.addProperty("connected", true);
-        json.addProperty("health", player.getHealth());
-        json.addProperty("hunger", player.getHungerManager().getFoodLevel());
-        json.addProperty("saturation", player.getHungerManager().getSaturationLevel());
+        json.addProperty("target", BotManager.isSpawned() ? "bot" : "player");
+        json.addProperty("name", target.getName().getString());
+        json.addProperty("health", target.getHealth());
+        json.addProperty("hunger", target.getHungerManager().getFoodLevel());
+        json.addProperty("saturation", target.getHungerManager().getSaturationLevel());
 
         // 位置
         JsonObject pos = new JsonObject();
-        pos.addProperty("x", player.getX());
-        pos.addProperty("y", player.getY());
-        pos.addProperty("z", player.getZ());
+        pos.addProperty("x", target.getX());
+        pos.addProperty("y", target.getY());
+        pos.addProperty("z", target.getZ());
         json.add("position", pos);
 
         // 朝向
         JsonObject rotation = new JsonObject();
-        rotation.addProperty("yaw", player.getYaw());
-        rotation.addProperty("pitch", player.getPitch());
+        rotation.addProperty("yaw", target.getYaw());
+        rotation.addProperty("pitch", target.getPitch());
         json.add("rotation", rotation);
 
         // 经验
-        json.addProperty("experience", player.totalExperience);
-        json.addProperty("level", player.experienceLevel);
+        json.addProperty("experience", target.totalExperience);
+        json.addProperty("level", target.experienceLevel);
 
         // 维度
-        json.addProperty("dimension", player.getWorld().getRegistryKey().getValue().toString());
-        json.addProperty("time_of_day", player.getWorld().getTimeOfDay());
-        json.addProperty("weather", getWeather(player));
+        json.addProperty("dimension", target.getWorld().getRegistryKey().getValue().toString());
+        json.addProperty("time_of_day", target.getWorld().getTimeOfDay());
+        json.addProperty("weather", getWeather(target));
 
         return json;
     }
@@ -77,13 +93,13 @@ public class StateCollector {
         JsonObject json = new JsonObject();
         if (server == null) return json;
 
-        ServerPlayerEntity player = getFirstPlayer();
-        if (player == null) return json;
+        ServerPlayerEntity target = getTarget();
+        if (target == null) return json;
 
-        World world = player.getWorld();
+        World world = target.getWorld();
         json.addProperty("dimension", world.getRegistryKey().getValue().toString());
         json.addProperty("time_of_day", world.getTimeOfDay());
-        json.addProperty("weather", getWeather(player));
+        json.addProperty("weather", getWeather(target));
         json.addProperty("difficulty", world.getDifficulty().getName());
         json.addProperty("day_count", world.getTimeOfDay() / 24000L);
 
@@ -97,14 +113,14 @@ public class StateCollector {
         JsonObject json = new JsonObject();
         if (server == null) return json;
 
-        ServerPlayerEntity player = getFirstPlayer();
-        if (player == null) return json;
+        ServerPlayerEntity target = getTarget();
+        if (target == null) return json;
 
         JsonArray items = new JsonArray();
         int emptySlots = 0;
 
-        for (int i = 0; i < player.getInventory().size(); i++) {
-            ItemStack stack = player.getInventory().getStack(i);
+        for (int i = 0; i < target.getInventory().size(); i++) {
+            ItemStack stack = target.getInventory().getStack(i);
             if (stack.isEmpty()) {
                 emptySlots++;
                 continue;
@@ -138,21 +154,21 @@ public class StateCollector {
             return json;
         }
 
-        ServerPlayerEntity player = getFirstPlayer();
-        if (player == null) {
+        ServerPlayerEntity target = getTarget();
+        if (target == null) {
             json.add("entities", entities);
             return json;
         }
 
-        for (Entity entity : player.getWorld().getEntitiesByClass(
+        for (Entity entity : target.getWorld().getEntitiesByClass(
                 Entity.class,
                 new Box(
-                    player.getX() - radius, player.getY() - radius, player.getZ() - radius,
-                    player.getX() + radius, player.getY() + radius, player.getZ() + radius
+                    target.getX() - radius, target.getY() - radius, target.getZ() - radius,
+                    target.getX() + radius, target.getY() + radius, target.getZ() + radius
                 ),
-                e -> e != player
+                e -> e != target
         )) {
-            double distance = entity.distanceTo(player);
+            double distance = entity.distanceTo(target);
             if (distance > radius) continue;
 
             JsonObject ent = new JsonObject();
@@ -192,14 +208,14 @@ public class StateCollector {
             return json;
         }
 
-        ServerPlayerEntity player = getFirstPlayer();
-        if (player == null) {
+        ServerPlayerEntity target = getTarget();
+        if (target == null) {
             json.add("blocks", blocks);
             return json;
         }
 
-        BlockPos playerPos = player.getBlockPos();
-        World world = player.getWorld();
+        BlockPos playerPos = target.getBlockPos();
+        World world = target.getWorld();
 
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {

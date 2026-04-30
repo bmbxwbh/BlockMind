@@ -1,6 +1,7 @@
 package blockmind.api;
 
 import blockmind.BlockMindMod;
+import blockmind.bot.BotManager;
 import blockmind.collector.StateCollector;
 import blockmind.executor.ActionExecutor;
 import blockmind.pathfinding.PathfinderHandler;
@@ -19,6 +20,7 @@ import java.util.concurrent.Executors;
  *
  * 端点列表：
  * - 健康检查: /health
+ * - Bot 管理: /api/bot/spawn, /api/bot/despawn, /api/bot/status
  * - 状态查询: /api/status, /api/world, /api/inventory, /api/entities, /api/blocks
  * - 动作执行: /api/move, /api/dig, /api/place, /api/attack, /api/eat, /api/look, /api/chat
  * - 智能导航: /api/navigate/goto, /api/navigate/stop, /api/navigate/status
@@ -43,6 +45,11 @@ public class BlockMindHttpServer {
         server.createContext("/api/inventory", new InventoryHandler());
         server.createContext("/api/entities", new EntitiesHandler());
         server.createContext("/api/blocks", new BlocksHandler());
+
+        // ── Bot 管理 ──
+        server.createContext("/api/bot/spawn", new BotSpawnHandler());
+        server.createContext("/api/bot/despawn", new BotDespawnHandler());
+        server.createContext("/api/bot/status", new BotStatusHandler());
 
         // ── 动作执行 ──
         server.createContext("/api/move", new MoveHandler());
@@ -131,6 +138,37 @@ public class BlockMindHttpServer {
             int radius = parseQueryParam(exchange, "radius", 16);
             String type = parseQueryStr(exchange, "type");
             sendResponse(exchange, 200, StateCollector.getBlocks(radius, type).toString());
+        }
+    }
+
+    // ─── Bot 管理 Handlers ────────────────────────────
+
+    static class BotSpawnHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!checkMethod(exchange, "POST")) return;
+            String body = readBody(exchange);
+            String name = null;
+            try {
+                var json = com.google.gson.JsonParser.parseString(body).getAsJsonObject();
+                if (json.has("name")) name = json.get("name").getAsString();
+            } catch (Exception ignored) {}
+            sendResponse(exchange, 200, BotManager.spawn(name).toString());
+        }
+    }
+
+    static class BotDespawnHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!checkMethod(exchange, "POST")) return;
+            sendResponse(exchange, 200, BotManager.despawn().toString());
+        }
+    }
+
+    static class BotStatusHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            sendResponse(exchange, 200, BotManager.getStatus().toString());
         }
     }
 

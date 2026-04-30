@@ -126,6 +126,10 @@ class ModWebSocketClient:
                 # Connection succeeded — reset backoff
                 self._reset_backoff()
                 await self._receive_messages()
+            except aiohttp.WSServerHandshakeError as e:
+                if e.status == 404:
+                    # Mod 没有 WebSocket，停止重连
+                    break
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -150,6 +154,12 @@ class ModWebSocketClient:
         try:
             self._ws = await self._session.ws_connect(self.url)
             logger.info("WebSocket 连接成功")
+        except aiohttp.WSServerHandshakeError as e:
+            # 404 = Mod 没有 WebSocket 端点，降级为轮询模式
+            if e.status == 404:
+                logger.info("Mod 无 WebSocket 端点，事件将通过 HTTP 轮询获取")
+                self._running = False  # 停止重连
+            raise
         except Exception as e:
             logger.error(f"WebSocket 连接失败: {e}")
             raise

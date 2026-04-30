@@ -28,7 +28,8 @@ class ModConfig(BaseModel):
     port: int = 25580
     timeout: float = 10.0
     no_mod_mode: bool = False
-    expected_version: str = "1.0.0"
+    expected_version: str = "1.1.0"
+    bot_name: str = "BlockMind_Bot"
     ws_backoff: ModWSBackoffConfig = ModWSBackoffConfig()
 
 

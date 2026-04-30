@@ -154,6 +154,19 @@ class CompanionEngine:
             connected = await self.mod_client.connect()
             if connected:
                 self.logger.info("✅ Mod API 连接成功")
+
+                # 生成 Bot（FakePlayer）
+                bot_name = self.config.mod.bot_name or "BlockMind_Bot"
+                spawn_result = await self.mod_client.spawn_bot(bot_name)
+                if spawn_result.get("success"):
+                    pos = spawn_result.get("position", {})
+                    self.logger.info(
+                        f"🤖 Bot '{bot_name}' 已加入游戏 @ "
+                        f"({pos.get('x', 0)}, {pos.get('y', 0)}, {pos.get('z', 0)})"
+                    )
+                else:
+                    self.logger.warning(f"⚠️ Bot 生成失败: {spawn_result.get('error', 'unknown')}")
+
                 await self.ws_client.connect()
 
                 # 检查 Mod 版本兼容性
@@ -219,11 +232,17 @@ class CompanionEngine:
 
         await self.event_bus.emit(Event(type="engine.stopped", data={}, source="engine"))
 
-        for module in [self.idle_scheduler, self.health_checker, self.ws_client, self.mod_client]:
+        for module in [self.idle_scheduler, self.health_checker, self.ws_client]:
             try:
                 await module.stop() if hasattr(module, 'stop') else await module.disconnect()
             except Exception:
                 pass
+
+        # 关闭 ModClient（会自动 despawn bot）
+        try:
+            await self.mod_client.disconnect()
+        except Exception:
+            pass
 
         self.logger.info("✅ BlockMind 已安全关闭")
 

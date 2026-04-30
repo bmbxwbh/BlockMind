@@ -409,7 +409,7 @@ async def get_memory(request: Request, _=Depends(require_auth)):
         })
 
     paths = []
-    for key, p in mem.cached_paths.items():
+    for key, p in mem.paths.items():
         paths.append({
             "start": str(p.start),
             "end": str(p.end),
