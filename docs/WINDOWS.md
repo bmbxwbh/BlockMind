@@ -58,19 +58,32 @@ python -m src.main
 
 ## Minecraft 服务端配置
 
-### 下载 Fabric 服务端
+### 全自动安装（推荐）
+
+直接运行 `start_mc.bat`，会自动完成：
+
+1. ✅ 检测 Java 版本
+2. ✅ 下载 Fabric 安装器
+3. ✅ 安装 Fabric 服务端 (MC 1.20.4)
+4. ✅ 下载 BlockMind Mod（从 GitHub Releases）
+5. ✅ 接受 EULA
+6. ✅ 启动服务器
+
+```cmd
+start_mc.bat
+```
+
+> 首次运行需要联网下载，约 100-200MB。之后再启动直接跳过下载步骤。
+
+### 手动安装（如自动下载失败）
 
 1. 访问 https://fabricmc.net/use/server/
 2. 选择 Minecraft 版本 **1.20.4**
 3. 下载服务端 JAR 文件
 4. 将 JAR 放到项目根目录的 `mc-server/` 文件夹
-5. 运行 `start_mc.bat`
-
-### 安装 BlockMind Mod
-
-1. 从 [GitHub Releases](https://github.com/bmbxwbh/BlockMind/releases) 下载最新 Mod JAR
-2. 将 JAR 放到 `mc-server/mods/` 文件夹
-3. 重启 Minecraft 服务端
+5. 从 https://github.com/bmbxwbh/BlockMind/releases 下载 Mod JAR
+6. 将 Mod JAR 放到 `mc-server/mods/` 文件夹
+7. 运行 `start_mc.bat`
 
 ### 内存配置
 
