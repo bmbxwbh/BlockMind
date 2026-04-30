@@ -1,6 +1,8 @@
 package blockmind;
 
 import blockmind.api.BlockMindHttpServer;
+import blockmind.collector.StateCollector;
+import blockmind.executor.ActionExecutor;
 import blockmind.event.EventListener;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -33,6 +35,8 @@ public class BlockMindMod implements DedicatedServerModInitializer {
         // 注册服务器启动/停止事件
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             LOGGER.info("[BlockMind] Server started, launching HTTP API...");
+            StateCollector.setServer(server);
+            ActionExecutor.setServer(server);
             startHttpServer();
             new EventListener().register();
             running = true;

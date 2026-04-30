@@ -9,6 +9,7 @@ import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 
 /**
@@ -143,8 +144,14 @@ public class StateCollector {
             return json;
         }
 
-        for (Entity entity : player.getWorld().getEntities()) {
-            if (entity == player) continue;
+        for (Entity entity : player.getWorld().getEntitiesByClass(
+                Entity.class,
+                new Box(
+                    player.getX() - radius, player.getY() - radius, player.getZ() - radius,
+                    player.getX() + radius, player.getY() + radius, player.getZ() + radius
+                ),
+                e -> e != player
+        )) {
             double distance = entity.distanceTo(player);
             if (distance > radius) continue;
 
