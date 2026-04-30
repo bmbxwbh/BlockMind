@@ -7,7 +7,6 @@ __pycache__
 venv/
 .env
 *.log
-mod/
 tests/
 scripts/
 docs/
@@ -16,3 +15,11 @@ README.md
 LICENSE
 docker-compose.yaml
 .dockerignore
+
+# Mod source (but NOT build artifacts)
+mod/src/
+mod/gradle/
+mod/gradlew
+mod/gradlew.bat
+mod/build.gradle
+mod/settings.gradle

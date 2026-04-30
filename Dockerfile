@@ -20,9 +20,6 @@ COPY src/ ./src/
 COPY skills/ ./skills/
 COPY config/ ./config/
 
-# Mod JAR（如果存在）
-COPY mod/build/libs/ ./mod/libs/
-
 # 默认配置
 COPY config/config.example.yaml config.yaml
 
