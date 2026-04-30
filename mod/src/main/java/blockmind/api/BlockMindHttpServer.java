@@ -3,6 +3,7 @@ package blockmind.api;
 import blockmind.BlockMindMod;
 import blockmind.collector.StateCollector;
 import blockmind.executor.ActionExecutor;
+import blockmind.pathfinding.PathfinderHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -15,6 +16,12 @@ import java.util.concurrent.Executors;
 /**
  * BlockMind HTTP API 服务
  * 提供 REST API 供 Python 后端调用
+ *
+ * 端点列表：
+ * - 健康检查: /health
+ * - 状态查询: /api/status, /api/world, /api/inventory, /api/entities, /api/blocks
+ * - 动作执行: /api/move, /api/dig, /api/place, /api/attack, /api/eat, /api/look, /api/chat
+ * - 智能导航: /api/navigate/goto, /api/navigate/stop, /api/navigate/status
  */
 public class BlockMindHttpServer {
 
@@ -29,13 +36,15 @@ public class BlockMindHttpServer {
         server = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newFixedThreadPool(4));
 
-        // 注册路由
+        // ── 基础 API ──
         server.createContext("/health", new HealthHandler());
         server.createContext("/api/status", new StatusHandler());
         server.createContext("/api/world", new WorldHandler());
         server.createContext("/api/inventory", new InventoryHandler());
         server.createContext("/api/entities", new EntitiesHandler());
         server.createContext("/api/blocks", new BlocksHandler());
+
+        // ── 动作执行 ──
         server.createContext("/api/move", new MoveHandler());
         server.createContext("/api/dig", new DigHandler());
         server.createContext("/api/place", new PlaceHandler());
@@ -44,8 +53,14 @@ public class BlockMindHttpServer {
         server.createContext("/api/look", new LookHandler());
         server.createContext("/api/chat", new ChatHandler());
 
+        // ── 智能导航（Baritone 集成）──
+        server.createContext("/api/navigate/goto", new NavigateGotoHandler());
+        server.createContext("/api/navigate/stop", new NavigateStopHandler());
+        server.createContext("/api/navigate/status", new NavigateStatusHandler());
+
         server.start();
-        BlockMindMod.LOGGER.info("[BlockMind] HTTP API listening on port {}", port);
+        BlockMindMod.LOGGER.info("[BlockMind] HTTP API listening on port {} ({} 导路引擎)",
+                port, PathfinderHandler.isBaritoneAvailable() ? "Baritone" : "基础");
     }
 
     public void stop() {
@@ -75,7 +90,9 @@ public class BlockMindHttpServer {
     static class HealthHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            sendResponse(exchange, 200, "{\"status\":\"ok\",\"mod\":\"blockmind\"}");
+            sendResponse(exchange, 200,
+                    "{\"status\":\"ok\",\"mod\":\"blockmind\",\"pathfinder\":\""
+                    + (PathfinderHandler.isBaritoneAvailable() ? "baritone" : "basic") + "\"}");
         }
     }
 
@@ -172,6 +189,45 @@ public class BlockMindHttpServer {
         public void handle(HttpExchange exchange) throws IOException {
             if (!checkMethod(exchange, "POST")) return;
             sendResponse(exchange, 200, ActionExecutor.chat(readBody(exchange)).toString());
+        }
+    }
+
+    // ─── 智能导航 Handlers ───────────────────────────
+
+    /**
+     * 导航到目标位置（带排除区域）
+     * POST /api/navigate/goto
+     */
+    static class NavigateGotoHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!checkMethod(exchange, "POST")) return;
+            String result = PathfinderHandler.gotoTarget(readBody(exchange));
+            sendResponse(exchange, 200, result);
+        }
+    }
+
+    /**
+     * 停止当前导航
+     * POST /api/navigate/stop
+     */
+    static class NavigateStopHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!checkMethod(exchange, "POST")) return;
+            String result = PathfinderHandler.stopNavigation();
+            sendResponse(exchange, 200, result);
+        }
+    }
+
+    /**
+     * 获取寻路引擎状态
+     * GET /api/navigate/status
+     */
+    static class NavigateStatusHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            sendResponse(exchange, 200, PathfinderHandler.getStatus());
         }
     }
 

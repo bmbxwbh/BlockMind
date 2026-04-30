@@ -180,3 +180,39 @@ class ModClient:
         """发送聊天消息"""
         data = await self._post("/api/chat", {"message": message})
         return ActionResult.from_dict(data)
+
+    # ── 智能导航 ──
+
+    async def navigate_goto(self, x: int, y: int, z: int,
+                            exclusion_zones: list = None,
+                            allow_break: bool = False,
+                            allow_place: bool = False,
+                            sprint: bool = False) -> dict:
+        """智能导航到目标位置（通过 Baritone 或基础寻路）
+
+        Args:
+            x, y, z: 目标坐标
+            exclusion_zones: 排除区域列表
+            allow_break: 是否允许破坏方块
+            allow_place: 是否允许放置方块
+            sprint: 是否疾跑
+
+        Returns:
+            {"success": bool, "engine": "baritone"|"basic", "path": [...]}
+        """
+        data = {
+            "x": x, "y": y, "z": z,
+            "exclusion_zones": exclusion_zones or [],
+            "allow_break": allow_break,
+            "allow_place": allow_place,
+            "sprint": sprint,
+        }
+        return await self._post("/api/navigate/goto", data)
+
+    async def navigate_stop(self) -> dict:
+        """停止当前导航"""
+        return await self._post("/api/navigate/stop")
+
+    async def navigate_status(self) -> dict:
+        """获取寻路引擎状态"""
+        return await self._get("/api/navigate/status")

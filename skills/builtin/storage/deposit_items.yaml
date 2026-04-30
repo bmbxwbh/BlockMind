@@ -9,8 +9,12 @@ when:
     - "inventory.count('oak_log') > 0 or inventory.count('cobblestone') > 0"
 
 do:
-  - action: walk_to
-    args: {x: "home_x", y: "home_y", z: "home_z"}
+  # 智能导航到家/仓库
+  - action: smart_navigate
+    args:
+      target: "home"
+      allow_break: false
+      use_cache: true
   - action: place_block
     args: {item: "chest", x: "chest_x", y: "chest_y", z: "chest_z"}
 

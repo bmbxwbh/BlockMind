@@ -9,8 +9,12 @@ when:
     - "self.position() near home"
 
 do:
-  - action: walk_to
-    args: {x: "home_x", y: "home_y", z: "home_z"}
+  # 智能导航到箱子位置
+  - action: smart_navigate
+    args:
+      target: "chest"
+      allow_break: false
+      use_cache: true
 
 until:
   any:

@@ -198,6 +198,29 @@ class LoggingConfig(BaseModel):
     backup_count: int = 5
 
 
+class MemoryConfig(BaseModel):
+    """记忆系统配置"""
+    enabled: bool = True
+    storage_path: str = "data/memory"
+    auto_detect_zones: bool = True         # 自动检测建筑/危险/资源区域
+    auto_detect_radius: int = 32           # 自动检测半径
+    max_cached_paths: int = 500            # 最大缓存路径数
+    max_strategies: int = 200              # 最大策略数
+    path_success_threshold: float = 0.8    # 路径成功率阈值
+    strategy_success_threshold: float = 0.6  # 策略成功率阈值
+    protect_buildings: bool = True         # 建筑保护区自动保护
+
+
+class NavigationConfig(BaseModel):
+    """导航系统配置"""
+    prefer_baritone: bool = True           # 优先使用 Baritone
+    fallback_to_basic: bool = True         # Baritone 不可用时回退到基础寻路
+    allow_break_default: bool = False      # 默认不允许破坏方块
+    allow_place_default: bool = False      # 默认不允许放置方块
+    sprint_default: bool = False           # 默认不疾跑
+    max_path_length: int = 200             # 最大路径长度
+
+
 class AppConfig(BaseModel):
     game: GameConfig = GameConfig()
     ai: AIConfig = AIConfig()
@@ -207,6 +230,8 @@ class AppConfig(BaseModel):
     idle_tasks: IdleTasksConfig = IdleTasksConfig()
     webui: WebUIConfig = WebUIConfig()
     logging: LoggingConfig = LoggingConfig()
+    memory: MemoryConfig = MemoryConfig()
+    navigation: NavigationConfig = NavigationConfig()
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:

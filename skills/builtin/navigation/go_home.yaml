@@ -8,10 +8,22 @@ when:
   all: []
 
 do:
-  - action: walk_to
-    args: {x: "home_x", y: "home_y", z: "home_z"}
+  # 使用智能导航系统（自动查询记忆中的家位置、缓存路径、保护区）
+  - action: smart_navigate
+    args:
+      target: "home"                    # 从记忆系统获取家位置
+      allow_break: false                # 不破坏建筑
+      allow_place: false                # 不放置方块
+      use_cache: true                   # 优先使用缓存路径
 
 until:
   any:
     - "self.position() near home"
     - "task_interrupted()"
+
+# 记忆增强：
+# 1. 自动从记忆系统获取玩家家位置
+# 2. 优先走缓存的可靠路径
+# 3. 自动避开建筑保护区
+# 4. 自动避开已知危险区域（岩浆等）
+# 5. 到达后自动更新路径缓存

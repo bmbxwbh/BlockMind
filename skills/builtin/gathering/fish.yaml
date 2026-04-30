@@ -9,8 +9,12 @@ when:
     - "inventory.has('fishing_rod')"
 
 do:
-  - action: walk_to
-    args: {x: "water_x", y: "water_y", z: "water_z"}
+  # 智能导航到已知水域（记忆系统）
+  - action: smart_navigate
+    args:
+      target: "water_point"             # 记忆中的水域位置
+      allow_break: false
+      use_cache: true
   - action: look_at
     args: {x: "water_x", y: "water_y", z: "water_z"}
   - action: wait

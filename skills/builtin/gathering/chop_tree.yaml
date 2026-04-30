@@ -7,13 +7,16 @@ task_level: L2
 when:
   all:
     - "inventory.has('wooden_axe') or inventory.has('stone_axe') or inventory.has('iron_axe')"
-    - "world.any_entity(type='oak_log', radius=32)"
 
 do:
   - action: scan_blocks
     args: {radius: 32, filter: "type == 'oak_log'", sort_by: "distance"}
-  - action: walk_to
-    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  # 智能导航到树木位置（避开建筑保护区）
+  - action: smart_navigate
+    args:
+      target: "scanned.position"
+      allow_break: false                # 不破坏路上的建筑
+      use_cache: true
   - loop:
       while: "world.entity_exists(scanned.id)"
       do:
@@ -26,3 +29,8 @@ until:
   any:
     - "inventory.count('oak_log') >= 64"
     - "task_interrupted()"
+
+# 记忆增强：
+# 1. 自动避开建筑保护区
+# 2. 如果树木在保护区内，跳过该树木
+# 3. 缓存从基地到树林的路径

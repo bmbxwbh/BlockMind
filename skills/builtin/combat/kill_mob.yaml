@@ -12,8 +12,13 @@ when:
 do:
   - action: scan_entities
     args: {radius: 16, filter: "hostile == true", sort_by: "distance"}
-  - action: walk_to
-    args: {x: "entity.position.x", y: "entity.position.y", z: "entity.position.z"}
+  # 战斗时允许破坏方块（绕路需要）
+  - action: smart_navigate
+    args:
+      target: "entity.position"
+      allow_break: true
+      allow_place: false
+      use_cache: false                  # 战斗不走缓存（动态目标）
   - action: attack
     args: {entity_id: "entity.id"}
 
@@ -22,3 +27,8 @@ until:
     - "not world.any_entity(type='monster', radius=16)"
     - "self.health() < 6"
     - "task_interrupted()"
+
+# 记忆增强：
+# 1. 战斗导航不使用缓存（目标动态移动）
+# 2. 允许破坏方块绕路（紧急情况）
+# 3. 自动避开建筑保护区（不在基地里打怪）

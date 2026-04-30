@@ -10,8 +10,12 @@ when:
     - "not world.any_entity(type='monster', radius=16)"
 
 do:
-  - action: walk_to
-    args: {x: "bed_x", y: "bed_y", z: "bed_z"}
+  # 智能导航到床的位置（从记忆中获取）
+  - action: smart_navigate
+    args:
+      target: "bed"                     # 记忆系统中的床位置
+      allow_break: false
+      use_cache: true
   - action: wait
     args: {seconds: 5}
 

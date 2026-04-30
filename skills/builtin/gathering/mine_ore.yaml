@@ -11,8 +11,13 @@ when:
 do:
   - action: scan_blocks
     args: {radius: 32, filter: "type contains 'ore'", sort_by: "distance"}
-  - action: walk_to
-    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  # 智能导航到矿石位置（自动避开危险区域）
+  - action: smart_navigate
+    args:
+      target: "scanned.position"
+      allow_break: true                 # 挖矿时可以破坏方块
+      allow_place: false
+      use_cache: true
   - action: dig_block
     args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
 
@@ -21,3 +26,9 @@ until:
     - "inventory.count('iron_ore') >= 32"
     - "inventory.count('diamond') >= 5"
     - "task_interrupted()"
+
+# 记忆增强：
+# 1. 自动避开岩浆等危险区域
+# 2. 如果在保护区内发现矿石，跳过
+# 3. 缓存矿洞路径
+# 4. 自动注册矿石聚集点到记忆

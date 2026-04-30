@@ -9,8 +9,12 @@ when:
     - "inventory.has('wheat_seeds')"
 
 do:
-  - action: walk_to
-    args: {x: "farm_x", y: "farm_y", z: "farm_z"}
+  # 智能导航到农场（记忆中的农场位置）
+  - action: smart_navigate
+    args:
+      target: "farm"
+      allow_break: false
+      use_cache: true
   - loop:
       while: "inventory.count('wheat_seeds') > 0"
       do:

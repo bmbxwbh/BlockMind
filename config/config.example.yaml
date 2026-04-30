@@ -104,6 +104,25 @@ logging:
   max_size: 10485760
   backup_count: 5
   format: '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+memory:
+  enabled: true
+  storage_path: data/memory
+  auto_detect_zones: true         # 自动检测建筑/危险/资源区域
+  auto_detect_radius: 32
+  max_cached_paths: 500
+  max_strategies: 200
+  path_success_threshold: 0.8    # 路径成功率 > 80% 才复用
+  strategy_success_threshold: 0.6
+  protect_buildings: true         # 自动保护玩家建筑
+
+navigation:
+  prefer_baritone: true           # 优先 Baritone 高级寻路
+  fallback_to_basic: true         # 不可用时回退到基础 A*
+  allow_break_default: false      # 默认不破坏方块
+  allow_place_default: false      # 默认不放置方块
+  sprint_default: false
+  max_path_length: 200
+
 ops:
   process:
     pid_file: /tmp/blockmind.pid

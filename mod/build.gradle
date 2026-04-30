@@ -12,6 +12,7 @@ base {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -19,6 +20,11 @@ dependencies {
     mappings "net.fabricmc:yarn:1.20.4+build.3:v2"
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.92.0+1.20.4"
     modImplementation "net.fabricmc:fabric-loader:0.15.3"
+
+    // Baritone — 可选依赖，运行时检测
+    // 如果服务器安装了 Baritone mod，自动启用高级寻路
+    // 如果没有，回退到基础直线移动
+    compileOnly "com.github.cabaletta:baritone:1.19.4"
 }
 
 java {
