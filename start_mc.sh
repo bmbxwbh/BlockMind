@@ -297,6 +297,23 @@ else
     info "${T_MOD_EXIST}"
 fi
 
+# 下载 Fabric API（BlockMind Mod 依赖）
+if ! ls "$MODS_DIR"/fabric-api-*.jar >/dev/null 2>&1; then
+    info "Downloading Fabric API..."
+    # 从 Modrinth 获取最新兼容版本
+    FABRIC_API_URL=$(curl -sL --connect-timeout 10 \
+        "https://api.modrinth.com/v2/project/P7dR8mSH/version?game_versions=%5B%22${MC_VERSION}%22%5D&loaders=%5B%22fabric%22%5D" 2>/dev/null | \
+        python3 -c "import sys,json; print(json.load(sys.stdin)[0]['files'][0]['url'])" 2>/dev/null)
+    if [ -n "$FABRIC_API_URL" ]; then
+        FABRIC_API_FILE=$(basename "$FABRIC_API_URL" | python3 -c "import sys,urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))")
+        curl -sL -o "$MODS_DIR/$FABRIC_API_FILE" "$FABRIC_API_URL" && \
+            info "Fabric API downloaded" || \
+            warn "Fabric API download failed, install manually"
+    else
+        warn "Could not find Fabric API for MC $MC_VERSION, install manually from https://modrinth.com/mod/fabric-api"
+    fi
+fi
+
 # ══════════════════════════════════════
 # 第六步：启动
 # ══════════════════════════════════════
