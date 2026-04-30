@@ -38,3 +38,8 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# Java build
+mod/build/
+mod/.gradle/
+.gradle/

@@ -8,6 +8,7 @@ WORKDIR /app
 # 系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Python 依赖
@@ -19,6 +20,9 @@ COPY src/ ./src/
 COPY skills/ ./skills/
 COPY config/ ./config/
 
+# Mod JAR（如果存在）
+COPY mod/build/libs/ ./mod/libs/
+
 # 默认配置
 COPY config/config.example.yaml config.yaml
 
@@ -29,5 +33,8 @@ EXPOSE 8080
 
 ENV PYTHONPATH=/app
 ENV BLOCKMIND_CONFIG=/app/config.yaml
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8080/api/system/health || exit 1
 
 CMD ["python", "-m", "src.main"]

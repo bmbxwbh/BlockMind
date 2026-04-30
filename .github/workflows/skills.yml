@@ -1,0 +1,50 @@
+name: Publish Skill to Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+  workflow_dispatch:
+
+jobs:
+  sync-skills:
+    name: 📦 Sync Skills
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: List Skill files
+        run: |
+          echo "=== 内置 Skill ==="
+          find skills/ -name '*.yaml' | sort
+          echo ""
+          echo "=== Skill 数量 ==="
+          find skills/ -name '*.yaml' | wc -l
+
+      - name: Validate Skill YAML
+        run: |
+          pip install pyyaml
+          python -c "
+          import yaml, os, sys
+          errors = []
+          for dp, _, fn in os.walk('skills'):
+              for f in fn:
+                  if f.endswith('.yaml'):
+                      path = os.path.join(dp, f)
+                      try:
+                          with open(path) as fh:
+                              data = yaml.safe_load(fh)
+                          if not data.get('skill_id'):
+                              errors.append(f'{path}: missing skill_id')
+                          if not data.get('name'):
+                              errors.append(f'{path}: missing name')
+                      except Exception as e:
+                          errors.append(f'{path}: {e}')
+          if errors:
+              print('Validation errors:')
+              for e in errors: print(f'  ❌ {e}')
+              sys.exit(1)
+          print('✅ All Skill YAMLs valid')
+          "
