@@ -1,6 +1,6 @@
 # 🧠 BlockMind — 智能 Minecraft AI 玩伴系统
 
-> **Fabric Mod + AI 驱动** · v2.0 · 2026-04-29
+> **Fabric Mod + AI 驱动 + 记忆系统** · v3.0 · 2026-04-30
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org)
@@ -8,7 +8,7 @@
 [![MC](https://img.shields.io/badge/Minecraft-1.20.x--1.21.x-green.svg)](https://minecraft.net)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-**一句话概括：** Fabric Mod 提供精准游戏接口 + Python 后端驱动 AI 决策，实现 7×24 小时自主生存的 Minecraft 智能玩伴。
+**一句话概括：** Fabric Mod 提供精准游戏接口 + Python 后端驱动 AI 决策 + 记忆系统跨会话学习，实现 7×24 小时自主生存的 Minecraft 智能玩伴。
 
 ---
 
@@ -16,45 +16,62 @@
 
 - [项目特色](#-项目特色)
 - [系统架构](#-系统架构)
+- [记忆系统](#-记忆系统)
+- [智能导航](#-智能导航)
+- [双 Agent 架构](#-双-agent-架构)
 - [快速开始](#-快速开始)
-- [项目结构](#-项目结构)
 - [Fabric Mod API](#-fabric-mod-api)
-- [核心模块](#-核心模块)
-- [任务分类系统](#-任务分类系统)
 - [Skill DSL 系统](#-skill-dsl-系统)
 - [安全体系](#-安全体系)
-- [故障容错](#-故障容错)
-- [空闲自主任务](#-空闲自主任务系统)
 - [WebUI 控制面板](#-webui-控制面板)
-- [配置参考](#-配置参考)
 - [部署指南](#-部署指南)
-- [开发指南](#-开发指南)
-- [故障排查](#-故障排查)
 - [FAQ](#-faq)
 - [路线图](#-路线图)
-- [更新日志](#-更新日志)
 
 ---
 
 ## ✨ 项目特色
 
-### 🧠 Skill DSL 固化复用 — 核心创新
+### 🧠 记忆系统 — 跨会话学习（v3.0 新增）
 
 ```
-传统方式：  玩家指令 → AI 思考 → 执行 → 下次再思考（每次消耗 Token）
-Skill 方式：玩家指令 → AI 思考 → 生成 Skill → 执行 → 永久复用（零 Token）
+传统方式：  每次重启都忘光，重复犯错，重复消耗 Token
+记忆方式：  空间/路径/策略三层记忆，持久化 JSON，跨会话复用
 ```
 
-AI 决策一次，生成 DSL Skill 文件，之后 **零 token 反复执行**。就像给机器人学会了"肌肉记忆"。
+- **空间记忆**：自动检测并记住建筑保护区、危险区域、资源点
+- **路径记忆**：缓存成功路径，黑名单失败路径，成功率统计
+- **策略记忆**：成功操作自动沉淀为可复用策略，零 Token 复用
+- **建筑保护**：导航时自动避开玩家建筑，再也不怕炸家
+
+### 🛤️ 智能导航 — 记忆驱动的寻路（v3.0 新增）
+
+```
+传统方式：  walk_to(x,y,z) → 遇墙卡死 / 炸穿建筑
+智能导航：  查记忆 → 走缓存 → Baritone(排除保护区) → A* 回退
+```
+
+- **缓存优先**：走过的路直接复用，零计算
+- **Baritone 集成**：社区最强寻路引擎，自动挖路/搭桥/游泳/规避岩浆
+- **建筑保护区注入**：记忆中的建筑自动注入为 Baritone 排除区域
+- **自动学习**：每次导航结果自动记录到记忆系统
+
+### 🤖 双 Agent 架构 — 聊天与操作隔离（v2.0 新增）
+
+```
+主 Agent：  负责聊天，持久上下文，只做意图识别（~50 Token/次）
+操作 Agent：负责执行，无状态全新上下文（<1500 Token/次）
+```
+
+- **主 Agent**：保持对话上下文，识别 `[TASK:xxx]` 标签
+- **操作 Agent**：无状态，用完即弃，避免上下文爆炸
+- **记忆注入**：AI 决策时自动注入记忆上下文（建筑保护区、已知路径等）
 
 ### 🔌 Fabric Mod 架构 — 精准可靠
 
-```
-传统方式：  Python Bot 解析 MC 协议 → 数据不准、动作不稳
-Mod 方式：  Fabric Mod 直接调用游戏 API → 精准状态、可靠动作
-```
-
-不再依赖过时的 pyCraft，直接用 Fabric Mod 访问游戏内部 API，**零协议解析、零数据丢失**。
+- **零协议解析**：直接调用游戏内部 API
+- **13 个 HTTP 端点** + WebSocket 实时事件
+- **Baritone 可选集成**：有则高级寻路，无则基础直线
 
 ### 🛡️ 五级安全体系
 
@@ -66,91 +83,247 @@ Mod 方式：  Fabric Mod 直接调用游戏 API → 精准状态、可靠动作
 | 3 | 高风险 | 点燃TNT、放岩浆 | 需玩家授权 |
 | 4 | 致命风险 | 放命令方块 | 默认禁止 |
 
-### 🔧 其他亮点
-
-- **7×24 云服务器常驻**：Systemd 托管，断线自动重连
-- **空闲自主行动**：没人指令时自动种田、挖矿、整理仓库
-- **故障三级降级**：自动重试 → 终止回安全点 → AI 紧急接管
-- **远程玩家干预**：聊天框发指令即可控制机器人
-- **WebUI 控制面板**：可视化管理 Skill、监控状态、配置安全规则
-
 ---
 
 ## 🏗️ 系统架构
 
-### 整体架构图
-
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Minecraft 服务器                          │
+┌──────────────────────────────────────────────────────────────┐
+│                    Minecraft 服务器                           │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │            BlockMind Fabric Mod (Java)                 │  │
+│  │                                                        │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │  │
+│  │  │状态采集器 │ │动作执行器 │ │事件监听器 │ │Baritone  │ │  │
+│  │  │方块/实体/ │ │移动/挖掘/ │ │聊天/伤害/ │ │寻路引擎  │ │  │
+│  │  │背包/世界  │ │放置/攻击  │ │方块变化   │ │(可选)    │ │  │
+│  │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ │  │
+│  │       └─────────────┼────────────┼────────────┘       │  │
+│  │               HTTP API :25580 + WebSocket              │  │
+│  └─────────────────────────────┼──────────────────────────┘  │
+└────────────────────────────────┼─────────────────────────────┘
+                                 │
+┌────────────────────────────────▼─────────────────────────────┐
+│                  BlockMind Python 后端                        │
+│                                                              │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │              BlockMind Fabric Mod (Java)               │  │
-│  │  ┌─────────────┐ ┌─────────────┐ ┌──────────────┐    │  │
-│  │  │  状态采集器   │ │  动作执行器  │ │  事件监听器   │    │  │
-│  │  │  方块/实体/  │ │  移动/挖掘/ │ │  聊天/伤害/  │    │  │
-│  │  │  背包/世界   │ │  放置/攻击  │ │  方块变化    │    │  │
-│  │  └──────┬──────┘ └──────┬──────┘ └──────┬───────┘    │  │
-│  │         └───────────────┼───────────────┘             │  │
-│  │                   HTTP API :25580                      │  │
-│  │                   WebSocket /ws/events                 │  │
-│  └───────────────────────────┼───────────────────────────┘  │
-└──────────────────────────────┼──────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────┐
-│                  BlockMind Python 后端                       │
-│                                                             │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────┐   │
-│  │  Mod 客户端   │ │  状态管理器   │ │  动作队列        │   │
-│  │  HTTP/WS 通信 │ │  快照对比    │ │  超时/取消/重试  │   │
-│  └──────┬───────┘ └──────┬───────┘ └──────┬───────────┘   │
-│         └────────────────┼────────────────┘                │
-│  ┌───────────────────────┼────────────────────────────┐    │
-│  │                  事件总线 (EventBus)                │    │
-│  └───┬───────────┬───────┼───────┬───────────┬────────┘    │
-│      │           │       │       │           │              │
-│  ┌───▼───┐ ┌────▼──┐ ┌──▼──┐ ┌──▼───┐ ┌────▼────┐        │
-│  │Skill  │ │ AI    │ │安全 │ │故障  │ │空闲任务 │        │
-│  │引擎   │ │决策层 │ │校验 │ │监控  │ │调度器   │        │
-│  └───────┘ └───────┘ └─────┘ └──────┘ └─────────┘        │
-│                                                             │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │              WebUI 控制面板 (FastAPI)               │    │
-│  └────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+│  │                   双 Agent 架构                        │  │
+│  │  ┌─────────────────┐  ┌────────────────────────────┐  │  │
+│  │  │ 主 Agent (聊天)  │  │ 操作 Agent (执行,无状态)    │  │  │
+│  │  │ 持久上下文       │  │ 每次全新上下文             │  │  │
+│  │  │ 意图识别         │  │ Skill匹配/生成/执行        │  │  │
+│  │  └────────┬────────┘  └─────────────┬──────────────┘  │  │
+│  └───────────┼─────────────────────────┼─────────────────┘  │
+│              │                         │                     │
+│  ┌───────────▼─────────────────────────▼─────────────────┐  │
+│  │               🧠 记忆系统 (GameMemory)                 │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │  │
+│  │  │ 空间记忆  │ │ 路径记忆  │ │ 策略记忆  │ │ 玩家记忆  │ │  │
+│  │  │ 建筑保护区│ │ 成功路径  │ │ 成功策略  │ │ 家位置   │ │  │
+│  │  │ 危险区域  │ │ 失败黑名单│ │ 失败记录  │ │ 偏好习惯 │ │  │
+│  │  │ 资源矿点  │ │ 成功率统计│ │ 上下文标签│ │ 交互记录 │ │  │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ │  │
+│  │              持久化 JSON (data/memory/)                 │  │
+│  └───────────────────────────┬───────────────────────────┘  │
+│                              │ 注入                          │
+│  ┌──────────┐ ┌──────────────▼──────┐ ┌──────────────────┐  │
+│  │ Skill引擎│ │ 智能导航            │ │ AI 决策层         │  │
+│  │ DSL解析  │ │ 记忆→缓存→Baritone  │ │ 记忆上下文注入    │  │
+│  │ 匹配执行 │ │ →A*回退→自动学习    │ │ provider.py      │  │
+│  └──────────┘ └─────────────────────┘ └──────────────────┘  │
+│  ┌──────────┐ ┌──────────────┐ ┌──────────────────────────┐ │
+│  │ 安全校验 │ │ 健康监控     │ │ WebUI (Miuix Console)   │ │
+│  │ 五级风控 │ │ 三级降级     │ │ 暗色主题/模型配置       │ │
+│  └──────────┘ └──────────────┘ └──────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### 数据流示例
 
-**正常任务执行：**
+**记忆驱动的智能导航：**
 ```
-玩家指令 "!砍树"
-    → ChatHandler 解析指令
-    → SkillMatcher 匹配 Skill
-    → SkillRuntime 执行 DSL
-    → ActionExecutor 调用 Mod API
-    → Fabric Mod 执行游戏动作
-    → StateCollector 采集结果
-    → 返回执行状态
-```
-
-**新任务处理：**
-```
-玩家指令 "!建个房子"
-    → SkillMatcher 未找到匹配
-    → AIDecider 生成 Skill DSL
-    → SkillValidator 校验
-    → 存入 SkillStorage
-    → SkillRuntime 执行
+玩家说 "回家"
+  → 主 Agent 识别任务 [TASK:回家]
+  → 操作 Agent 匹配 go_home Skill
+  → SmartNavigator 查询记忆：
+      ✅ 家位置: (65, 64, -120) 来自玩家记忆
+      ✅ 缓存路径: 走过3次, 成功率100%
+      ✅ 建筑保护区: 基地周围30格禁止破坏
+      ✅ 危险区域: (80,12,-50) 有岩浆
+  → Baritone 导航：
+      GoalBlock(65, 64, -120)
+      + exclusion_zones=[基地保护区]
+      → 自动绕路，不破坏任何建筑
+  → 到达后：路径缓存 success_count+1
+  → 下次回家：直接走缓存路径，零 Token 消耗
 ```
 
-**故障处理：**
+---
+
+## 🧠 记忆系统
+
+### 三层记忆架构
+
+| 层 | 存储内容 | 持久化 | 示例 |
+|---|---------|--------|------|
+| **空间记忆** | 建筑保护区、危险区域、资源点、基地 | ✅ JSON | "基地范围: (50-100, 60-80, -150--90)" |
+| **路径记忆** | 成功路径缓存、失败路径黑名单、成功率 | ✅ JSON | "家→矿洞: 经过(70,64,-100) 成功率100%" |
+| **策略记忆** | 成功策略沉淀、失败教训、上下文标签 | ✅ JSON | "挖矿时先放火把再挖，效率最高" |
+| **玩家记忆** | 家位置、偏好工具、交互记录 | ✅ JSON | "Steve 的家在 (100,64,200)" |
+| **世界记忆** | 出生点、安全点、重要事件 | ✅ JSON | "出生点 (0,64,0), 安全点列表" |
+
+### 自动建筑保护
+
+```python
+# 注册建筑保护区（禁止 AI 破坏）
+memory.register_building("主城", center=(100, 64, 200), radius=30)
+# → 导航时自动注入 Baritone exclusion_zones
+# → type: "no_break" + "no_place"
+# → AI 在保护区内无法破坏/放置方块
+
+# 自动检测（每60秒扫描周围）
+navigator.auto_detect_and_memorize()
+# → 检测到连续建筑方块 → 自动注册为保护区
+# → 检测到岩浆/火焰 → 自动注册为危险区
+# → 检测到矿石聚集 → 自动注册为资源点
 ```
-执行中检测到血量过低
-    → ErrorClassifier 评级 3 级
-    → CircuitBreaker 熔断
-    → EmergencyTakeover AI 接管
-    → AI 直接控制机器人回安全点
-    → AutoReparer 修复出错 Skill
+
+### 路径缓存机制
+
+```python
+# 第一次导航：AI 规划 + 执行
+result = await navigator.goto(100, 64, 200)
+# → 缓存路径: success_count=1, success_rate=100%
+
+# 第二次导航：直接走缓存
+result = await navigator.goto(100, 64, 200)
+# → 命中缓存路径，直接执行，零计算
+
+# 失败路径：自动学习
+# → fail_count >= 3 → 自动加入黑名单
+# → 下次重新规划，不走老路
+```
+
+### 策略自动沉淀
+
+```python
+# 操作 Agent 执行成功后自动记录
+memory.record_strategy(
+    task_type="mine",
+    description="先放火把再挖矿",
+    action_sequence=[...],
+    success=True,
+    context_tags=["nighttime", "cave"],
+)
+
+# 下次相同任务类型自动匹配最佳策略
+best = memory.get_best_strategy("mine", context_tags=["nighttime"])
+# → 返回成功率最高的策略
+```
+
+### AI 记忆上下文注入
+
+```python
+# 每次 AI 决策时自动注入记忆
+memory_context = memory.get_ai_context()
+# 输出：
+# [记忆系统]
+# 基地:
+#   - 家: (50, 64, -100) (半径30)
+# 建筑保护区（禁止破坏）:
+#   - 主城: (100, 64, 200) (半径20)
+# 危险区域:
+#   - 岩浆湖: (80, 12, -50) (lava)
+# 已知可靠路径: 3 条
+# 已验证策略: 5 个
+```
+
+---
+
+## 🛤️ 智能导航
+
+### 导航流程
+
+```
+SmartNavigator.goto(x, y, z)
+  │
+  ├── 1. 安全检查
+  │     └── 目标在保护区内？→ 警告但不拒绝
+  │
+  ├── 2. 查询缓存路径
+  │     └── 有可靠缓存？→ 直接执行缓存路径
+  │
+  ├── 3. 获取导航上下文
+  │     ├── 排除区域（建筑保护区）
+  │     ├── 危险区域（岩浆、悬崖）
+  │     └── 可靠路径参考
+  │
+  ├── 4. Baritone 寻路（优先）
+  │     ├── 注入 exclusion_zones
+  │     ├── 自动挖路 / 搭桥 / 游泳
+  │     └── 摔落代价 / 岩浆规避
+  │
+  ├── 5. A* 寻路（回退）
+  │     └── 基础网格 A* + 方块可通行判断
+  │
+  └── 6. 记录结果
+        ├── 成功 → cache_path(success=True)
+        └── 失败 → cache_path(success=False) + 可能黑名单
+```
+
+### Baritone 集成
+
+| 特性 | Baritone | 基础 A* |
+|------|----------|---------|
+| 寻路算法 | 改进 A* + 代价启发 | 标准 A* |
+| 挖路 | ✅ 自动挖穿障碍 | ❌ |
+| 搭桥 | ✅ scaffold 模式 | ❌ |
+| 游泳 | ✅ | ❌ |
+| 垂直移动 | ✅ 跳跃/梯子/藤蔓 | ⚠️ 仅1格 |
+| 岩浆规避 | ✅ 代价惩罚 | ❌ |
+| 摔落代价 | ✅ 计入启发函数 | ❌ |
+| 排除区域 | ✅ `exclusionAreas` | ❌ |
+| **建筑保护** | ✅ 注入 `no_break` 区域 | ❌ |
+
+### 排除区域类型
+
+| 类型 | 说明 | 来源 |
+|------|------|------|
+| `no_break` | 禁止破坏方块 | 建筑保护区、基地 |
+| `no_place` | 禁止放置方块 | 建筑保护区 |
+| `avoid` | 完全绕开 | 危险区域（岩浆等） |
+
+---
+
+## 🤖 双 Agent 架构
+
+### 为什么需要双 Agent？
+
+```
+单 Agent 问题：
+  聊天上下文 + 操作上下文 → Token 爆炸（>4000/次）
+  操作失败污染聊天 → 对话体验差
+  每次操作都要带完整聊天历史 → 浪费
+
+双 Agent 方案：
+  主 Agent：只聊天，滑动窗口 20 条，~50 Token/次
+  操作 Agent：无状态，全新上下文，<1500 Token/次
+```
+
+### 流程
+
+```
+玩家消息
+  → 主 Agent 聊天（持久上下文）
+  → 识别到 [TASK:xxx] 标签
+  → 提取任务描述
+  → 操作 Agent 执行（无状态）：
+      ├── 查询 Skill 匹配
+      ├── 注入记忆上下文
+      ├── L1/L2: 执行缓存 Skill
+      ├── L3: AI 填充模板 + 执行
+      └── L4: AI 完全推理 + 执行
+  → 主 Agent 格式化回复 → 玩家
 ```
 
 ---
@@ -161,513 +334,108 @@ Mod 方式：  Fabric Mod 直接调用游戏 API → 精准状态、可靠动作
 
 | 组件 | 要求 |
 |------|------|
-| **操作系统** | Ubuntu 22.04 LTS（推荐） |
-| **Python** | 3.9+ |
-| **Java** | 17+（编译 Mod） |
-| **Minecraft** | 1.20.x - 1.21.x |
-| **服务器** | Fabric Loader 0.92+ |
-| **内存** | ≥ 4GB（服务器 + Python） |
-| **磁盘** | ≥ 20GB |
+| Python | 3.9+ |
+| Java | 17+ |
+| Minecraft | 1.20.x - 1.21.x |
+| Fabric Loader | 0.92+ |
 
-### 安装步骤
+### 安装
 
 ```bash
-# 1. 克隆项目
+# 克隆
 git clone https://github.com/bmbxwbh/BlockMind.git
 cd BlockMind
 
-# 2. 安装 Python 依赖
-python3 -m venv venv
-source venv/bin/activate
+# Python 环境
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# 3. 编译 Fabric Mod（需要 Java 17+）
-cd mod
-./gradlew build
-# 产出：mod/build/libs/blockmind-mod-1.0.0.jar
-
-# 4. 安装 Mod 到服务器
+# 编译 Mod
+cd mod && ./gradlew build
 cp build/libs/blockmind-mod-1.0.0.jar /path/to/server/mods/
 
-# 5. 配置 Python 后端
-cd ..
-cp config.example.yaml config.yaml
-# 编辑 config.yaml
+# 配置
+cd .. && cp config/config.example.yaml config.yaml
 
-# 6. 启动
+# 启动
 python -m src.main
 ```
 
-### 最小配置
+### 配置示例
 
 ```yaml
-# config.yaml
-mod:
-  host: "localhost"
-  port: 25580
-
 game:
   server_ip: "localhost"
   server_port: 25565
   username: "BlockMind"
 
 ai:
-  provider: "openai"
-  api_key: "your-api-key"
-  model: "gpt-4o"
+  main_agent:
+    provider: "openai"
+    model: "gpt-4o"
+    temperature: 0.7
+  operation_agent:
+    provider: "openai"
+    model: "gpt-4o"
+    temperature: 0.3
 
-webui:
+memory:
   enabled: true
-  port: 8080
-  password: "your-password"
-```
+  storage_path: data/memory
+  auto_detect_zones: true
+  protect_buildings: true
 
----
-
-## 📁 项目结构
-
-```
-BlockMind/
-├── mod/                          # Fabric Mod (Java)
-│   ├── src/main/java/blockmind/
-│   │   ├── BlockMindMod.java     # Mod 入口
-│   │   ├── api/
-│   │   │   ├── HttpServer.java   # HTTP API 服务
-│   │   │   ├── WebSocketHandler.java
-│   │   │   └── Routes.java       # 路由定义
-│   │   ├── collector/
-│   │   │   ├── StateCollector.java    # 状态采集
-│   │   │   ├── EntityCollector.java   # 实体采集
-│   │   │   └── BlockCollector.java    # 方块采集
-│   │   ├── executor/
-│   │   │   ├── ActionExecutor.java    # 动作执行
-│   │   │   ├── MoveExecutor.java      # 移动
-│   │   │   └── DigExecutor.java       # 挖掘
-│   │   └── event/
-│   │       ├── EventListener.java     # 事件监听
-│   │       └── ChatListener.java      # 聊天监听
-│   ├── src/main/resources/
-│   │   └── fabric.mod.json
-│   ├── build.gradle
-│   └── README.md
-│
-├── src/                          # Python 后端
-│   ├── main.py                   # 主入口
-│   ├── core/
-│   │   ├── engine.py             # 核心引擎
-│   │   ├── event_bus.py          # 事件总线
-│   │   └── scheduler.py          # 任务调度
-│   ├── mod_client/               # Mod 通信客户端
-│   │   ├── client.py             # HTTP 客户端
-│   │   ├── ws_client.py          # WebSocket 客户端
-│   │   └── models.py             # 数据模型
-│   ├── game/
-│   │   ├── perception.py         # 状态感知
-│   │   ├── inventory.py          # 背包管理
-│   │   ├── actions.py            # 动作执行
-│   │   ├── action_queue.py       # 动作队列
-│   │   ├── chat.py               # 聊天交互
-│   │   └── pathfinding.py        # 寻路算法
-│   ├── skills/
-│   │   ├── dsl_parser.py         # DSL 解析器
-│   │   ├── runtime.py            # Skill 运行时
-│   │   ├── storage.py            # Skill 存储
-│   │   ├── matcher.py            # 意图匹配
-│   │   └── validator.py          # DSL 校验
-│   ├── ai/
-│   │   ├── provider.py           # AI 提供商
-│   │   ├── generator.py          # DSL 生成
-│   │   ├── takeover.py           # 紧急接管
-│   │   └── auto_repair.py        # 自动修复
-│   ├── safety/
-│   │   ├── gateway.py            # 安全入口
-│   │   ├── risk_assessor.py      # 风险评估
-│   │   ├── authorizer.py         # 授权管理
-│   │   └── audit.py              # 审计日志
-│   ├── monitoring/
-│   │   ├── health.py             # 健康检查
-│   │   ├── fallback.py           # 降级策略
-│   │   ├── circuit_breaker.py    # 熔断器
-│   │   └── auto_repair.py        # 自动修复
-│   ├── webui/
-│   │   ├── app.py                # FastAPI 应用
-│   │   ├── routes.py             # API 路由
-│   │   ├── auth.py               # 认证
-│   │   ├── websocket.py          # WebSocket
-│   │   └── templates/            # 前端页面
-│   ├── config/
-│   │   └── loader.py             # 配置加载
-│   └── utils/
-│       └── logger.py             # 日志工具
-│
-├── skills/                       # Skill 文件
-│   ├── builtin/                  # 内置 Skill
-│   └── custom/                   # AI 生成的 Skill
-│
-├── config/
-│   └── config.example.yaml
-├── tests/                        # 测试
-├── docs/                         # 文档
-├── scripts/                      # 脚本
-├── requirements.txt
-├── Dockerfile
-└── README.md
+navigation:
+  prefer_baritone: true
+  fallback_to_basic: true
+  allow_break_default: false
 ```
 
 ---
 
 ## 🔌 Fabric Mod API
 
-Mod 启动后在端口 `25580` 暴露 HTTP API。
-
 ### 状态查询
 
-```
-GET /api/status
-```
-```json
-{
-  "connected": true,
-  "health": 18.5,
-  "hunger": 15,
-  "position": {"x": 128.5, "y": 64.0, "z": -256.3},
-  "rotation": {"yaw": 45.2, "pitch": -12.5},
-  "experience": 127,
-  "level": 5,
-  "dimension": "overworld",
-  "time_of_day": 6000,
-  "weather": "clear"
-}
-```
-
-```
-GET /api/world
-```
-```json
-{
-  "dimension": "overworld",
-  "time_of_day": 6000,
-  "weather": "clear",
-  "difficulty": "normal",
-  "day_count": 156
-}
-```
-
-```
-GET /api/inventory
-```
-```json
-{
-  "items": [
-    {"name": "diamond_sword", "slot": 0, "count": 1, "durability": 1561, "max_durability": 1561},
-    {"name": "bread", "slot": 1, "count": 32, "durability": 0, "max_durability": 0}
-  ],
-  "empty_slots": 34,
-  "is_full": false
-}
-```
-
-```
-GET /api/entities?radius=32
-```
-```json
-{
-  "entities": [
-    {"id": 123, "type": "zombie", "position": {"x": 130, "y": 64, "z": -258}, "health": 20.0, "hostile": true},
-    {"id": 456, "type": "cow", "position": {"x": 125, "y": 64, "z": -250}, "health": 10.0, "hostile": false}
-  ]
-}
-```
-
-```
-GET /api/blocks?radius=16&type=stone
-```
-```json
-{
-  "blocks": [
-    {"position": {"x": 128, "y": 60, "z": -256}, "type": "stone"},
-    {"position": {"x": 129, "y": 60, "z": -256}, "type": "stone"}
-  ]
-}
-```
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/health` | GET | 健康检查 |
+| `/api/status` | GET | 玩家状态 |
+| `/api/world` | GET | 世界状态 |
+| `/api/inventory` | GET | 背包信息 |
+| `/api/entities?radius=32` | GET | 附近实体 |
+| `/api/blocks?radius=16` | GET | 附近方块 |
 
 ### 动作执行
 
-```
-POST /api/move
-Body: {"x": 128, "y": 64, "z": -256, "sprint": false}
-```
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/move` | POST | 移动到坐标 |
+| `/api/dig` | POST | 挖掘方块 |
+| `/api/place` | POST | 放置方块 |
+| `/api/attack` | POST | 攻击实体 |
+| `/api/eat` | POST | 进食 |
+| `/api/look` | POST | 看向坐标 |
+| `/api/chat` | POST | 发送聊天 |
+
+### 智能导航（v3.0 新增）
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/navigate/goto` | POST | 智能导航（带排除区域） |
+| `/api/navigate/stop` | POST | 停止导航 |
+| `/api/navigate/status` | GET | 寻路引擎状态 |
+
 ```json
-{"success": true, "details": "移动完成"}
-```
-
-```
-POST /api/dig
-Body: {"x": 128, "y": 63, "z": -256}
-```
-```json
-{"success": true, "details": "挖掘完成，获得 stone x1"}
-```
-
-```
-POST /api/place
-Body: {"item": "torch", "x": 128, "y": 64, "z": -256}
-```
-```json
-{"success": true, "details": "放置 torch 完成"}
-```
-
-```
-POST /api/attack
-Body: {"entity_id": 123}
-```
-```json
-{"success": true, "details": "攻击 zombie，造成 7.0 伤害"}
-```
-
-```
-POST /api/eat
-Body: {"item": "bread"}
-```
-```json
-{"success": true, "details": "进食 bread，恢复 5 饥饿值"}
-```
-
-```
-POST /api/look
-Body: {"x": 130, "y": 65, "z": -258}
-```
-```json
-{"success": true, "details": "看向目标位置"}
-```
-
-```
-POST /api/chat
-Body: {"message": "Hello!"}
-```
-```json
-{"success": true, "details": "消息已发送"}
-```
-
-### WebSocket 实时事件
-
-```
-ws://localhost:25580/ws/events
-```
-
-事件格式：
-```json
-{"type": "chat", "data": {"player": "Steve", "message": "hi"}}
-{"type": "damage", "data": {"source": "zombie", "amount": 3.0, "health": 15.0}}
-{"type": "block_change", "data": {"position": {"x": 1, "y": 2, "z": 3}, "old": "air", "new": "stone"}}
-{"type": "entity_spawn", "data": {"id": 789, "type": "skeleton", "position": {"x": 10, "y": 64, "z": 20}}}
-{"type": "death", "data": {"reason": "fall"}}
-```
-
----
-
-## 🔧 核心模块
-
-### Mod 通信客户端
-
-```python
-# src/mod_client/client.py
-class ModClient:
-    """Fabric Mod HTTP 客户端"""
-
-    def __init__(self, host: str = "localhost", port: int = 25580):
-        self.base_url = f"http://{host}:{port}"
-
-    async def get_status(self) -> dict
-    async def get_world(self) -> dict
-    async def get_inventory(self) -> dict
-    async def get_entities(self, radius: int = 32) -> dict
-    async def get_blocks(self, radius: int = 32, block_type: str = None) -> dict
-    async def move(self, x, y, z, sprint=False) -> dict
-    async def dig(self, x, y, z) -> dict
-    async def place(self, item, x, y, z) -> dict
-    async def attack(self, entity_id) -> dict
-    async def eat(self, item) -> dict
-    async def look(self, x, y, z) -> dict
-    async def chat(self, message) -> dict
-```
-
-### 状态采集器
-
-```python
-# src/game/perception.py
-class StateCollector:
-    """从 Mod API 采集游戏状态"""
-
-    def __init__(self, mod_client: ModClient):
-        self.mod_client = mod_client
-        self._current: Optional[GameStateSnapshot] = None
-        self._last: Optional[GameStateSnapshot] = None
-
-    async def collect(self) -> GameStateSnapshot
-    def has_hostile_nearby(self, radius: float = 16.0) -> bool
-    def get_nearest_entity(self, entity_type: str = None) -> Optional[EntityInfo]
-    def get_blocks_by_type(self, block_type: str, radius: int = 32) -> List[BlockInfo]
-```
-
-### 动作执行器
-
-```python
-# src/game/actions.py
-class ActionExecutor:
-    """通过 Mod API 执行游戏动作"""
-
-    def __init__(self, mod_client: ModClient, safety_gateway=None):
-        self.mod_client = mod_client
-        self.safety_gateway = safety_gateway
-
-    async def walk_to(self, x, y, z, sprint=False) -> ActionResult
-    async def dig_block(self, x, y, z) -> ActionResult
-    async def place_block(self, item, x, y, z) -> ActionResult
-    async def attack(self, entity_id) -> ActionResult
-    async def eat(self, item) -> ActionResult
-    async def look_at(self, x, y, z) -> ActionResult
-    async def jump(self) -> ActionResult
-```
-
-### 背包管理器
-
-```python
-# src/game/inventory.py
-class InventoryManager:
-    """背包管理（数据来自 Mod API）"""
-
-    def __init__(self, mod_client: ModClient):
-        self.mod_client = mod_client
-
-    async def refresh(self) -> None
-    def count(self, item_name: str) -> int
-    def has_item(self, item_name: str, min_count: int = 1) -> bool
-    def is_full(self) -> bool
-    def get_empty_slots(self) -> int
-```
-
-### 事件总线
-
-```python
-# src/core/event_bus.py
-class EventBus:
-    """发布/订阅事件总线"""
-
-    def subscribe(self, event_type: str, handler: Callable) -> None
-    def unsubscribe(self, event_type: str, handler: Callable) -> None
-    async def emit(self, event: Event) -> None
-    def get_history(self, event_type: str = None, limit: int = 50) -> List[Event]
-```
-
----
-
-## 🧠 任务分类系统
-
-> 不是所有任务都适合固化为 Skill。BlockMind 通过三维判断自动分类任务。
-
-### 核心问题
-
-```
-一个任务传进来，凭什么判断它是"可重复"还是"动态"？
-```
-
-### 三维判断标准
-
-| 维度 | 固定任务 | 动态任务 |
-|------|----------|----------|
-| **步骤** | 每次相同，可写死 | 每次不同，无法预测 |
-| **输入** | ≤3 个参数（目标、位置） | 需要描述性语言 |
-| **结果** | 可量化验证（物品数量） | 主观判断（美观、创意） |
-
-### 四级分类
-
-| 级别 | 名称 | 缓存策略 | 例子 |
-|------|------|----------|------|
-| **L1** | 完全固定 | 完整 Skill | 进食、存放物品 |
-| **L2** | 参数化 | Skill + 变量 | 砍树（哪棵树）、挖矿（挖什么） |
-| **L3** | 模板化 | 模板 + AI 填充 | 建墙（尺寸不同）、铺路（路线不同） |
-| **L4** | 完全动态 | AI 每次推理 | 建房子、探索洞穴、打Boss |
-
-### 分类流程
-
-```
-玩家指令
-    │
-    ▼
-┌──────────────────┐
-│ 1. 查固定任务库   │  精确匹配
-│    "砍树" → L2   │
-└────────┬─────────┘
-         │ 未命中
-         ▼
-┌──────────────────┐
-│ 2. 关键词分析     │
-│ "建/设计" → L4   │
-│ "砍/挖/种" → L2  │
-└────────┬─────────┘
-         │ 未命中
-         ▼
-┌──────────────────┐
-│ 3. AI 判断       │  兜底
-│ 步骤可预测？      │
-│ 输入简单？        │
-│ 结果可验证？      │
-└────────┬─────────┘
-         │
-         ▼
-    分类结果 → 路由到对应处理器
-```
-
-### 分类示例
-
-```python
-# ✅ L1 完全固定 — 步骤永远一样
-"吃东西" → eat_food Skill
-"整理箱子" → organize_chest Skill
-
-# ✅ L2 参数化 — 流程固定，目标不同
-"砍一棵橡树" → chop_tree Skill(target="oak_tree")
-"挖铁矿" → mine_ore Skill(target="iron_ore")
-
-# ⚠️ L3 模板化 — 结构类似，细节不同
-"建一面墙" → build_wall 模板 + AI 填充(长、宽、材料、位置)
-"铺一条路" → build_path 模板 + AI 填充(起点、终点、材料)
-
-# ❌ L4 完全动态 — 每次都不同
-"建个房子" → AI 完全推理（地形、材料、风格每次不同）
-"探索这个洞穴" → AI 完全推理（洞穴结构每次不同）
-```
-
-### 任务路由
-
-```python
-class TaskRouter:
-    """任务路由器 — 根据分类结果分发到对应处理器"""
-
-    async def route(self, task: str):
-        classification = self.classifier.classify(task)
-
-        if classification == "L1_fixed":
-            # 直接执行缓存的 Skill
-            skill = self.skill_storage.get(task)
-            return await self.skill_runtime.execute(skill)
-
-        elif classification == "L2_parameter":
-            # AI 填充参数，然后执行 Skill
-            params = await self.ai.fill_params(task)
-            skill = self.skill_storage.get(task.type)
-            return await self.skill_runtime.execute(skill, params)
-
-        elif classification == "L3_template":
-            # AI 填充模板细节，然后执行
-            filled = await self.ai.fill_template(task)
-            return await self.skill_runtime.execute(filled)
-
-        else:  # L4_dynamic
-            # AI 完全推理，不缓存
-            actions = await self.ai.reason(task)
-            return await self.action_executor.execute_sequence(actions)
+// POST /api/navigate/goto
+{
+  "x": 100, "y": 64, "z": 200,
+  "exclusion_zones": [
+    {"center": [100, 64, 200], "radius": 30, "type": "no_break", "name": "基地"}
+  ],
+  "allow_break": false,
+  "allow_place": false
+}
 ```
 
 ---
@@ -681,236 +449,136 @@ skill_id: string      # 唯一标识
 name: string          # 显示名称
 tags: list[string]    # 检索标签
 priority: int         # 1=最高, 5=最低
+task_level: L1|L2|L3|L4  # 任务分级
 when:                 # 触发条件
-  all: [expression]   # 所有条件满足
-  any: [expression]   # 任意条件满足
+  all: [expression]
 do: [statement]       # 执行逻辑
 until:                # 结束条件
   any: [expression]
 ```
 
-### 内置函数
-
-| 类别 | 函数 | 说明 |
-|------|------|------|
-| 状态 | `self.health()` | 生命值 |
-| | `self.hunger()` | 饥饿值 |
-| | `self.position()` | 当前坐标 |
-| | `inventory.count(item)` | 物品数量 |
-| | `world.time()` | 游戏时间 |
-| | `world.any_entity(type, radius)` | 是否有实体 |
-| 动作 | `walk_to(pos)` | 走到位置 |
-| | `dig_block(pos)` | 挖掘方块 |
-| | `place_block(item, pos)` | 放置方块 |
-| | `attack(entity)` | 攻击实体 |
-| | `eat(item)` | 进食 |
-| 控制 | `if/then/else` | 条件 |
-| | `loop/while` | 循环 |
-| | `break_loop()` | 跳出 |
-| | `wait(seconds)` | 等待 |
-
-### 示例：砍树
+### 智能导航动作（v3.0 新增）
 
 ```yaml
-skill_id: skill_chop_tree_001
-name: 砍树
-tags: ["砍树", "收集木材"]
-priority: 4
-
-when:
-  all:
-    - "inventory.has('wooden_axe') or inventory.has('stone_axe')"
-    - "world.any_entity(type='oak_tree', radius=32)"
-
+# 所有导航类 Skill 使用 smart_navigate 替代 walk_to
 do:
-  - scan_entities:
-      radius: 32
-      filter: "type == 'oak_tree'"
-      sort_by: distance
-  - walk_to: "scanned_entities[0].position"
-  - loop:
-      while: "world.entity_exists(scanned_entities[0].id)"
-      do:
-        - dig_block: "scanned_entities[0].position"
-        - wait: 1
-
-until:
-  any:
-    - "inventory.count('oak_log') >= 64"
-    - "task_interrupted()"
+  - action: smart_navigate
+    args:
+      target: "home"           # 从记忆获取目标位置
+      allow_break: false       # 不破坏建筑
+      allow_place: false       # 不放置方块
+      use_cache: true          # 优先走缓存路径
 ```
+
+### 内置 Skill
+
+| 分类 | Skill | 说明 |
+|------|-------|------|
+| 🏠 导航 | `go_home` | 回家（记忆驱动） |
+| 🛡️ 生存 | `sleep` | 睡觉（记忆床位置） |
+| | `eat_food` | 进食 |
+| 🪓 采集 | `chop_tree` | 砍树（避开保护区） |
+| | `mine_ore` | 挖矿（避开危险区） |
+| | `fish` | 钓鱼（记忆水域） |
+| | `collect` | 采集 |
+| 🌾 农业 | `plant_wheat` | 种田（记忆农场） |
+| 📦 存储 | `deposit_items` | 存放物品 |
+| | `organize_chest` | 整理箱子 |
+| ⚔️ 战斗 | `kill_mob` | 杀怪（动态导航） |
 
 ---
 
 ## 🛡️ 安全体系
-
-### 操作风险等级
-
-| 等级 | 操作 | 策略 |
-|------|------|------|
-| 0 | 移动、跳跃、聊天 | 自动执行 |
-| 1 | 挖泥土、放火把 | 自动执行 |
-| 2 | 挖矿石、攻击中立生物 | 自动执行 |
-| 3 | 点燃TNT、放岩浆、开箱子 | 需玩家授权 |
-| 4 | 放命令方块、自杀 | 默认禁止 |
 
 ### 玩家远程指令
 
 | 指令 | 功能 |
 |------|------|
 | `!stop` | 终止所有任务 |
-| `!come` | 传送到玩家身边 |
-| `!safe` | 回安全点 |
-| `!status` | 查看状态 |
-| `!approve` | 同意高风险操作 |
-| `!deny` | 拒绝高风险操作 |
-| `!disable_ai` | 禁用 AI 接管 |
-| `!enable_ai` | 启用 AI 接管 |
-
----
-
-## 🔥 故障容错
-
-### 三级降级
-
-```
-1级（临时偶发）→ 自动重试 3 次
-2级（无法恢复）→ 终止任务，返回安全点
-3级（危及安全）→ 紧急熔断 + AI 实时接管
-```
-
-### AI 紧急接管
-
-```
-【紧急接管模式】
-首要任务：保证机器人安全
-规则：只输出动作指令，优先处理：溺水>被攻击>掉落
-安全后输出 "SAFE"
-```
-
----
-
-## 🤖 空闲自主任务系统
-
-### 触发条件
-
-```
-✅ 无玩家指令
-✅ 无危险（无敌对生物，血量 > 50%）
-✅ 无待执行任务
-→ 进入空闲模式
-```
-
-### 任务池
-
-| 任务 | 描述 | 优先级 |
-|------|------|--------|
-| 🌾 自动种田 | 播种→收割→补种 | 5 |
-| ⛏️ 自主挖矿 | 挖掘铁矿/煤矿 | 5 |
-| 🌲 自主砍树 | 收集木材 | 5 |
-| 📦 整理箱子 | 分类存放 | 5 |
-| 🏠 修补房屋 | 修复建筑 | 4 |
-| 🔦 点亮区域 | 放火把防怪 | 4 |
-| 🚶 巡逻区域 | 巡视基地 | 5 |
+| `!status` | 查看状态（含记忆统计） |
+| `!memory` | 查看记忆系统详情 |
+| `!safe` | 前往最近安全点 |
+| `!help` | 帮助信息 |
 
 ---
 
 ## 🖥️ WebUI 控制面板
 
+基于 [Miuix Console](https://github.com/bmbxwbh/miuix-console) 设计系统：
+
+| 特性 | 说明 |
+|------|------|
+| 🎨 MiSans 字体 | 小米官方字体 |
+| 🌙 深色/浅色 | 主题切换 |
+| 📱 响应式 | 桌面侧边栏 + 手机底部导航 |
+| 📊 数据表格 | mx-table 手机端卡片式 |
+| 💬 轻提示 | MxToast 涟漪效果 |
+
 | 页面 | 功能 |
 |------|------|
-| 📊 仪表盘 | 状态卡片、任务进度、快捷操作 |
-| 🛠️ Skill管理 | 浏览/编辑/测试 Skill |
+| 📊 仪表盘 | 状态卡片、任务进度 |
+| 🛠️ Skill 管理 | 浏览/编辑/测试 |
+| ⚙️ 模型配置 | 双 Agent 独立配置 |
 | 🛡️ 安全设置 | 风险等级、授权策略 |
 | 📋 日志中心 | 日志查询、统计 |
-| ⚙️ 系统设置 | 服务器/AI/WebUI 配置 |
-| 🔌 连接状态 | Mod/AI/WebUI 状态 |
 
 ---
 
-## ⚙️ 配置参考
+## 🚀 部署
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `mod.host` | string | localhost | Mod HTTP 地址 |
-| `mod.port` | int | 25580 | Mod HTTP 端口 |
-| `game.server_ip` | string | - | MC 服务器地址 |
-| `game.server_port` | int | 25565 | MC 服务器端口 |
-| `ai.provider` | string | openai | AI 提供商 |
-| `ai.model` | string | gpt-4o | AI 模型 |
-| `webui.port` | int | 8080 | WebUI 端口 |
-| `safety.auth_timeout` | int | 30 | 授权等待超时 |
-| `idle_tasks.enabled` | bool | true | 空闲任务开关 |
-
----
-
-## 🚀 部署指南
-
-### Systemd 部署
+### Systemd
 
 ```bash
-# 安装 Mod
-cp mod/build/libs/blockmind-mod-1.0.0.jar /opt/mc-server/mods/
-
-# 部署 Python 后端
 sudo bash scripts/deploy.sh
-
-# 服务管理
 sudo systemctl start blockmind
-sudo systemctl status blockmind
-journalctl -u blockmind -f
 ```
 
-### Docker 部署
+### Docker
 
 ```bash
 docker-compose up -d
 ```
 
----
+### CI/CD
 
-## 👨‍💻 开发指南
-
-```bash
-# 本地开发
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
-
-# 测试
-pytest tests/ -v
-
-# Mod 开发
-cd mod && ./gradlew build
-```
+GitHub Actions 自动化：
+- `build-mod` → Gradle 构建 JAR
+- `test-python` → pytest 59 个测试
+- `build-docker` → 推送 GHCR
+- `release` → tag 触发自动发布
 
 ---
 
 ## ❓ FAQ
 
-**Q: 必须用 Fabric 吗？**
-A: 是的。pyCraft 不支持 1.20+，Fabric Mod 是最可靠的方案。
+**Q: 必须装 Baritone 吗？**
+A: 不必须。Baritone 是 `compileOnly` 可选依赖。没有时自动回退到基础 A* 直线移动。
 
-**Q: 支持离线服务器吗？**
-A: 支持。Mod 不验证正版，Python 端配置 `auth_mode: offline`。
+**Q: 记忆数据存在哪？**
+A: `data/memory/` 目录下，5 个 JSON 文件（zones/paths/strategies/players/world），跨会话保留。
 
-**Q: Mod 会影响服务器性能吗？**
-A: 几乎不影响。Mod 只暴露 API，不做额外计算。
+**Q: 建筑保护怎么生效？**
+A: 两种方式：① 手动 `register_building()` 注册 ② 自动检测（每60秒扫描周围建筑方块）。注册后自动注入 Baritone 排除区域。
+
+**Q: 支持哪些 AI 提供商？**
+A: OpenAI 格式（含 DeepSeek/OpenRouter/MiMo/本地模型）+ Anthropic 格式。双 Agent 可独立配置不同模型。
 
 ---
 
 ## 🗺️ 路线图
 
-### v2.0（当前）
-- [x] Fabric Mod + HTTP API
-- [x] Skill DSL 系统
-- [x] AI 决策 + 自动修复
-- [x] 安全校验
-- [x] WebUI 控制面板
+### v3.0（当前）✅
+- [x] 三层记忆系统（空间/路径/策略）
+- [x] 智能导航（记忆驱动 + Baritone 集成）
+- [x] 双 Agent 架构（聊天/操作隔离）
+- [x] 建筑保护区自动保护
+- [x] Miuix Console WebUI
 
-### v2.1
-- [ ] Mod 可视化配置
-- [ ] Skill 市场
+### v3.1（计划中）
+- [ ] 记忆系统的 WebUI 可视化管理
+- [ ] 路径记忆的热力图展示
+- [ ] 多玩家记忆隔离
+- [ ] MCP Server 接口
 - [ ] 多机器人协同
 
 ---
