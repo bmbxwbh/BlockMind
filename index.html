@@ -35,9 +35,12 @@ nav .container{display:flex;align-items:center;justify-content:space-between}
 .nav-links{display:flex;gap:32px;font-size:14px;color:var(--text3)}
 .nav-links a{color:var(--text3);transition:color .2s}
 .nav-links a:hover{color:var(--text)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-stars{display:flex;align-items:center;gap:6px;color:var(--text3);font-size:13px;font-family:var(--mono)}
+.nav-stars svg{color:var(--accent)}
 .nav-github{display:flex;align-items:center;gap:6px;color:var(--text3);font-size:14px;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .2s}
 .nav-github:hover{border-color:var(--border2);color:var(--text)}
-@media(max-width:640px){.nav-links{display:none}}
+@media(max-width:640px){.nav-links{display:none}.nav-stars{display:none}}
 
 /* ── Hero ── */
 .hero{padding:200px 0 120px;text-align:center;position:relative;overflow:hidden}
@@ -48,6 +51,9 @@ nav .container{display:flex;align-items:center;justify-content:space-between}
 .hero h1{font-size:clamp(40px,8vw,64px);font-weight:700;letter-spacing:-.022em;line-height:1.1;margin-bottom:24px;background:linear-gradient(180deg,var(--text) 0%,var(--text3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero p{font-size:clamp(16px,2.5vw,18px);color:var(--text2);max-width:560px;margin:0 auto 48px;line-height:1.7}
 .hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-providers{display:flex;gap:24px;justify-content:center;align-items:center;margin-top:32px;font-size:13px;color:var(--text4);font-family:var(--mono)}
+.hero-providers span{display:flex;align-items:center;gap:6px}
+.hero-providers .dot-sep{width:3px;height:3px;border-radius:50%;background:var(--text4);display:inline-block}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-family:var(--sans)}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
@@ -58,7 +64,7 @@ nav .container{display:flex;align-items:center;justify-content:space-between}
 .hero-code .copy-hint{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text4);opacity:0;transition:opacity .2s}
 .hero-code:hover .copy-hint{opacity:1}
 .hero-code code{color:var(--accent2)}
-@media(max-width:768px){.hero{padding:160px 0 80px}}
+@media(max-width:768px){.hero{padding:160px 0 80px}.hero-providers{flex-wrap:wrap;gap:12px}}
 
 /* ── Features ── */
 .features{border-top:1px solid var(--border)}
@@ -72,6 +78,22 @@ nav .container{display:flex;align-items:center;justify-content:space-between}
 .feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:-.01em}
 .feature-card p{font-size:14px;color:var(--text3);line-height:1.6}
 @media(max-width:768px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:28px 24px}}
+
+/* ── Token Compare ── */
+.token-compare{border-top:1px solid var(--border)}
+.token-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:64px}
+.token-card{padding:32px;background:var(--bg2);border:1px solid var(--border);border-radius:12px}
+.token-card.highlight{border-color:rgba(94,106,210,0.3);position:relative}
+.token-card.highlight::after{content:'推荐';position:absolute;top:16px;right:16px;font-size:11px;font-family:var(--mono);color:var(--accent);background:rgba(94,106,210,0.1);padding:2px 8px;border-radius:4px}
+.token-card h4{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.token-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px}
+.token-row:last-child{border-bottom:none}
+.token-row .label{color:var(--text3)}
+.token-row .value{font-family:var(--mono);color:var(--text)}
+.token-row .value.green{color:#4ade80}
+.token-total{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-weight:600;font-size:15px}
+.token-total .value{font-family:var(--mono);color:var(--accent2);font-size:20px}
+@media(max-width:768px){.token-grid{grid-template-columns:1fr}}
 
 /* ── Architecture ── */
 .arch{border-top:1px solid var(--border)}
@@ -89,12 +111,21 @@ nav .container{display:flex;align-items:center;justify-content:space-between}
 
 /* ── Stats ── */
 .stats{border-top:1px solid var(--border)}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;margin-top:64px}
-.stat-item{background:var(--bg2);padding:48px 32px;text-align:center}
-.stat-value{font-size:clamp(32px,5vw,48px);font-weight:800;letter-spacing:-.03em;font-family:var(--mono)}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;margin-top:64px}
+.stat-item{background:var(--bg2);padding:40px 20px;text-align:center}
+.stat-value{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.03em;font-family:var(--mono)}
 .stat-value .accent{color:var(--accent2)}
-.stat-label{font-size:14px;color:var(--text4);margin-top:8px}
-@media(max-width:768px){.stat-grid{grid-template-columns:1fr 1fr}.stat-item{padding:32px 20px}}
+.stat-label{font-size:13px;color:var(--text4);margin-top:8px}
+@media(max-width:768px){.stat-grid{grid-template-columns:1fr 1fr}.stat-item{padding:32px 20px}.stat-grid .stat-item:last-child{grid-column:span 2}}
+
+/* ── Tech Stack ── */
+.techstack{border-top:1px solid var(--border)}
+.tech-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;margin-top:64px}
+.tech-item{background:var(--bg2);padding:28px 24px;text-align:center}
+.tech-item .tech-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.tech-item .tech-ver{font-size:12px;font-family:var(--mono);color:var(--accent)}
+.tech-item .tech-desc{font-size:12px;color:var(--text4);margin-top:8px}
+@media(max-width:768px){.tech-grid{grid-template-columns:1fr 1fr}}
 
 /* ── Quick Start ── */
 .quickstart{border-top:1px solid var(--border)}
@@ -131,12 +162,19 @@ footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
   <div class="nav-links">
     <a href="#features">特性</a>
     <a href="#arch">架构</a>
+    <a href="#techstack">技术栈</a>
     <a href="#quickstart">快速开始</a>
   </div>
-  <a class="nav-github" href="https://github.com/bmbxwbh/BlockMind" target="_blank">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-    GitHub
-  </a>
+  <div class="nav-right">
+    <div class="nav-stars" id="gh-stars">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
+      <span id="star-count">—</span>
+    </div>
+    <a class="nav-github" href="https://github.com/bmbxwbh/BlockMind" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
 </div>
 </nav>
 
@@ -150,6 +188,15 @@ footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
     <div class="hero-actions">
       <a class="btn btn-primary" href="https://github.com/bmbxwbh/BlockMind/releases/latest" target="_blank">开始使用</a>
       <a class="btn btn-ghost" href="https://github.com/bmbxwbh/BlockMind" target="_blank">查看文档</a>
+    </div>
+    <div class="hero-providers fade-in fade-in-delay-1">
+      <span>OpenAI</span>
+      <span class="dot-sep"></span>
+      <span>Anthropic</span>
+      <span class="dot-sep"></span>
+      <span>本地模型</span>
+      <span class="dot-sep"></span>
+      <span>Ollama / vLLM / llama.cpp</span>
     </div>
   </div>
   <div class="hero-code fade-in fade-in-delay-2" onclick="copyInstall(this)">
@@ -171,32 +218,63 @@ footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
     <div class="feature-card fade-in">
       <span class="feature-icon">🧠</span>
       <h3>三层记忆系统</h3>
-      <p>空间记忆记住建筑保护区，路径记忆缓存成功路线，策略记忆沉淀可复用操作。跨会话持久化，越用越聪明。</p>
+      <p>空间记忆记住建筑保护区与危险区域，路径记忆缓存成功路线与黑名单路径，策略记忆沉淀可复用操作模式。JSON 持久化，跨会话累积，越用越聪明。</p>
     </div>
     <div class="feature-card fade-in fade-in-delay-1">
       <span class="feature-icon">🤖</span>
       <h3>双 Agent 架构</h3>
-      <p>主 Agent 维护对话上下文（~50 Token/次），操作 Agent 无状态执行（&lt;1500 Token/次）。聊天与执行完全隔离。</p>
+      <p>主 Agent 维护对话上下文（~50 Token/次），操作 Agent 无状态执行（&lt;1500 Token/次）。聊天与执行完全隔离，单次操作成本降低 97%。</p>
     </div>
     <div class="feature-card fade-in fade-in-delay-2">
       <span class="feature-icon">🛤️</span>
       <h3>智能导航</h3>
-      <p>记忆驱动寻路：缓存优先 → Baritone 高级寻路 → A* 回退。自动注入建筑保护区，再也不怕炸家。</p>
+      <p>记忆驱动寻路：缓存优先 → Baritone 高级寻路 → A* 回退。自动注入建筑保护区，绕开危险地形，再也不怕炸家。</p>
     </div>
     <div class="feature-card fade-in">
       <span class="feature-icon">📝</span>
       <h3>Skill DSL</h3>
-      <p>YAML 声明式技能定义，L1-L4 四级缓存。常见任务直接走缓存，零 Token 消耗。支持循环、条件、嵌套。</p>
+      <p>YAML 声明式技能定义，L1-L4 四级缓存分类。固定任务零 Token、参数化任务极低消耗。支持循环、条件、嵌套，常见操作直接走缓存。</p>
     </div>
     <div class="feature-card fade-in fade-in-delay-1">
       <span class="feature-icon">🛡️</span>
       <h3>五级安全体系</h3>
-      <p>风险评估 → 操作授权 → 紧急接管 → 审计日志 → 安全区限制。高风险操作需玩家确认，致命操作默认禁止。</p>
+      <p>风险评估 → 操作授权 → 紧急接管 → 审计日志 → 安全区限制。高风险操作需玩家确认，TNT/岩浆等致命操作默认禁止。</p>
     </div>
     <div class="feature-card fade-in fade-in-delay-2">
-      <span class="feature-icon">🛒</span>
-      <h3>Skill 市场</h3>
-      <p>浏览、导入、分享社区技能。支持 YAML 粘贴、URL 导入、批量打包。PR 方式提交到社区仓库。</p>
+      <span class="feature-icon">👤</span>
+      <h3>FakePlayer Bot</h3>
+      <p>独立 Bot 实体，7×24 在线不掉线。无需玩家在线即可执行任务：挖矿、建造、巡逻、自动采集。支持 13 个 API 端点远程控制。</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Token Comparison -->
+<section class="token-compare">
+<div class="container">
+  <div class="fade-in">
+    <div class="section-label">Token Efficiency</div>
+    <div class="section-title">双 Agent 架构省在哪</div>
+    <div class="section-desc">传统单 Agent 每次操作都带完整上下文，BlockMind 将聊天与执行分离，大幅降低 Token 消耗</div>
+  </div>
+  <div class="token-grid">
+    <div class="token-card fade-in">
+      <h4>❌ 传统单 Agent</h4>
+      <div class="token-row"><span class="label">系统提示词</span><span class="value">~800</span></div>
+      <div class="token-row"><span class="label">对话历史（10轮）</span><span class="value">~3,000</span></div>
+      <div class="token-row"><span class="label">游戏状态注入</span><span class="value">~500</span></div>
+      <div class="token-row"><span class="label">记忆上下文</span><span class="value">~400</span></div>
+      <div class="token-row"><span class="label">Skill 描述</span><span class="value">~300</span></div>
+      <div class="token-total"><span>单次操作总消耗</span><span class="value">~5,000</span></div>
+    </div>
+    <div class="token-card highlight fade-in fade-in-delay-1">
+      <h4>✅ BlockMind 双 Agent</h4>
+      <div class="token-row"><span class="label">系统提示词（精简）</span><span class="value green">~200</span></div>
+      <div class="token-row"><span class="label">对话历史</span><span class="value green">0（无状态）</span></div>
+      <div class="token-row"><span class="label">游戏状态（仅相关）</span><span class="value green">~300</span></div>
+      <div class="token-row"><span class="label">记忆上下文（压缩）</span><span class="value green">~200</span></div>
+      <div class="token-row"><span class="label">Skill 匹配结果</span><span class="value green">~100</span></div>
+      <div class="token-total"><span>单次操作总消耗</span><span class="value">~800</span></div>
     </div>
   </div>
 </div>
@@ -235,21 +313,21 @@ footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
     <div class="arch-layer fade-in">
       <h4>🔌 Fabric Mod (Java)</h4>
       <ul>
-        <li>13 个 HTTP API 端点 + WebSocket 事件推送</li>
+        <li>13 个 HTTP API 端点 + WebSocket 实时事件推送</li>
         <li>零协议解析，直接调用游戏内部 API</li>
-        <li>状态采集：方块、实体、背包、世界</li>
-        <li>动作执行：移动、挖掘、放置、攻击</li>
-        <li>FakePlayer Bot 系统：独立 bot 实体</li>
+        <li>状态采集：方块、实体、背包、世界时间/天气</li>
+        <li>动作执行：移动、挖掘、放置、攻击、进食、朝向</li>
+        <li>FakePlayer Bot：独立实体，7×24 在线，13 端点控制</li>
       </ul>
     </div>
     <div class="arch-layer fade-in fade-in-delay-1">
       <h4>🐍 Python 后端</h4>
       <ul>
-        <li>双 Agent 架构：聊天/操作上下文隔离</li>
-        <li>三层记忆：空间/路径/策略，JSON 持久化</li>
+        <li>双 Agent 架构：聊天/操作上下文隔离，省 97% Token</li>
+        <li>三层记忆：空间/路径/策略，JSON 持久化，跨会话累积</li>
         <li>Skill DSL：YAML 声明式，L1-L4 分级缓存</li>
-        <li>五级安全：风险评估 + 授权 + 审计</li>
-        <li>WebUI：Miuix Console，暗色主题</li>
+        <li>五级安全：风险评估 + 授权 + 审计日志</li>
+        <li>WebUI：Miuix Console 毛玻璃暗色主题，端口 19951</li>
       </ul>
     </div>
   </div>
@@ -276,6 +354,63 @@ footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
       <div class="stat-value"><span class="accent">L4</span></div>
       <div class="stat-label">任务分级</div>
     </div>
+    <div class="stat-item fade-in fade-in-delay-3">
+      <div class="stat-value">84<span class="accent">%</span></div>
+      <div class="stat-label">Token 节省率</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Tech Stack -->
+<section class="techstack" id="techstack">
+<div class="container">
+  <div class="fade-in">
+    <div class="section-label">Tech Stack</div>
+    <div class="section-title">技术栈</div>
+    <div class="section-desc">核心依赖与版本信息</div>
+  </div>
+  <div class="tech-grid">
+    <div class="tech-item fade-in">
+      <div class="tech-name">Fabric</div>
+      <div class="tech-ver">1.20.4</div>
+      <div class="tech-desc">Mod Loader</div>
+    </div>
+    <div class="tech-item fade-in fade-in-delay-1">
+      <div class="tech-name">Java</div>
+      <div class="tech-ver">17+</div>
+      <div class="tech-desc">Fabric Mod 运行时</div>
+    </div>
+    <div class="tech-item fade-in fade-in-delay-2">
+      <div class="tech-name">Python</div>
+      <div class="tech-ver">3.11+</div>
+      <div class="tech-desc">AI 后端运行时</div>
+    </div>
+    <div class="tech-item fade-in fade-in-delay-3">
+      <div class="tech-name">aiohttp</div>
+      <div class="tech-ver">async</div>
+      <div class="tech-desc">异步 HTTP 框架</div>
+    </div>
+    <div class="tech-item fade-in">
+      <div class="tech-name">Minecraft</div>
+      <div class="tech-ver">1.20.4</div>
+      <div class="tech-desc">服务端版本</div>
+    </div>
+    <div class="tech-item fade-in fade-in-delay-1">
+      <div class="tech-name">OpenAI</div>
+      <div class="tech-ver">GPT-4o</div>
+      <div class="tech-desc">云端 AI Provider</div>
+    </div>
+    <div class="tech-item fade-in fade-in-delay-2">
+      <div class="tech-name">Anthropic</div>
+      <div class="tech-ver">Claude</div>
+      <div class="tech-desc">云端 AI Provider</div>
+    </div>
+    <div class="tech-item fade-in fade-in-delay-3">
+      <div class="tech-name">Ollama</div>
+      <div class="tech-ver">local</div>
+      <div class="tech-desc">本地模型推理</div>
+    </div>
   </div>
 </div>
 </section>
@@ -286,7 +421,7 @@ footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
   <div class="fade-in">
     <div class="section-label">Quick Start</div>
     <div class="section-title">三步启动</div>
-    <div class="section-desc">支持 Linux / macOS / Windows，自动检测环境、安装依赖、下载 MC 服务端。</div>
+    <div class="section-desc">支持 Linux / macOS / Windows / Docker / 云部署，自动检测环境、安装依赖、下载 MC 服务端。</div>
   </div>
   <div class="code-block fade-in">
     <div class="code-header">
@@ -326,6 +461,17 @@ start_all.bat
 <span class="cmd">cd</span> BlockMind && <span class="cmd">start_all.bat</span></div>
     </div>
   </div>
+  <div class="code-block fade-in fade-in-delay-2" style="margin-top:16px">
+    <div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span>Cloud (Sealos DevBox)</span></div>
+    <div class="code-body"><span class="comment"># 一键部署到云环境，无需本地 Java/Python</span>
+<span class="comment"># 1. 在 Sealos 创建 DevBox 实例（Ubuntu 24.04, 4C8G+）</span>
+<span class="comment"># 2. 克隆项目并执行部署脚本</span>
+<span class="cmd">git clone</span> https://github.com/bmbxwbh/BlockMind.git
+<span class="cmd">cd</span> BlockMind && <span class="cmd">./scripts/deploy-cloud.sh</span>
+
+<span class="comment"># 自动安装 JDK17 + Python3.12 + Fabric + MC 服务端</span>
+<span class="comment"># 通过 SSH 隧道暴露端口：25565(MC) / 25580(API) / 19951(WebUI)</span></div>
+  </div>
 </div>
 </section>
 
@@ -364,6 +510,16 @@ function copyInstall(el) {
     setTimeout(() => { hint.textContent = '点击复制'; }, 2000);
   });
 }
+
+// Fetch GitHub stars
+fetch('https://api.github.com/repos/bmbxwbh/BlockMind')
+  .then(r => r.json())
+  .then(d => {
+    if (d.stargazers_count !== undefined) {
+      document.getElementById('star-count').textContent = d.stargazers_count;
+    }
+  })
+  .catch(() => {});
 </script>
 </body>
 </html>
