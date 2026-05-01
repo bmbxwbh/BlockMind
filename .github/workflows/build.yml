@@ -27,7 +27,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mc-version: ['1.20.4', '1.21.4', '26.1.2']
+        mc-version:
+          # ── 1.20.x ──
+          - '1.20.0'
+          - '1.20.1'
+          - '1.20.2'
+          - '1.20.3'
+          - '1.20.4'
+          - '1.20.6'
+          # ── 1.21.x ──
+          - '1.21'
+          - '1.21.1'
+          - '1.21.2'
+          - '1.21.3'
+          - '1.21.4'
+          # ── 26.x ──
+          - '26.1'
+          - '26.1.1'
+          - '26.1.2'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,7 +53,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ matrix.mc-version == '26.1.2' && '25' || '17' }}
+          java-version: ${{ startsWith(matrix.mc-version, '26') && '25' || '17' }}
           cache: gradle
 
       - name: Setup Gradle
@@ -197,11 +214,33 @@ jobs:
             ## 🧠 BlockMind ${{ github.ref_name }}
 
             ### 📦 Mod JARs
+            选择与你的 Minecraft 服务器版本匹配的 JAR 放入 `mods/` 目录。
+
+            **MC 1.20.x：**
             | 文件 | 说明 |
             |------|------|
-            | `blockmind-mod-1.20.4.jar` | MC 1.20.0 ~ 1.20.4 |
-            | `blockmind-mod-1.21.4.jar` | MC 1.21 ~ 1.21.4 |
-            | `blockmind-mod-26.1.2.jar` | MC 26.1 ~ 26.1.2（最新） |
+            | `blockmind-mod-1.20.0.jar` | MC 1.20.0 |
+            | `blockmind-mod-1.20.1.jar` | MC 1.20.1 |
+            | `blockmind-mod-1.20.2.jar` | MC 1.20.2 |
+            | `blockmind-mod-1.20.3.jar` | MC 1.20.3 |
+            | `blockmind-mod-1.20.4.jar` | MC 1.20.4 |
+            | `blockmind-mod-1.20.6.jar` | MC 1.20.6 |
+
+            **MC 1.21.x：**
+            | 文件 | 说明 |
+            |------|------|
+            | `blockmind-mod-1.21.jar` | MC 1.21 |
+            | `blockmind-mod-1.21.1.jar` | MC 1.21.1 |
+            | `blockmind-mod-1.21.2.jar` | MC 1.21.2 |
+            | `blockmind-mod-1.21.3.jar` | MC 1.21.3 |
+            | `blockmind-mod-1.21.4.jar` | MC 1.21.4 |
+
+            **MC 26.x（最新）：**
+            | 文件 | 说明 |
+            |------|------|
+            | `blockmind-mod-26.1.jar` | MC 26.1 |
+            | `blockmind-mod-26.1.1.jar` | MC 26.1.1 |
+            | `blockmind-mod-26.1.2.jar` | MC 26.1.2 |
 
             ### 🐳 Docker
             ```bash
