@@ -24,6 +24,7 @@
 - [一键部署](#-一键部署)
 - [Fabric Mod API](#-fabric-mod-api)
 - [Skill DSL 系统](#-skill-dsl-系统)
+- [Skill 市场](#-skill-市场v31-新增)
 - [安全体系](#-安全体系)
 - [WebUI 控制面板](#-webui-控制面板)
 - [部署指南](#-部署指南)
@@ -518,6 +519,82 @@ steps:
 
 ---
 
+## 🛒 Skill 市场（v3.1 新增）
+
+### 功能概览
+
+```
+┌─────────────────────────────────────────────────┐
+│  Skill 市场 — 浏览 · 导入 · 导出 · 分享         │
+│                                                  │
+│  📥 导入: YAML 粘贴 / URL 下载 / Bundle 批量     │
+│  📤 导出: 单个导出 / 批量打包 / 分享给他人        │
+│  🔍 搜索: 按名称 / 标签 / 分类 / 难度            │
+│  📦 安装: 一键安装到 custom 目录                  │
+│  🚀 提交: PR 方式提交到社区仓库                   │
+│  🔄 更新: 自动检测已安装 Skill 的新版本           │
+│  🛡️ 安全: 导入时三层校验（语法/安全/注入检测）    │
+└─────────────────────────────────────────────────┘
+```
+
+### 使用方式
+
+**WebUI 操作：**
+1. 登录 WebUI → 侧栏「🛒 Skill 市场」
+2. 浏览/搜索社区 Skill → 点击查看详情 → 一键安装
+3. 或点击「📥 导入」→ 粘贴 YAML 或输入 URL
+
+**API 操作：**
+```bash
+# 浏览市场
+curl -H "Authorization: Bearer $TOKEN" http://localhost:19951/api/marketplace/browse
+
+# 搜索
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:19951/api/marketplace/search?q=钻石"
+
+# 从 URL 导入
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  -d '{"url": "https://raw.githubusercontent.com/.../skill.yaml"}' \
+  http://localhost:19951/api/marketplace/import
+
+# 安装
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  http://localhost:19951/api/marketplace/auto_mine_diamonds/install
+
+# 导出
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  http://localhost:19951/api/marketplace/auto_mine_diamonds/export
+
+# 提交到社区
+curl -X POST -H "Authorization: Bearer $TOKEN" \
+  -d '{"skill_id": "my_skill", "category": "farming"}' \
+  http://localhost:19951/api/marketplace/submit
+```
+
+### 市场元数据
+
+Skill YAML 支持 `market` 字段扩展：
+```yaml
+market:
+  category: gathering          # 分类
+  difficulty: intermediate     # 难度
+  mc_versions: ["1.20.x"]      # 兼容版本
+  description_long: |          # 详细描述
+    自动前往钻石层挖钻石...
+  license: MIT                 # 许可
+  rating: 4.7                  # 评分
+  download_count: 234          # 下载量
+```
+
+### 社区仓库
+
+社区 Skill 托管在 GitHub: `bmbxwbh/blockmind-skills`
+- 提交方式：通过 WebUI/API 创建 PR
+- 审核流程：自动校验 + 人工 Review
+- 索引文件：`.index.json`（自动更新）
+
+---
+
 ## 🛡️ 安全体系
 
 | 层级 | 机制 | 说明 |
@@ -576,8 +653,8 @@ A: 约 200MB，基于 python:3.11-slim 多阶段构建。
 - [x] GitHub Actions CI/CD
 
 ### v3.1（计划中）
+- [x] Skill 市场（导入/导出/安装/分享）
 - [ ] 多模态输入（截图分析）
-- [ ] Skill 市场（导入/导出）
 - [ ] 多玩家协作
 - [ ] 语音交互
 
