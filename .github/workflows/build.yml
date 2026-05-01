@@ -71,7 +71,12 @@ jobs:
 
       - name: Build Mod
         working-directory: mod
-        run: gradle build --no-daemon -PmcVersion=${{ matrix.mc-version }}
+        run: |
+          EXTRA_ARGS=""
+          if [[ "${{ matrix.mc-version }}" == 26.* ]]; then
+            EXTRA_ARGS="-Pfabric.loom.disableObfuscation=true"
+          fi
+          gradle build --no-daemon -PmcVersion=${{ matrix.mc-version }} $EXTRA_ARGS
 
       - name: Upload Mod JAR
         uses: actions/upload-artifact@v4
