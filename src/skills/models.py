@@ -47,6 +47,28 @@ class SkillDSL(BaseModel):
     usage_count: int = 0
     success_rate: float = 1.0
     task_level: str = "L2"  # L1/L2/L3
+    market_meta: Optional['SkillMarketMeta'] = None
+
+
+class SkillMarketMeta(BaseModel):
+    """Skill 市场元数据"""
+    category: str = "general"                # combat/farming/building/gathering/navigation/storage/survival/general
+    difficulty: str = "beginner"             # beginner/intermediate/advanced
+    mc_versions: List[str] = Field(default_factory=list)  # 兼容MC版本
+    description_long: str = ""               # 详细描述（Markdown）
+    source_url: str = ""                     # 来源URL
+    homepage: str = ""                       # 项目主页
+    license: str = "MIT"                     # 开源许可
+    keywords: List[str] = Field(default_factory=list)  # 搜索关键词
+    dependencies: List[str] = Field(default_factory=list)  # 依赖的其他 skill_id
+    download_count: int = 0                  # 下载量
+    rating: float = 0.0                      # 评分 0-5
+    rating_count: int = 0                    # 评分人数
+    created_at: str = ""                     # 创建时间 ISO
+    updated_at: str = ""                     # 更新时间 ISO
+    installed_at: Optional[str] = None       # 本地安装时间
+    update_available: bool = False           # 是否有更新
+    registry_version: int = 0                # 注册中心版本号（用于更新检测）
 
 
 class SkillResult(BaseModel):
