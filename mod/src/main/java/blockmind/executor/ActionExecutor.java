@@ -170,8 +170,10 @@ public class ActionExecutor {
     }
 
     /**
-     * 看向位置
-     * Body: {"x": 130, "y": 65, "z": -258}
+     * 设置朝向
+     * 支持两种模式：
+     * 1. 直接设置: {"yaw": 90.0, "pitch": 30.0}
+     * 2. 看向位置: {"x": 130, "y": 65, "z": -258}
      */
     public static JsonObject look(String body) {
         JsonObject json = parseBody(body);
@@ -180,17 +182,29 @@ public class ActionExecutor {
         ServerPlayerEntity target = getTarget();
         if (target == null) return error("No player or bot available");
 
-        double x = json.get("x").getAsDouble();
-        double y = json.get("y").getAsDouble();
-        double z = json.get("z").getAsDouble();
+        float yaw, pitch;
+        String details;
 
-        // 计算朝向
-        double dx = x - target.getX();
-        double dy = y - target.getY();
-        double dz = z - target.getZ();
-        double horizontalDist = Math.sqrt(dx * dx + dz * dz);
-        float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        float pitch = (float) Math.toDegrees(Math.atan2(-dy, horizontalDist));
+        if (json.has("yaw") && json.has("pitch")) {
+            // 模式 1: 直接设置 yaw/pitch
+            yaw = json.get("yaw").getAsFloat();
+            pitch = json.get("pitch").getAsFloat();
+            details = String.format("朝向 yaw=%.1f pitch=%.1f", yaw, pitch);
+        } else if (json.has("x") && json.has("y") && json.has("z")) {
+            // 模式 2: 看向目标位置
+            double x = json.get("x").getAsDouble();
+            double y = json.get("y").getAsDouble();
+            double z = json.get("z").getAsDouble();
+            double dx = x - target.getX();
+            double dy = y - target.getY();
+            double dz = z - target.getZ();
+            double horizontalDist = Math.sqrt(dx * dx + dz * dz);
+            yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+            pitch = (float) Math.toDegrees(Math.atan2(-dy, horizontalDist));
+            details = String.format("看向 (%.1f, %.1f, %.1f)", x, y, z);
+        } else {
+            return error("需要 yaw+pitch 或 x+y+z 参数");
+        }
 
         target.setYaw(yaw);
         target.setPitch(pitch);
@@ -198,7 +212,7 @@ public class ActionExecutor {
         JsonObject result = new JsonObject();
         result.addProperty("success", true);
         result.addProperty("target", BotManager.isSpawned() ? "bot" : "player");
-        result.addProperty("details", String.format("看向 (%.1f, %.1f, %.1f)", x, y, z));
+        result.addProperty("details", details);
         return result;
     }
 

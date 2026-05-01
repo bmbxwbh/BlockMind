@@ -344,9 +344,21 @@ class ModClient:
         data = await self._post("/api/eat", {"item": item})
         return ActionResult.from_dict(data)
 
-    async def look(self, x: float, y: float, z: float) -> ActionResult:
-        """看向指定位置"""
-        data = await self._post("/api/look", {"x": x, "y": y, "z": z})
+    async def look(self, x: float = None, y: float = None, z: float = None,
+                   yaw: float = None, pitch: float = None) -> ActionResult:
+        """设置朝向
+
+        支持两种模式：
+        - look(yaw=90, pitch=30) — 直接设置角度
+        - look(x=100, y=65, z=200) — 看向指定坐标
+        """
+        if yaw is not None and pitch is not None:
+            data = {"yaw": yaw, "pitch": pitch}
+        elif x is not None and y is not None and z is not None:
+            data = {"x": x, "y": y, "z": z}
+        else:
+            return ActionResult(success=False, error="需要 yaw+pitch 或 x+y+z")
+        data = await self._post("/api/look", data)
         return ActionResult.from_dict(data)
 
     async def chat(self, message: str) -> ActionResult:
