@@ -1,31 +1,13 @@
-// ── 动态加载 Loom ──
-buildscript {
-    def mcVer = project.findProperty('mcVersion') ?: '26.1.2'
-    def loomMap = [
-        '1.20.0': '1.6-SNAPSHOT', '1.20.1': '1.6-SNAPSHOT', '1.20.2': '1.6-SNAPSHOT',
-        '1.20.3': '1.6-SNAPSHOT', '1.20.4': '1.6-SNAPSHOT', '1.20.6': '1.7-SNAPSHOT',
-        '1.21': '1.7-SNAPSHOT', '1.21.1': '1.7-SNAPSHOT', '1.21.2': '1.8-SNAPSHOT',
-        '1.21.3': '1.8-SNAPSHOT', '1.21.4': '1.8-SNAPSHOT',
-        '26.1': '1.15.5', '26.1.1': '1.15.5', '26.1.2': '1.15.5',
-    ]
-    repositories {
-        maven { url 'https://maven.fabricmc.net/' }
-        gradlePluginPortal()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "net.fabricmc:fabric-loom:${loomMap[mcVer] ?: '1.15.5'}"
-    }
+plugins {
+    id 'fabric-loom'
+    id 'java'
 }
-
-apply plugin: 'fabric-loom'
-apply plugin: 'java'
 
 // ── 版本参数化 ──
 def mcVersion = project.findProperty('mcVersion') ?: '26.1.2'
 
 def versionMap = [
-    '1.20.0': [yarn: '1.20+build.1:v2',       fabricApi: '0.87.0+1.20',    loader: '0.15.3',  java: 17],
+    '1.20': [yarn: '1.20+build.1:v2',       fabricApi: '0.87.0+1.20',    loader: '0.15.3',  java: 17],
     '1.20.1': [yarn: '1.20.1+build.10:v2',     fabricApi: '0.89.3+1.20.1',  loader: '0.15.3',  java: 17],
     '1.20.2': [yarn: '1.20.2+build.4:v2',      fabricApi: '0.91.0+1.20.2',  loader: '0.15.3',  java: 17],
     '1.20.3': [yarn: '1.20.3+build.1:v2',      fabricApi: '0.91.6+1.20.3',  loader: '0.15.3',  java: 17],
@@ -53,7 +35,6 @@ base { archivesName = "blockmind-mod-${mcVersion}" }
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
-    maven { url 'https://maven.fabricmc.net/' }
 }
 
 // ── 版本分源码 ──
