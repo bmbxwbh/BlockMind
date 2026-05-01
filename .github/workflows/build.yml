@@ -61,7 +61,7 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           # 26.x 需要 Gradle 9.5（loom 1.15.5 要求），1.x 用 Gradle 8.7
-          gradle-version: ${{ startsWith(matrix.mc-version, '26') && '9.5.0' || '8.7' }}
+          gradle-version: ${{ startsWith(matrix.mc-version, '26') && '9.5.0' || startsWith(matrix.mc-version, '1.21') && '8.10' || '8.7' }}
 
       - name: Build Mod
         working-directory: mod

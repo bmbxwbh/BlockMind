@@ -3,24 +3,24 @@ plugins {
     id 'java'
 }
 
-// ── 版本参数化 ──
 def mcVersion = project.findProperty('mcVersion') ?: '26.1.2'
 
+// 版本映射表 — Fabric API 版本从 maven 实际查询校验
 def versionMap = [
-    '1.20': [yarn: '1.20+build.1:v2',       fabricApi: '0.87.0+1.20',    loader: '0.15.3',  java: 17],
-    '1.20.1': [yarn: '1.20.1+build.10:v2',     fabricApi: '0.89.3+1.20.1',  loader: '0.15.3',  java: 17],
-    '1.20.2': [yarn: '1.20.2+build.4:v2',      fabricApi: '0.91.0+1.20.2',  loader: '0.15.3',  java: 17],
-    '1.20.3': [yarn: '1.20.3+build.1:v2',      fabricApi: '0.91.6+1.20.3',  loader: '0.15.3',  java: 17],
-    '1.20.4': [yarn: '1.20.4+build.3:v2',      fabricApi: '0.92.0+1.20.4',  loader: '0.15.3',  java: 17],
-    '1.20.6': [yarn: '1.20.6+build.1:v2',      fabricApi: '0.97.8+1.20.6',  loader: '0.15.11', java: 21],
-    '1.21':   [yarn: '1.21+build.9:v2',        fabricApi: '0.100.4+1.21',   loader: '0.15.11', java: 21],
-    '1.21.1': [yarn: '1.21.1+build.3:v2',      fabricApi: '0.102.0+1.21.1', loader: '0.16.0',  java: 21],
-    '1.21.2': [yarn: '1.21.2+build.1:v2',      fabricApi: '0.106.1+1.21.2', loader: '0.16.9',  java: 21],
-    '1.21.3': [yarn: '1.21.3+build.1:v2',      fabricApi: '0.107.0+1.21.3', loader: '0.16.9',  java: 21],
-    '1.21.4': [yarn: '1.21.4+build.8:v2',      fabricApi: '0.111.2+1.21.4', loader: '0.16.9',  java: 21],
-    '26.1':   [yarn: null,                      fabricApi: '0.145.1+26.1',   loader: '0.18.4',  java: 25],
-    '26.1.1': [yarn: null,                      fabricApi: '0.145.4+26.1.1', loader: '0.19.2',  java: 25],
-    '26.1.2': [yarn: null,                      fabricApi: '0.147.0+26.1.2', loader: '0.19.2',  java: 25],
+    '1.20':   [yarn: '1.20+build.1:v2',        fabricApi: '0.83.0+1.20',    loader: '0.15.3',  java: 17],
+    '1.20.1': [yarn: '1.20.1+build.10:v2',      fabricApi: '0.92.8+1.20.1',  loader: '0.15.3',  java: 17],
+    '1.20.2': [yarn: '1.20.2+build.4:v2',       fabricApi: '0.91.6+1.20.2',  loader: '0.15.3',  java: 17],
+    '1.20.3': [yarn: '1.20.3+build.1:v2',       fabricApi: '0.91.1+1.20.3',  loader: '0.15.3',  java: 17],
+    '1.20.4': [yarn: '1.20.4+build.3:v2',       fabricApi: '0.92.0+1.20.4',  loader: '0.15.3',  java: 17],
+    '1.20.6': [yarn: '1.20.6+build.1:v2',       fabricApi: '0.100.8+1.20.6', loader: '0.15.11', java: 21],
+    '1.21':   [yarn: '1.21+build.9:v2',         fabricApi: '0.102.0+1.21',   loader: '0.15.11', java: 21],
+    '1.21.1': [yarn: '1.21.1+build.3:v2',       fabricApi: '0.116.11+1.21.1',loader: '0.16.0',  java: 21],
+    '1.21.2': [yarn: '1.21.2+build.1:v2',       fabricApi: '0.106.1+1.21.2', loader: '0.16.9',  java: 21],
+    '1.21.3': [yarn: '1.21.3+build.1:v2',       fabricApi: '0.114.1+1.21.3', loader: '0.16.9',  java: 21],
+    '1.21.4': [yarn: '1.21.4+build.8:v2',       fabricApi: '0.111.2+1.21.4', loader: '0.16.9',  java: 21],
+    '26.1':   [yarn: null,                       fabricApi: '0.145.1+26.1',   loader: '0.18.4',  java: 25],
+    '26.1.1': [yarn: null,                       fabricApi: '0.145.4+26.1.1', loader: '0.19.2',  java: 25],
+    '26.1.2': [yarn: null,                       fabricApi: '0.147.0+26.1.2', loader: '0.19.2',  java: 25],
 ]
 
 def vi = versionMap[mcVersion]
@@ -37,7 +37,6 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
-// ── 版本分源码 ──
 if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v26/java'
 } else if (mcVersion.startsWith('1.21')) {
@@ -64,14 +63,5 @@ jar {
     from("LICENSE") { rename { "${it}_${base.archivesName.get()}" } }
     manifest {
         attributes("Implementation-Version": project.version, "Minecraft-Version": mcVersion, "Fabric-API": vi.fabricApi)
-    }
-}
-
-task buildAllVersions {
-    group = "build"
-    dependsOn = versionMap.keySet().collect { v ->
-        tasks.register("build_${v.replace('.', '_')}") {
-            doLast { exec { commandLine "./gradlew", "build", "-PmcVersion=${v}", "--no-daemon" } }
-        }
     }
 }

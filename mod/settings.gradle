@@ -7,16 +7,13 @@ pluginManagement {
         '1.21.3': '1.8-SNAPSHOT', '1.21.4': '1.8-SNAPSHOT',
         '26.1': '1.15.5', '26.1.1': '1.15.5', '26.1.2': '1.15.5',
     ]
-    def loomVer = loomVersions[mcVer] ?: '1.15.5'
-
     repositories {
         maven { url 'https://maven.fabricmc.net/' }
         gradlePluginPortal()
         mavenCentral()
     }
-
     plugins {
-        id 'fabric-loom' version loomVer
+        id 'fabric-loom' version loomVersions[mcVer] ?: '1.15.5'
     }
 }
 
