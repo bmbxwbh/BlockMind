@@ -53,8 +53,9 @@ if (mcVersion.startsWith('26')) {
 dependencies {
     minecraft "com.mojang:minecraft:${mcVersion}"
     if (vi.yarn != null) { mappings "net.fabricmc:yarn:${vi.yarn}" }
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${vi.fabricApi}"
-    modImplementation "net.fabricmc:fabric-loader:${vi.loader}"
+    def modImpl = mcVersion.startsWith('26') ? 'implementation' : 'modImplementation'
+    "${modImpl}" "net.fabricmc.fabric-api:fabric-api:${vi.fabricApi}"
+    "${modImpl}" "net.fabricmc:fabric-loader:${vi.loader}"
 }
 
 java {
