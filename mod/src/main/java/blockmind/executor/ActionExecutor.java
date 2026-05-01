@@ -53,8 +53,12 @@ public class ActionExecutor {
         double y = json.get("y").getAsDouble();
         double z = json.get("z").getAsDouble();
 
-        // 传送到目标位置
-        target.teleport(x, y, z);
+        // 传送到目标位置（BotPlayer 用 setPos 避免 NPE）
+        if (target instanceof blockmind.bot.BotPlayer) {
+            target.setPos(x, y, z);
+        } else {
+            target.teleport(x, y, z);
+        }
 
         JsonObject result = new JsonObject();
         result.addProperty("success", true);
