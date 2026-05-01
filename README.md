@@ -1,11 +1,11 @@
 # 🧠 BlockMind — 智能 Minecraft AI 玩伴系统
 
-> **Fabric Mod + AI 驱动 + 记忆系统** · v3.0 · 2026-04-30
+> **Fabric Mod + AI 驱动 + 记忆系统** · v3.1 · 2026-05-01
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org)
 [![Fabric](https://img.shields.io/badge/Fabric-0.92+-yellow.svg)](https://fabricmc.net)
-[![MC](https://img.shields.io/badge/Minecraft-1.20.x--1.21.x-green.svg)](https://minecraft.net)
+[![MC](https://img.shields.io/badge/Minecraft-1.20.x--26.x-green.svg)](https://minecraft.net)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 **一句话概括：** Fabric Mod 提供精准游戏接口 + Python 后端驱动 AI 决策 + 记忆系统跨会话学习，实现 7×24 小时自主生存的 Minecraft 智能玩伴。
@@ -338,7 +338,7 @@ SmartNavigator.goto(x, y, z)
 |------|------|
 | Python | 3.10+ |
 | Java | 17+ |
-| Minecraft | 1.20.0 - 1.21.4 |
+| Minecraft | 1.20.0 - 26.1.2 |
 | Fabric Loader | 0.15+ |
 
 ---
@@ -370,7 +370,7 @@ chmod +x start.sh
 
 ### 多版本构建
 
-BlockMind Mod 支持 **MC 1.20.0 ~ 1.21.4** 全版本。构建时指定目标版本：
+BlockMind Mod 支持 **MC 1.20.0 ~ 26.1.2** 全版本。构建时指定目标版本：
 
 ```bash
 cd mod
@@ -401,8 +401,15 @@ cd mod
 | 1.21.2 | `1.21.2+build.1` | `0.106.1+1.21.2` | ✅ 支持 |
 | 1.21.3 | `1.21.3+build.1` | `0.107.0+1.21.3` | ✅ 支持 |
 | 1.21.4 | `1.21.4+build.8` | `0.111.2+1.21.4` | ✅ 支持 |
+| 26.1 | 无 yarn（Mojang 映射） | `0.145.1+26.1` | ✅ 支持 |
+| 26.1.1 | 无 yarn（Mojang 映射） | `0.145.4+26.1.1` | ✅ 支持 |
+| 26.1.2 | 无 yarn（Mojang 映射） | `0.147.0+26.1.2` | ✅ **最新** |
 
-> **版本兼容机制**：Mod 使用 `VersionCompat` 兼容层，运行时自动检测 MC 版本并适配 API 差异（如 `SyncedClientOptions`、聊天事件回调签名等），无需手动选择。
+> **版本兼容机制**：Mod 使用 `MinecraftCompat` + `VersionCompat` 双层兼容架构：
+> - **版本分源码**：`src/v1_20/`、`src/v1_21/`、`src/v26/` 三个源码目录，编译时只包含对应版本
+> - **MC 26.x** 使用 Mojang 官方映射（`ServerPlayer`、`Component`、`PlayerChatMessage`）
+> - **MC 1.20.x/1.21.x** 使用 Yarn 映射（`ServerPlayerEntity`、`Text`、`SignedMessage`）
+> - 运行时自动检测版本并加载对应实现，无需手动选择
 
 ### Windows 一键启动
 

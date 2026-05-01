@@ -1,48 +1,61 @@
 package blockmind.bot;
 
-import com.mojang.authlib.GameProfile;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
+import blockmind.compat.MinecraftCompat;
 
 /**
- * BotPlayer — 继承 ServerPlayerEntity，覆盖 tick 避免网络 NPE
+ * BotPlayer — 版本无关的 FakePlayer 包装类
  *
- * 兼容 MC 1.20.0 ~ 1.21.x：
- * - 1.20.0-1.20.1: ServerPlayerEntity 3 参数构造函数
- * - 1.20.2+: ServerPlayerEntity 4 参数构造函数 (含 SyncedClientOptions)
+ * 不再直接继承 ServerPlayerEntity（Yarn）/ ServerPlayer（Mojang），
+ * 而是包装底层玩家对象，通过 MinecraftCompat 接口访问所有属性。
  *
- * 通过 VersionCompat 工厂方法创建，不直接暴露构造函数。
+ * 这样同一个 BotPlayer 类可以编译并运行在所有 MC 版本上：
+ * - 1.20.x (Yarn mappings, ServerPlayerEntity)
+ * - 1.21.x (Yarn mappings, ServerPlayerEntity)
+ * - 26.x   (Mojang mappings, ServerPlayer)
  */
-public class BotPlayer extends ServerPlayerEntity {
+public class BotPlayer {
+
+    /** 底层 MC 玩家对象（实际类型为 ServerPlayerEntity 或 ServerPlayer） */
+    private final Object handle;
+
+    /** 版本兼容层 */
+    private final MinecraftCompat compat;
 
     /**
-     * 内部构造函数 — 由 VersionCompat.createPlayer() 反射调用
-     * 直接使用 4 参数版本，VersionCompat 会处理版本差异
+     * @param handle 底层 MC 玩家对象
+     * @param compat 版本兼容层
      */
-    public BotPlayer(MinecraftServer server, ServerWorld world, GameProfile profile, Object... args) {
-        super(server, world, profile,
-              args.length > 0 && args[0] != null
-                  ? (net.minecraft.network.packet.c2s.common.SyncedClientOptions) args[0]
-                  : createDefaultOptions());
+    public BotPlayer(Object handle, MinecraftCompat compat) {
+        this.handle = handle;
+        this.compat = compat;
     }
 
-    /**
-     * 创建默认 SyncedClientOptions — 兼容不同版本
-     */
-    private static net.minecraft.network.packet.c2s.common.SyncedClientOptions createDefaultOptions() {
-        try {
-            return net.minecraft.network.packet.c2s.common.SyncedClientOptions.createDefault();
-        } catch (NoClassDefFoundError e) {
-            // MC 1.20.0-1.20.1 没有这个类，不应该走到这里
-            throw new UnsupportedOperationException(
-                "SyncedClientOptions not available in this MC version. Use VersionCompat.createPlayer() instead.", e);
-        }
+    /** 获取底层 MC 玩家对象 */
+    public Object getHandle() {
+        return handle;
     }
 
-    @Override
-    public void tick() {
-        // 最小化 tick — 跳过所有需要 networkHandler 的逻辑
-        this.tickPortalCooldown();
+    /** 获取版本兼容层 */
+    public MinecraftCompat getCompat() {
+        return compat;
     }
+
+    // ── 便捷方法（委托给 compat）──
+
+    public float getHealth() { return compat.getHealth(handle); }
+    public double getX() { return compat.getX(handle); }
+    public double getY() { return compat.getY(handle); }
+    public double getZ() { return compat.getZ(handle); }
+    public float getYaw() { return compat.getYaw(handle); }
+    public float getPitch() { return compat.getPitch(handle); }
+    public boolean isAlive() { return compat.isAlive(handle); }
+    public void discard() { compat.discard(handle); }
+    public int getFoodLevel() { return compat.getFoodLevel(handle); }
+    public float getSaturationLevel() { return compat.getSaturationLevel(handle); }
+    public int getTotalExperience() { return compat.getTotalExperience(handle); }
+    public int getExperienceLevel() { return compat.getExperienceLevel(handle); }
+    public java.util.UUID getUuid() { return compat.getUuid(handle); }
+    public String getDimension() { return compat.getDimension(handle); }
+    public int[] getBlockPos() { return compat.getBlockPos(handle); }
+    public String getName() { return compat.getPlayerName(handle); }
 }

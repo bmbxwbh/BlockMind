@@ -34,7 +34,7 @@ public class BlockMindMod implements DedicatedServerModInitializer {
         LOGGER.info("========================================");
         LOGGER.info("  BlockMind Mod v1.1.0 Loading...");
         LOGGER.info("  MC Version: {} (detected by VersionCompat)", VersionCompat.getVersionString());
-        LOGGER.info("  SyncedClientOptions: {}", VersionCompat.hasSyncedClientOptions() ? "YES" : "NO (legacy mode)");
+        LOGGER.info("  Compat impl: {}", VersionCompat.getCompat().getClass().getSimpleName());
         LOGGER.info("  [NEW] FakePlayer Bot Support");
         LOGGER.info("========================================");
 

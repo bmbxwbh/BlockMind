@@ -1,9 +1,9 @@
 {
     "schemaVersion": 1,
     "id": "blockmind",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "name": "BlockMind",
-    "description": "BlockMind AI Companion - HTTP API for Minecraft automation. Supports MC 1.20.0 ~ 1.21.4",
+    "description": "BlockMind AI Companion - HTTP API for Minecraft automation. Supports MC 1.20.0 ~ 26.1.2",
     "authors": ["BlockMind Team"],
     "contact": {
         "homepage": "https://github.com/bmbxwbh/BlockMind",
@@ -18,7 +18,7 @@
     "depends": {
         "fabricloader": ">=0.15.0",
         "fabric-api": "*",
-        "minecraft": ">=1.20.0 <=1.21.99"
+        "minecraft": ">=1.20.0"
     },
     "suggests": {
         "minecraft": ">=1.20.4"

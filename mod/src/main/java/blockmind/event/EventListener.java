@@ -1,9 +1,9 @@
 package blockmind.event;
 
+import blockmind.compat.MinecraftCompat;
 import blockmind.compat.VersionCompat;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 /**
  * 游戏事件监听器
  * 监听 MC 游戏事件并推送到 WebSocket
+ *
+ * 使用 MinecraftCompat 接口隔离版本差异。
  */
 public class EventListener {
 
@@ -26,8 +28,10 @@ public class EventListener {
      * 注册事件监听
      */
     public void register() {
-        // 聊天消息监听 — 使用 VersionCompat 适配不同版本的 callback 签名
-        VersionCompat.registerChatListener((playerName, messageText) -> {
+        MinecraftCompat compat = VersionCompat.getCompat();
+
+        // 聊天消息监听 — 通过 MinecraftCompat 注册（版本无关）
+        compat.registerChatListener((playerName, messageText) -> {
             JsonObject event = new JsonObject();
             event.addProperty("type", "chat");
             JsonObject data = new JsonObject();
@@ -39,9 +43,16 @@ public class EventListener {
 
         // 每 tick 检查（用于检测伤害、状态变化等）
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            // 检查玩家状态变化
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                checkPlayerStatus(player);
+            // 检查玩家状态变化 — 通过反射获取玩家列表
+            try {
+                Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
+                @SuppressWarnings("unchecked")
+                var players = (Iterable<?>) playerManager.getClass().getMethod("getPlayerList").invoke(playerManager);
+                for (Object player : players) {
+                    checkPlayerStatus(player, compat);
+                }
+            } catch (Exception e) {
+                // Silently ignore tick errors to avoid spamming logs
             }
         });
     }
@@ -52,11 +63,11 @@ public class EventListener {
     /**
      * 检查玩家状态变化
      */
-    private void checkPlayerStatus(ServerPlayerEntity player) {
-        float currentHealth = player.getHealth();
-        int currentHunger = player.getHungerManager().getFoodLevel();
+    private void checkPlayerStatus(Object player, MinecraftCompat compat) {
+        float currentHealth = compat.getHealth(player);
+        int currentHunger = compat.getFoodLevel(player);
 
-        UUID playerId = player.getUuid();
+        UUID playerId = compat.getUuid(player);
         float[] state = playerStates.computeIfAbsent(playerId,
                 id -> new float[]{DEFAULT_HEALTH, DEFAULT_HUNGER});
         float lastHealth = state[0];
