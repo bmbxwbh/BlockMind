@@ -14,7 +14,7 @@ NC="\033[0m"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-DEFAULT_MC_VERSION="1.20.4"
+DEFAULT_MC_VERSION="26.1.2"
 FABRIC_INSTALLER_VER="1.1.1"
 FABRIC_LOADER_VER="0.19.2"
 
@@ -216,26 +216,26 @@ MC_VERSION="$DEFAULT_MC_VERSION"
 if [ "$USE_EXISTING" = false ]; then
     echo ""
     echo "  ${T_VERSIONS}"
-    echo "    1) 1.21.4  (${T_VER_LATEST})"
-    echo "    2) 1.21.3"
-    echo "    3) 1.21.1"
-    echo "    4) 1.20.6"
-    echo "    5) 1.20.4  (${T_VER_RECOMMEND})"
-    echo "    6) 1.20.1"
-    echo "    7) 1.19.4"
+    echo "    1) 26.1.2  (${T_VER_LATEST})"
+    echo "    2) 26.1.1"
+    echo "    3) 26.1"
+    echo "    4) 1.21.4"
+    echo "    5) 1.21.1"
+    echo "    6) 1.20.6"
+    echo "    7) 1.20.4  (${T_VER_RECOMMEND})"
     echo "    8) ${T_VER_CUSTOM}"
     echo ""
     read -rp "  ${T_CHOOSE_VER} (默认5): " ver_choice
 
     case "${ver_choice:-5}" in
-        1) MC_VERSION="1.21.4" ;;
-        2) MC_VERSION="1.21.3" ;;
-        3) MC_VERSION="1.21.1" ;;
-        4) MC_VERSION="1.20.6" ;;
-        5) MC_VERSION="1.20.4" ;;
-        6) MC_VERSION="1.20.1" ;;
-        7) MC_VERSION="1.19.4" ;;
-        8) read -rp "  ${T_INPUT_VER} (如 1.20.4): " MC_VERSION ;;
+        1) MC_VERSION="26.1.2" ;;
+        2) MC_VERSION="26.1.1" ;;
+        3) MC_VERSION="26.1" ;;
+        4) MC_VERSION="1.21.4" ;;
+        5) MC_VERSION="1.21.1" ;;
+        6) MC_VERSION="1.20.6" ;;
+        7) MC_VERSION="1.20.4" ;;
+        8) read -rp "  ${T_INPUT_VER} (如 26.1.2): " MC_VERSION ;;
         *) MC_VERSION="$DEFAULT_MC_VERSION" ;;
     esac
 
@@ -278,26 +278,26 @@ fi
 MODS_DIR="$MC_DIR/mods"
 mkdir -p "$MODS_DIR"
 
-    if ! ls "$MODS_DIR"/blockmind-mod-*.jar >/dev/null 2>&1; then
-        info "${T_DL_MOD}"
-        # 尝试从 GitHub API 获取最新 Mod URL（优先匹配当前 MC 版本）
-        MOD_URL=""
-        RELEASE_JSON=$(curl -sL --connect-timeout 10 "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest" 2>/dev/null)
-        if echo "$RELEASE_JSON" | grep -q "browser_download_url"; then
-            # 优先下载匹配当前 MC 版本的 JAR
-            MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod-'"$MC_VERSION"'[^"]*"' | head -1 | cut -d'"' -f4)
-            # 如果没有版本特定 JAR，回退到任意 blockmind-mod
-            if [ -z "$MOD_URL" ]; then
-                MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod[^"]*"' | head -1 | cut -d'"' -f4)
-            fi
-        fi
-        # Fallback: 直接用最新 release 的固定 URL 模式
+if ! ls "$MODS_DIR"/blockmind-mod-*.jar >/dev/null 2>&1; then
+    info "${T_DL_MOD}"
+    # 尝试从 GitHub API 获取最新 Mod URL（优先匹配当前 MC 版本）
+    MOD_URL=""
+    RELEASE_JSON=$(curl -sL --connect-timeout 10 "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest" 2>/dev/null)
+    if echo "$RELEASE_JSON" | grep -q "browser_download_url"; then
+        # 优先下载匹配当前 MC 版本的 JAR（如 blockmind-mod-26.1.2-1.2.0.jar）
+        MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod-'"$MC_VERSION"'[^"]*"' | head -1 | cut -d'"' -f4)
+        # 如果没有版本特定 JAR，回退到任意 blockmind-mod
         if [ -z "$MOD_URL" ]; then
-            MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod-${MC_VERSION}.jar"
+            MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod[^"]*"' | head -1 | cut -d'"' -f4)
         fi
-        curl -sL -o "$MODS_DIR/blockmind-mod.jar" "$MOD_URL" && \
-        info "${T_MOD_DONE}" || \
-        warn "${T_MOD_FAIL}: https://github.com/bmbxwbh/BlockMind/releases"
+    fi
+    # Fallback: 直接用最新 release 的固定 URL 模式
+    if [ -z "$MOD_URL" ]; then
+        MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod-${MC_VERSION}-1.2.0.jar"
+    fi
+    curl -sL -o "$MODS_DIR/blockmind-mod-${MC_VERSION}.jar" "$MOD_URL" && \
+    info "${T_MOD_DONE}" || \
+    warn "${T_MOD_FAIL}: https://github.com/bmbxwbh/BlockMind/releases"
 else
     info "${T_MOD_EXIST}"
 fi
