@@ -3,28 +3,24 @@ package blockmind.bot;
 import blockmind.BlockMindMod;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
-import java.lang.reflect.Field;
 import java.util.UUID;
 
 /**
  * Bot 管理器 — 管理 FakePlayer 的生命周期
  *
- * 使用 BotNetworkHandler（no-op 发包）避免 NPE。
- * Bot 可以执行所有游戏动作但不实际发送网络包。
+ * 使用 BotPlayer（继承 ServerPlayerEntity）避免所有网络相关 NPE。
+ * Bot 可以执行游戏动作但不发送网络包。
  */
 public class BotManager {
 
     private static MinecraftServer server;
-    private static ServerPlayerEntity botPlayer;
+    private static BotPlayer botPlayer;
     private static String botName = "BlockMind_Bot";
     private static final UUID BOT_UUID = UUID.fromString("a0b1c2d3-e4f5-6789-abcd-ef0123456789");
 
@@ -32,9 +28,6 @@ public class BotManager {
         server = srv;
     }
 
-    /**
-     * 生成 Bot
-     */
     public static JsonObject spawn(String name) {
         JsonObject result = new JsonObject();
 
@@ -59,9 +52,10 @@ public class BotManager {
             GameProfile profile = new GameProfile(BOT_UUID, botName);
             ServerWorld world = server.getOverworld();
             SyncedClientOptions clientOptions = SyncedClientOptions.createDefault();
-            botPlayer = new ServerPlayerEntity(server, world, profile, clientOptions);
 
-            // 设置初始位置
+            // 使用 BotPlayer 子类，覆盖所有网络相关方法
+            botPlayer = new BotPlayer(server, world, profile, clientOptions);
+
             BlockPos spawnPos = world.getSpawnPos();
             botPlayer.refreshPositionAndAngles(
                 spawnPos.getX() + 0.5,
@@ -70,12 +64,8 @@ public class BotManager {
                 0, 0
             );
 
-            // 使用 no-op 网络处理器
-            botPlayer.networkHandler = new BotNetworkHandler(server, botPlayer);
-
             BlockMindMod.LOGGER.info("[BlockMind] ✅ Bot '{}' spawned at ({}, {}, {})",
-                    botName,
-                    spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+                    botName, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
 
             result.addProperty("success", true);
             result.addProperty("name", botName);
@@ -97,48 +87,34 @@ public class BotManager {
         return result;
     }
 
-    /**
-     * 移除 Bot
-     */
     public static JsonObject despawn() {
         JsonObject result = new JsonObject();
-
         if (botPlayer == null) {
             result.addProperty("success", false);
             result.addProperty("error", "No bot spawned");
             return result;
         }
-
         try {
             String name = botName;
             botPlayer.discard();
             botPlayer = null;
-
             BlockMindMod.LOGGER.info("[BlockMind] Bot '{}' despawned", name);
-
             result.addProperty("success", true);
             result.addProperty("message", "Bot '" + name + "' removed");
-
         } catch (Exception e) {
             BlockMindMod.LOGGER.error("[BlockMind] Failed to despawn bot: {}", e.getMessage(), e);
             result.addProperty("success", false);
             result.addProperty("error", e.getMessage());
         }
-
         return result;
     }
 
-    /**
-     * 获取 Bot 状态
-     */
     public static JsonObject getStatus() {
         JsonObject result = new JsonObject();
-
         if (botPlayer == null) {
             result.addProperty("spawned", false);
             return result;
         }
-
         result.addProperty("spawned", true);
         result.addProperty("name", botName);
         result.addProperty("uuid", BOT_UUID.toString());
@@ -161,76 +137,10 @@ public class BotManager {
         result.addProperty("level", botPlayer.experienceLevel);
         result.addProperty("dimension", botPlayer.getWorld().getRegistryKey().getValue().toString());
         result.addProperty("alive", botPlayer.isAlive());
-
         return result;
     }
 
-    public static ServerPlayerEntity getBot() {
-        return botPlayer;
-    }
-
-    public static boolean isSpawned() {
-        return botPlayer != null;
-    }
-
-    public static String getBotName() {
-        return botName;
-    }
-
-    /**
-     * No-op 网络处理器 — 所有发包操作静默忽略
-     * 继承 ServerPlayNetworkHandler 以通过类型检查
-     */
-    /**
-     * 创建带 EmbeddedChannel 的假 ClientConnection
-     */
-    private static net.minecraft.network.ClientConnection createFakeConnection() {
-        try {
-            net.minecraft.network.ClientConnection conn =
-                new net.minecraft.network.ClientConnection(net.minecraft.network.NetworkSide.SERVERBOUND);
-            // 反射注入 EmbeddedChannel — 遍历所有字段找到 Channel 类型
-            boolean found = false;
-            for (Field f : net.minecraft.network.ClientConnection.class.getDeclaredFields()) {
-                BlockMindMod.LOGGER.info("[BlockMind] ClientConnection field: {} type: {}", f.getName(), f.getType().getName());
-                if (io.netty.channel.Channel.class.isAssignableFrom(f.getType())) {
-                    f.setAccessible(true);
-                    f.set(conn, new io.netty.channel.embedded.EmbeddedChannel());
-                    BlockMindMod.LOGGER.info("[BlockMind] ✅ FakeChannel injected into: {}", f.getName());
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                BlockMindMod.LOGGER.error("[BlockMind] No Channel field found in ClientConnection!");
-            }
-            return conn;
-        } catch (Exception e) {
-            BlockMindMod.LOGGER.error("[BlockMind] Failed to create fake connection: {}", e.getMessage(), e);
-        }
-        return new net.minecraft.network.ClientConnection(net.minecraft.network.NetworkSide.SERVERBOUND);
-    }
-
-    private static class BotNetworkHandler extends ServerPlayNetworkHandler {
-        BotNetworkHandler(MinecraftServer server, ServerPlayerEntity player) {
-            super(server, createFakeConnection(), player,
-                  new net.minecraft.server.network.ConnectedClientData(
-                      player.getGameProfile(), 0,
-                      net.minecraft.network.packet.c2s.common.SyncedClientOptions.createDefault()));
-        }
-
-        @Override
-        public void sendPacket(Packet<?> packet) {
-            // no-op: Bot 不需要发送网络包
-        }
-
-        @Override
-        public void disconnect(Text reason) {
-            // no-op: Bot 不需要断开连接
-        }
-
-        @Override
-        public void requestTeleport(double x, double y, double z, float yaw, float pitch) {
-            // no-op: Bot 的位置由服务端直接设置
-        }
-    }
+    public static ServerPlayerEntity getBot() { return botPlayer; }
+    public static boolean isSpawned() { return botPlayer != null; }
+    public static String getBotName() { return botName; }
 }
