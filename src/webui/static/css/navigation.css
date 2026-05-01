@@ -209,6 +209,6 @@
 /* ═══ TABLET ADAPTATIONS ═══ */
 @media(min-width:768px) and (max-width:1023px){
   .mx-topbar{height:50px}
-  .mx-bottom-nav{padding:6px 0}
+  .mx-bottom-nav{left:16px;right:16px;bottom:12px}
   .mx-btm-item span{font-size:10px}
 }

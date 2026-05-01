@@ -412,7 +412,10 @@
             <!-- ══ 模型配置 ══ -->
             <div class="mx-page" id="page-model">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">模型配置</h1>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
+                    </div>
+                    <h1 class="mx-page-title">🤖 模型配置</h1>
                     <p class="mx-page-sub">双 Agent 架构 · 主 Agent 聊天 + 操作 Agent 执行</p>
                 </div>
                 <div class="mx-grid-2">
@@ -464,7 +467,10 @@
             <!-- ══ 安全设置 ══ -->
             <div class="mx-page" id="page-safety">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">安全设置</h1>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
+                    </div>
+                    <h1 class="mx-page-title">🛡️ 安全设置</h1>
                     <p class="mx-page-sub">五级安全体系配置</p>
                 </div>
                 <div class="mx-card">
@@ -493,7 +499,10 @@
             <!-- ══ 日志中心 ══ -->
             <div class="mx-page" id="page-logs">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">日志中心</h1>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
+                    </div>
+                    <h1 class="mx-page-title">📋 日志中心</h1>
                     <p class="mx-page-sub">系统运行日志</p>
                 </div>
                 <div class="mx-card">
@@ -502,25 +511,96 @@
                 </div>
             </div>
 
-            <!-- ══ 系统 ══ -->
+            <!-- ══ 更多（功能聚合页） ══ -->
             <div class="mx-page" id="page-system">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">系统</h1>
-                    <p class="mx-page-sub">连接状态和系统信息</p>
+                    <h1 class="mx-page-title">⚙️ 更多功能</h1>
+                    <p class="mx-page-sub">系统管理与高级设置</p>
                 </div>
+
+                <!-- 功能入口网格 -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px">
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('model',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                        <div style="font-size:32px;margin-bottom:8px">🤖</div>
+                        <div style="font-size:14px;font-weight:600">模型配置</div>
+                        <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">双 Agent · Provider</div>
+                    </div>
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('command',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                        <div style="font-size:32px;margin-bottom:8px">💬</div>
+                        <div style="font-size:14px;font-weight:600">命令面板</div>
+                        <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">自然语言指令</div>
+                    </div>
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('tasks',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                        <div style="font-size:32px;margin-bottom:8px">📋</div>
+                        <div style="font-size:14px;font-weight:600">任务队列</div>
+                        <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">执行状态 · 历史</div>
+                    </div>
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('safety',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                        <div style="font-size:32px;margin-bottom:8px">🛡️</div>
+                        <div style="font-size:14px;font-weight:600">安全设置</div>
+                        <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">五级风控 · 审计</div>
+                    </div>
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('logs',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                        <div style="font-size:32px;margin-bottom:8px">📋</div>
+                        <div style="font-size:14px;font-weight:600">日志中心</div>
+                        <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">实时日志流</div>
+                    </div>
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="loadTokenStats();showPage('tokens',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                        <div style="font-size:32px;margin-bottom:8px">📊</div>
+                        <div style="font-size:14px;font-weight:600">Token 统计</div>
+                        <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">用量 · 成本</div>
+                    </div>
+                </div>
+
+                <!-- 系统状态卡片 -->
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">⚙️ 系统状态</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title">🔗 系统状态</span></div>
                     <div class="mx-card-body">
-                        <div class="mx-table-wrap">
-                            <table class="mx-table">
-                                <tbody>
-                                    <tr><td>Mod 连接</td><td id="sysMod">检查中...</td></tr>
-                                    <tr><td>AI 服务</td><td id="sysAI">检查中...</td></tr>
-                                    <tr><td>WebUI</td><td><span style="color:var(--mx-green)">✓ 运行中</span></td></tr>
-                                    <tr><td>记忆系统</td><td id="sysMemory">检查中...</td></tr>
-                                </tbody>
-                            </table>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--mx-s1);border-radius:var(--mx-r-sm)">
+                                <div class="bm-status-dot" id="sysModDot"></div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600">Mod 连接</div>
+                                    <div style="font-size:11px;color:var(--mx-t3)" id="sysMod">检查中...</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--mx-s1);border-radius:var(--mx-r-sm)">
+                                <div class="bm-status-dot" id="sysAIDot"></div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600">AI 服务</div>
+                                    <div style="font-size:11px;color:var(--mx-t3)" id="sysAI">检查中...</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--mx-s1);border-radius:var(--mx-r-sm)">
+                                <div class="bm-status-dot online"></div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600">WebUI</div>
+                                    <div style="font-size:11px;color:var(--mx-green)">✓ 运行中</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--mx-s1);border-radius:var(--mx-r-sm)">
+                                <div class="bm-status-dot" id="sysMemoryDot"></div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600">记忆系统</div>
+                                    <div style="font-size:11px;color:var(--mx-t3)" id="sysMemory">检查中...</div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 快速命令 -->
+                <div class="mx-card" style="margin-top:16px">
+                    <div class="mx-card-head"><span class="mx-card-title">⚡ 快速命令</span></div>
+                    <div class="mx-card-body" style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/status')">📊 状态</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/come')">🏠 回家</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/follow')">👣 跟随</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/stop')">⏹️ 停止</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/eat')">🍖 进食</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/mine')">⛏️ 挖矿</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/tree')">🪓 砍树</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/sleep')">😴 睡觉</button>
                     </div>
                 </div>
             </div>
@@ -528,7 +608,10 @@
             <!-- ══ 命令面板 ══ -->
             <div class="mx-page" id="page-command">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">命令面板</h1>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
+                    </div>
+                    <h1 class="mx-page-title">💬 命令面板</h1>
                     <p class="mx-page-sub">发送自然语言指令给 AI</p>
                 </div>
                 <div class="mx-card" style="margin-bottom:16px">
@@ -546,7 +629,10 @@
             <!-- ══ 任务队列 ══ -->
             <div class="mx-page" id="page-tasks">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">任务队列</h1>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
+                    </div>
+                    <h1 class="mx-page-title">📋 任务队列</h1>
                     <p class="mx-page-sub">查看待执行和执行中的任务</p>
                 </div>
                 <div class="bm-stat-grid" style="margin-bottom:16px">
@@ -563,7 +649,7 @@
 
     </main>
 
-    <!-- 底部导航（手机端） -->
+    <!-- 底部导航（手机端） — 悬浮胶囊 -->
     <nav class="mx-bottom-nav">
         <ul class="mx-bottom-nav-items">
             <li class="mx-btm-item active" onclick="showPage('dashboard',this)"><span>📊</span><span>仪表盘</span></li>
@@ -902,9 +988,24 @@ async function loadMemory() {
 // ══ 系统状态 ══
 async function loadSystemStatus() {
     const d = await api('/api/system/status'); if (!d) return;
-    document.getElementById('sysMod').innerHTML = d.mod_connected ? '<span style="color:var(--mx-green)">✓ 已连接</span>' : '<span style="color:var(--mx-t3)">○ 未连接（正常）</span>';
-    document.getElementById('sysAI').innerHTML = d.ai_connected ? '<span style="color:var(--mx-green)">✓ 已连接</span>' : '<span style="color:var(--mx-amber)">⚠ 未配置</span>';
+    const modOk = d.mod_connected;
+    const aiOk = d.ai_connected;
+    document.getElementById('sysMod').innerHTML = modOk ? '<span style="color:var(--mx-green)">✓ 已连接</span>' : '<span style="color:var(--mx-t3)">○ 未连接</span>';
+    document.getElementById('sysAI').innerHTML = aiOk ? '<span style="color:var(--mx-green)">✓ 已连接</span>' : '<span style="color:var(--mx-amber)">⚠ 未配置</span>';
     document.getElementById('sysMemory').innerHTML = '<span style="color:var(--mx-green)">✓ 运行中</span>';
+    // 更新状态圆点
+    const modDot = document.getElementById('sysModDot');
+    const aiDot = document.getElementById('sysAIDot');
+    const memDot = document.getElementById('sysMemoryDot');
+    if (modDot) modDot.className = 'bm-status-dot ' + (modOk ? 'online' : 'offline');
+    if (aiDot) aiDot.className = 'bm-status-dot ' + (aiOk ? 'online' : 'offline');
+    if (memDot) memDot.className = 'bm-status-dot online';
+}
+
+// ══ 快速命令 ══
+async function sendQuickCmd(cmd) {
+    await api('/api/command', {method:'POST', body:JSON.stringify({command:cmd})});
+    if(typeof MxToast!=='undefined') MxToast.info('已发送: ' + cmd);
 }
 
 // ══ 指令 ══
