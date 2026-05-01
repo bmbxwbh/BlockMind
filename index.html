@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlockMind — Minecraft 智能 AI 玩伴</title>
+<meta name="description" content="Fabric Mod + AI 驱动 + 记忆系统，实现 7×24 小时自主生存的 Minecraft 智能玩伴">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A0A0B;--bg2:#111113;--bg3:#18181B;
+  --border:#27272A;--border2:#3F3F46;
+  --text:#FAFAFA;--text2:#A1A1AA;--text3:#71717A;
+  --accent:#00D4FF;--accent2:#00A3CC;
+  --glow:rgba(0,212,255,0.08);--glow2:rgba(0,212,255,0.15);
+  --mono:'SF Mono','Cascadia Code','Fira Code',ui-monospace,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans SC',sans-serif;
+}
+html{scroll-behavior:smooth;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent);color:var(--bg)}
+a{color:var(--accent);text-decoration:none;transition:opacity .2s}
+a:hover{opacity:.8}
+
+/* ── Layout ── */
+.container{max-width:1080px;margin:0 auto;padding:0 24px}
+section{padding:120px 0}
+@media(max-width:768px){section{padding:80px 0}.container{padding:0 20px}}
+
+/* ── Nav ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 0;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid transparent;transition:border-color .3s}
+nav.scrolled{border-color:var(--border)}
+nav .container{display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-size:18px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.nav-logo span{color:var(--accent)}
+.nav-links{display:flex;gap:32px;font-size:14px;color:var(--text2)}
+.nav-links a{color:var(--text2);transition:color .2s}
+.nav-links a:hover{color:var(--text);opacity:1}
+.nav-github{display:flex;align-items:center;gap:6px;color:var(--text2);font-size:14px;padding:8px 16px;border:1px solid var(--border);border-radius:8px;transition:all .2s}
+.nav-github:hover{border-color:var(--border2);color:var(--text);opacity:1}
+@media(max-width:640px){.nav-links{display:none}}
+
+/* ── Hero ── */
+.hero{padding:200px 0 120px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--glow2) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-block;padding:6px 16px;border:1px solid var(--border);border-radius:100px;font-size:13px;color:var(--text2);margin-bottom:32px;font-family:var(--mono)}
+.hero-badge .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:8px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{font-size:clamp(40px,8vw,72px);font-weight:800;letter-spacing:-.04em;line-height:1.1;margin-bottom:24px;background:linear-gradient(180deg,var(--text) 0%,var(--text3) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:clamp(16px,2.5vw,20px);color:var(--text2);max-width:560px;margin:0 auto 48px;line-height:1.7}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-family:var(--sans)}
+.btn-primary{background:var(--text);color:var(--bg)}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);opacity:1}
+.hero-code{margin-top:64px;padding:16px 24px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;display:inline-block;font-family:var(--mono);font-size:14px;color:var(--text2);cursor:pointer;transition:all .2s;position:relative}
+.hero-code:hover{border-color:var(--border2)}
+.hero-code .copy-hint{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text3);opacity:0;transition:opacity .2s}
+.hero-code:hover .copy-hint{opacity:1}
+.hero-code code{color:var(--accent)}
+@media(max-width:768px){.hero{padding:160px 0 80px}}
+
+/* ── Features ── */
+.features{border-top:1px solid var(--border)}
+.section-label{font-size:13px;font-family:var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px}
+.section-title{font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-.03em;margin-bottom:16px}
+.section-desc{font-size:17px;color:var(--text2);max-width:520px;line-height:1.7}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:16px;overflow:hidden;margin-top:64px}
+.feature-card{background:var(--bg2);padding:40px 32px;transition:background .3s}
+.feature-card:hover{background:var(--bg3)}
+.feature-icon{font-size:28px;margin-bottom:20px;display:block}
+.feature-card h3{font-size:17px;font-weight:600;margin-bottom:8px;letter-spacing:-.01em}
+.feature-card p{font-size:14px;color:var(--text2);line-height:1.6}
+@media(max-width:768px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:28px 24px}}
+
+/* ── Architecture ── */
+.arch{border-top:1px solid var(--border)}
+.arch-diagram{margin-top:64px;padding:48px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--text2);overflow-x:auto;white-space:pre;position:relative}
+.arch-diagram .hl{color:var(--accent)}
+.arch-diagram .dim{color:var(--text3)}
+.arch-layers{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+.arch-layer{padding:28px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;transition:border-color .3s}
+.arch-layer:hover{border-color:var(--border2)}
+.arch-layer h4{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.arch-layer ul{list-style:none;font-size:14px;color:var(--text2)}
+.arch-layer li{padding:4px 0;padding-left:16px;position:relative}
+.arch-layer li::before{content:'';position:absolute;left:0;top:12px;width:6px;height:6px;border-radius:50%;background:var(--border2)}
+@media(max-width:768px){.arch-layers{grid-template-columns:1fr}}
+
+/* ── Stats ── */
+.stats{border-top:1px solid var(--border)}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:16px;overflow:hidden;margin-top:64px}
+.stat-item{background:var(--bg2);padding:48px 32px;text-align:center}
+.stat-value{font-size:clamp(32px,5vw,48px);font-weight:800;letter-spacing:-.03em;font-family:var(--mono)}
+.stat-value .accent{color:var(--accent)}
+.stat-label{font-size:14px;color:var(--text3);margin-top:8px}
+@media(max-width:768px){.stat-grid{grid-template-columns:1fr 1fr}.stat-item{padding:32px 20px}}
+
+/* ── Quick Start ── */
+.quickstart{border-top:1px solid var(--border)}
+.code-block{margin-top:48px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.code-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text3)}
+.code-dots{display:flex;gap:6px}
+.code-dots span{width:10px;height:10px;border-radius:50%;background:var(--border2)}
+.code-body{padding:20px;font-family:var(--mono);font-size:14px;line-height:2;color:var(--text2);overflow-x:auto}
+.code-body .comment{color:var(--text3)}
+.code-body .cmd{color:var(--accent)}
+.code-body .flag{color:var(--text3)}
+
+/* ── Footer ── */
+footer{border-top:1px solid var(--border);padding:48px 0;text-align:center}
+.footer-links{display:flex;justify-content:center;gap:32px;margin-bottom:24px;font-size:14px}
+.footer-links a{color:var(--text3)}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{font-size:13px;color:var(--text3)}
+
+/* ── Animations ── */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+.fade-in-delay-1{transition-delay:.1s}
+.fade-in-delay-2{transition-delay:.2s}
+.fade-in-delay-3{transition-delay:.3s}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav id="nav">
+<div class="container">
+  <div class="nav-logo">🧠 <span>BlockMind</span></div>
+  <div class="nav-links">
+    <a href="#features">特性</a>
+    <a href="#arch">架构</a>
+    <a href="#quickstart">快速开始</a>
+  </div>
+  <a class="nav-github" href="https://github.com/bmbxwbh/BlockMind" target="_blank">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+<div class="container">
+  <div class="fade-in">
+    <div class="hero-badge"><span class="dot"></span>v3.0 · 2026</div>
+    <h1>BlockMind</h1>
+    <p>Fabric Mod 精准接口 + Python AI 决策 + 三层记忆系统<br>7×24 小时自主生存的 Minecraft 智能玩伴</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="https://github.com/bmbxwbh/BlockMind/releases/latest" target="_blank">下载 Latest</a>
+      <a class="btn btn-ghost" href="https://github.com/bmbxwbh/BlockMind" target="_blank">查看文档</a>
+    </div>
+  </div>
+  <div class="hero-code fade-in fade-in-delay-2" onclick="copyInstall(this)">
+    <code>git clone https://github.com/bmbxwbh/BlockMind.git && cd BlockMind && ./start.sh</code>
+    <span class="copy-hint">点击复制</span>
+  </div>
+</div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+<div class="container">
+  <div class="fade-in">
+    <div class="section-label">Features</div>
+    <div class="section-title">为 Minecraft 而生的 AI 架构</div>
+    <div class="section-desc">不是通用聊天机器人套壳，而是从游戏接口到 AI 决策的全链路设计</div>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-card fade-in">
+      <span class="feature-icon">🧠</span>
+      <h3>三层记忆系统</h3>
+      <p>空间记忆记住建筑保护区，路径记忆缓存成功路线，策略记忆沉淀可复用操作。跨会话持久化，越用越聪明。</p>
+    </div>
+    <div class="feature-card fade-in fade-in-delay-1">
+      <span class="feature-icon">🤖</span>
+      <h3>双 Agent 架构</h3>
+      <p>主 Agent 维护对话上下文（~50 Token/次），操作 Agent 无状态执行（&lt;1500 Token/次）。聊天与执行完全隔离。</p>
+    </div>
+    <div class="feature-card fade-in fade-in-delay-2">
+      <span class="feature-icon">🛤️</span>
+      <h3>智能导航</h3>
+      <p>记忆驱动寻路：缓存优先 → Baritone 高级寻路 → A* 回退。自动注入建筑保护区，再也不怕炸家。</p>
+    </div>
+    <div class="feature-card fade-in">
+      <span class="feature-icon">📝</span>
+      <h3>Skill DSL</h3>
+      <p>YAML 声明式技能定义，L1-L4 四级缓存。常见任务直接走缓存，零 Token 消耗。支持循环、条件、嵌套。</p>
+    </div>
+    <div class="feature-card fade-in fade-in-delay-1">
+      <span class="feature-icon">🛡️</span>
+      <h3>五级安全体系</h3>
+      <p>风险评估 → 操作授权 → 紧急接管 → 审计日志 → 安全区限制。高风险操作需玩家确认，致命操作默认禁止。</p>
+    </div>
+    <div class="feature-card fade-in fade-in-delay-2">
+      <span class="feature-icon">🛒</span>
+      <h3>Skill 市场</h3>
+      <p>浏览、导入、分享社区技能。支持 YAML 粘贴、URL 导入、批量打包。PR 方式提交到社区仓库。</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Architecture -->
+<section class="arch" id="arch">
+<div class="container">
+  <div class="fade-in">
+    <div class="section-label">Architecture</div>
+    <div class="section-title">系统架构</div>
+    <div class="section-desc">Fabric Mod 提供精准游戏接口，Python 后端驱动 AI 决策，两层解耦，各司其职。</div>
+  </div>
+  <div class="arch-diagram fade-in">
+<span class="dim">┌─────────────────────────────────────────────────────────┐</span>
+<span class="dim">│</span>              <span class="hl">Minecraft 服务器 (Fabric Mod)</span>              <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐</span>  <span class="dim">│</span>
+<span class="dim">│</span>  <span class="hl">状态采集器</span>  <span class="hl">动作执行器</span>  <span class="hl">事件监听器</span>  <span class="hl">Baritone</span>   <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">└────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘</span>  <span class="dim">│</span>
+<span class="dim">│</span>       <span class="dim">└────────────┼────────────┼────────────┘</span>       <span class="dim">│</span>
+<span class="dim">│</span>              <span class="hl">HTTP API :25580 + WebSocket</span>              <span class="dim">│</span>
+<span class="dim">└────────────────────────┬────────────────────────────────┘</span>
+                         <span class="dim">│</span>
+<span class="dim">┌────────────────────────▼────────────────────────────────┐</span>
+<span class="dim">│</span>              <span class="hl">Python 后端 (BlockMind)</span>                   <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">┌─────────────┐  ┌─────────────────────────────┐</span>     <span class="dim">│</span>
+<span class="dim">│</span>  <span class="hl">主 Agent</span>      <span class="dim">│</span>  <span class="hl">操作 Agent (无状态)</span>           <span class="dim">│</span>     <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">│ 聊天 · 意图  │</span>  <span class="dim">│ Skill 匹配 · 执行 · 推理   │</span>     <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">└──────┬──────┘</span>  <span class="dim">└──────────────┬──────────────┘</span>     <span class="dim">│</span>
+<span class="dim">│</span>         <span class="dim">│</span>                        <span class="dim">│</span>                     <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">┌──────▼──────────────────────▼──────────────────┐</span>  <span class="dim">│</span>
+<span class="dim">│</span>  <span class="hl">🧠 记忆系统</span>  <span class="dim">│</span> <span class="hl">📝 Skill DSL</span> <span class="dim">│</span> <span class="hl">🛡️ 安全层</span>   <span class="dim">│</span>  <span class="dim">│</span>
+<span class="dim">│</span>  <span class="dim">└──────────────────────────────────────────────┘</span>  <span class="dim">│</span>
+<span class="dim">└─────────────────────────────────────────────────────────┘</span></div>
+  <div class="arch-layers">
+    <div class="arch-layer fade-in">
+      <h4>🔌 Fabric Mod (Java)</h4>
+      <ul>
+        <li>13 个 HTTP API 端点 + WebSocket 事件推送</li>
+        <li>零协议解析，直接调用游戏内部 API</li>
+        <li>状态采集：方块、实体、背包、世界</li>
+        <li>动作执行：移动、挖掘、放置、攻击</li>
+        <li>FakePlayer Bot 系统：独立 bot 实体</li>
+      </ul>
+    </div>
+    <div class="arch-layer fade-in fade-in-delay-1">
+      <h4>🐍 Python 后端</h4>
+      <ul>
+        <li>双 Agent 架构：聊天/操作上下文隔离</li>
+        <li>三层记忆：空间/路径/策略，JSON 持久化</li>
+        <li>Skill DSL：YAML 声明式，L1-L4 分级缓存</li>
+        <li>五级安全：风险评估 + 授权 + 审计</li>
+        <li>WebUI：Miuix Console，暗色主题</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Stats -->
+<section class="stats">
+<div class="container">
+  <div class="stat-grid">
+    <div class="stat-item fade-in">
+      <div class="stat-value">14</div>
+      <div class="stat-label">语言 README</div>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-1">
+      <div class="stat-value"><span class="accent">13</span></div>
+      <div class="stat-label">API 端点</div>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-2">
+      <div class="stat-value">5</div>
+      <div class="stat-label">安全等级</div>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-3">
+      <div class="stat-value"><span class="accent">L4</span></div>
+      <div class="stat-label">任务分级</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Quick Start -->
+<section class="quickstart" id="quickstart">
+<div class="container">
+  <div class="fade-in">
+    <div class="section-label">Quick Start</div>
+    <div class="section-title">三步启动</div>
+    <div class="section-desc">支持 Linux / macOS / Windows，自动检测环境、安装依赖、下载 MC 服务端。</div>
+  </div>
+  <div class="code-block fade-in">
+    <div class="code-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span>terminal</span>
+    </div>
+    <div class="code-body"><span class="comment"># 1. 克隆项目</span>
+<span class="cmd">git clone</span> https://github.com/bmbxwbh/BlockMind.git
+<span class="cmd">cd</span> BlockMind
+
+<span class="comment"># 2. 编辑配置（填入你的 AI API Key）</span>
+<span class="cmd">cp</span> config.example.yaml config.yaml
+<span class="cmd">vim</span> config.yaml
+
+<span class="comment"># 3. 一键启动（自动安装依赖 + MC 服务端 + BlockMind + WebUI）</span>
+<span class="cmd">chmod +x</span> start.sh
+<span class="cmd">./start.sh</span>
+
+<span class="comment"># 访问 WebUI: http://localhost:19951</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px" class="fade-in fade-in-delay-1">
+    <div class="code-block">
+      <div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span>Docker</span></div>
+      <div class="code-body"><span class="cmd">docker pull</span> ghcr.io/bmbxwbh/blockmind:latest
+<span class="cmd">docker run</span> <span class="flag">-d -p</span> 19951:19951 <span class="flag">--name</span> blockmind \
+  <span class="flag">-v</span> config.yaml:/app/config.yaml:ro \
+  ghcr.io/bmbxwbh/blockmind:latest</div>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span>Windows</span></div>
+      <div class="code-body"><span class="comment">:: 双击运行</span>
+install.bat
+start_all.bat
+
+<span class="comment">:: 或命令行</span>
+<span class="cmd">git clone</span> https://github.com/bmbxwbh/BlockMind.git
+<span class="cmd">cd</span> BlockMind && <span class="cmd">start_all.bat</span></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- Footer -->
+<footer>
+<div class="container">
+  <div class="footer-links">
+    <a href="https://github.com/bmbxwbh/BlockMind" target="_blank">GitHub</a>
+    <a href="https://github.com/bmbxwbh/BlockMind/releases" target="_blank">Releases</a>
+    <a href="https://github.com/bmbxwbh/BlockMind/blob/main/README-en.md" target="_blank">English</a>
+    <a href="https://github.com/bmbxwbh/BlockMind/blob/main/README.md" target="_blank">中文</a>
+  </div>
+  <div class="footer-copy">MIT License · Built with ❤️ by BlockMind Community</div>
+</div>
+</footer>
+
+<script>
+// Nav scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// Fade in on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Copy install command
+function copyInstall(el) {
+  const cmd = el.querySelector('code').textContent;
+  navigator.clipboard.writeText(cmd).then(() => {
+    const hint = el.querySelector('.copy-hint');
+    hint.textContent = '已复制 ✓';
+    setTimeout(() => { hint.textContent = '点击复制'; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
