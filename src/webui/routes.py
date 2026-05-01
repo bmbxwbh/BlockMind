@@ -701,3 +701,224 @@ async def chat_history(request: Request, limit: int = 50, _=Depends(require_auth
     if hasattr(engine, 'chat_history'):
         return {"history": engine.chat_history[-limit:]}
     return {"history": []}
+
+
+# ── Skill 市场接口 ──
+
+class MarketplaceImportRequest(BaseModel):
+    """市场导入请求"""
+    content: str = ""           # YAML 内容
+    url: str = ""               # 或 URL
+    force: bool = False         # 强制覆盖
+
+class MarketplaceSubmitRequest(BaseModel):
+    """市场提交请求"""
+    skill_id: str
+    category: str = "general"
+
+class MarketplaceInstallRequest(BaseModel):
+    """市场安装请求"""
+    skill_id: str
+
+def _get_marketplace(request: Request):
+    """获取市场管理器实例"""
+    engine = get_engine(request)
+    if not hasattr(engine, '_marketplace'):
+        from src.skills.marketplace import SkillMarketplace
+        storage_path = "./skills"
+        if hasattr(engine, 'skill_storage') and engine.skill_storage:
+            storage_path = str(engine.skill_storage.storage_path)
+        engine._marketplace = SkillMarketplace(
+            storage_path=storage_path,
+            skill_storage=getattr(engine, 'skill_storage', None),
+        )
+    return engine._marketplace
+
+def _get_registry(request: Request):
+    """获取注册中心客户端"""
+    engine = get_engine(request)
+    if not hasattr(engine, '_registry'):
+        from src.skills.registry import SkillRegistry
+        engine._registry = SkillRegistry()
+    return engine._registry
+
+
+@router.get("/api/marketplace/browse")
+async def marketplace_browse(
+    request: Request,
+    category: str = None,
+    sort: str = "popular",
+    _=Depends(require_auth),
+):
+    """浏览市场"""
+    registry = _get_registry(request)
+    marketplace = _get_marketplace(request)
+
+    # 先从远程注册中心获取
+    try:
+        remote_skills = registry.search(category=category, sort=sort)
+    except Exception:
+        remote_skills = []
+
+    # 合并本地 marketplace 数据
+    local_skills = marketplace.list_available(category)
+    local_ids = {s["skill_id"] for s in local_skills}
+
+    # 远程的如果本地没有，添加到列表
+    for rs in remote_skills:
+        if rs["skill_id"] not in local_ids:
+            rs["installed"] = False
+            rs["source"] = "remote"
+            local_skills.append(rs)
+
+    return {
+        "skills": local_skills,
+        "categories": marketplace.CATEGORIES,
+        "total": len(local_skills),
+    }
+
+
+@router.get("/api/marketplace/search")
+async def marketplace_search(
+    request: Request,
+    q: str = "",
+    category: str = None,
+    _=Depends(require_auth),
+):
+    """搜索市场"""
+    marketplace = _get_marketplace(request)
+    registry = _get_registry(request)
+
+    results = marketplace.search(q, category)
+
+    # 补充远程结果
+    try:
+        remote = registry.search(q, category)
+        local_ids = {r["skill_id"] for r in results}
+        for rs in remote:
+            if rs["skill_id"] not in local_ids:
+                rs["source"] = "remote"
+                results.append(rs)
+    except Exception:
+        pass
+
+    return {"skills": results, "total": len(results)}
+
+
+@router.get("/api/marketplace/stats")
+async def marketplace_stats(request: Request, _=Depends(require_auth)):
+    """获取市场统计"""
+    marketplace = _get_marketplace(request)
+    registry = _get_registry(request)
+
+    local_stats = marketplace.get_stats()
+    try:
+        remote_stats = registry.get_stats()
+    except Exception:
+        remote_stats = {"total_skills": 0, "total_downloads": 0, "categories": {}}
+
+    return {
+        "local": local_stats,
+        "remote": remote_stats,
+    }
+
+
+@router.get("/api/marketplace/{skill_id}")
+async def marketplace_get_skill(skill_id: str, request: Request, _=Depends(require_auth)):
+    """获取市场 Skill 详情"""
+    marketplace = _get_marketplace(request)
+    detail = marketplace.get_detail(skill_id)
+    if not detail:
+        raise HTTPException(status_code=404, detail="Skill 未找到")
+    return detail
+
+
+@router.post("/api/marketplace/import")
+async def marketplace_import(req: MarketplaceImportRequest, request: Request, _=Depends(require_auth)):
+    """导入 Skill（从 YAML 或 URL）"""
+    marketplace = _get_marketplace(request)
+
+    if req.url:
+        skill = marketplace.import_from_url(req.url, force=req.force)
+    elif req.content:
+        skill = marketplace.import_from_yaml(req.content, force=req.force)
+    else:
+        raise HTTPException(status_code=400, detail="需要提供 content 或 url")
+
+    if not skill:
+        raise HTTPException(status_code=400, detail="导入失败，请检查 YAML 内容或 URL")
+
+    return {
+        "success": True,
+        "skill_id": skill.skill_id,
+        "name": skill.name,
+        "message": f"成功导入: {skill.name} ({skill.skill_id})",
+    }
+
+
+@router.post("/api/marketplace/{skill_id}/install")
+async def marketplace_install(skill_id: str, request: Request, _=Depends(require_auth)):
+    """安装市场 Skill 到本地"""
+    marketplace = _get_marketplace(request)
+    success = marketplace.install(skill_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="安装失败")
+    return {"success": True, "message": f"已安装: {skill_id}"}
+
+
+@router.post("/api/marketplace/{skill_id}/uninstall")
+async def marketplace_uninstall(skill_id: str, request: Request, _=Depends(require_auth)):
+    """卸载市场 Skill"""
+    marketplace = _get_marketplace(request)
+    success = marketplace.uninstall(skill_id)
+    return {"success": success, "message": f"已卸载: {skill_id}"}
+
+
+@router.delete("/api/marketplace/{skill_id}")
+async def marketplace_remove(skill_id: str, request: Request, _=Depends(require_auth)):
+    """从市场完全移除"""
+    marketplace = _get_marketplace(request)
+    success = marketplace.remove(skill_id)
+    return {"success": success, "message": f"已移除: {skill_id}"}
+
+
+@router.post("/api/marketplace/{skill_id}/export")
+async def marketplace_export(skill_id: str, request: Request, _=Depends(require_auth)):
+    """导出 Skill 为 YAML"""
+    marketplace = _get_marketplace(request)
+    content = marketplace.export_skill(skill_id)
+    if not content:
+        raise HTTPException(status_code=404, detail="Skill 未找到")
+    return {"skill_id": skill_id, "content": content}
+
+
+@router.post("/api/marketplace/submit")
+async def marketplace_submit(req: MarketplaceSubmitRequest, request: Request, _=Depends(require_auth)):
+    """提交 Skill 到社区注册中心"""
+    marketplace = _get_marketplace(request)
+    registry = _get_registry(request)
+
+    content = marketplace.export_skill(req.skill_id)
+    if not content:
+        raise HTTPException(status_code=404, detail="Skill 未找到")
+
+    result = registry.submit_skill(content, category=req.category)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "提交失败"))
+
+    return result
+
+
+@router.get("/api/marketplace/updates/check")
+async def marketplace_check_updates(request: Request, _=Depends(require_auth)):
+    """检查更新"""
+    marketplace = _get_marketplace(request)
+    registry = _get_registry(request)
+
+    try:
+        remote_skills = registry.search(limit=200)
+    except Exception:
+        remote_skills = []
+
+    updates = marketplace.check_updates(remote_skills)
+    return {"updates": updates, "total": len(updates)}

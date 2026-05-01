@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "updated_at": "2026-05-01T00:00:00Z",
+  "categories": [
+    "combat",
+    "farming",
+    "building",
+    "gathering",
+    "navigation",
+    "storage",
+    "survival",
+    "automation",
+    "general"
+  ],
+  "skills": {
+    "kill_ender_dragon": {
+      "name": "击杀末影龙",
+      "author": "community",
+      "version": 1,
+      "category": "combat",
+      "tags": [
+        "combat",
+        "boss",
+        "ender",
+        "dragon",
+        "末地"
+      ],
+      "description": "自动前往末地击杀末影龙，含准备工作",
+      "difficulty": "advanced",
+      "rating": 4.5,
+      "downloads": 42,
+      "mc_versions": [
+        "1.20.4",
+        "1.21.x"
+      ],
+      "path": "combat/kill_ender_dragon.yaml",
+      "updated_at": "2026-05-01T00:00:00Z"
+    },
+    "auto_sugar_cane": {
+      "name": "自动收割甘蔗",
+      "author": "community",
+      "version": 1,
+      "category": "farming",
+      "tags": [
+        "farming",
+        "sugar_cane",
+        "auto",
+        "甘蔗"
+      ],
+      "description": "自动收割成熟甘蔗并补种",
+      "difficulty": "beginner",
+      "rating": 4.2,
+      "downloads": 89,
+      "mc_versions": [
+        "1.19.4",
+        "1.20.x",
+        "1.21.x"
+      ],
+      "path": "farming/auto_sugar_cane.yaml",
+      "updated_at": "2026-05-01T00:00:00Z"
+    },
+    "build_glass_house": {
+      "name": "建造玻璃房子",
+      "author": "community",
+      "version": 1,
+      "category": "building",
+      "tags": [
+        "building",
+        "house",
+        "glass",
+        "建造"
+      ],
+      "description": "在当前位置建造一个5x5玻璃房子",
+      "difficulty": "intermediate",
+      "rating": 4.8,
+      "downloads": 156,
+      "mc_versions": [
+        "1.20.x",
+        "1.21.x"
+      ],
+      "path": "building/glass_house.yaml",
+      "updated_at": "2026-05-01T00:00:00Z"
+    },
+    "auto_mine_diamonds": {
+      "name": "自动挖钻石",
+      "author": "community",
+      "version": 2,
+      "category": "gathering",
+      "tags": [
+        "gathering",
+        "mine",
+        "diamond",
+        "挖矿",
+        "钻石"
+      ],
+      "description": "自动前往钻石层挖钻石",
+      "difficulty": "intermediate",
+      "rating": 4.7,
+      "downloads": 234,
+      "mc_versions": [
+        "1.19.4",
+        "1.20.x",
+        "1.21.x"
+      ],
+      "path": "gathering/auto_mine_diamonds.yaml",
+      "updated_at": "2026-05-01T00:00:00Z"
+    },
+    "auto_torch": {
+      "name": "自动插火把",
+      "author": "community",
+      "version": 1,
+      "category": "automation",
+      "tags": [
+        "automation",
+        "torch",
+        "light",
+        "火把",
+        "照明"
+      ],
+      "description": "自动在暗处放置火把防止刷怪",
+      "difficulty": "beginner",
+      "rating": 4.0,
+      "downloads": 67,
+      "mc_versions": [
+        "1.19.4",
+        "1.20.x",
+        "1.21.x"
+      ],
+      "path": "automation/auto_torch.yaml",
+      "updated_at": "2026-05-01T00:00:00Z"
+    }
+  }
+}

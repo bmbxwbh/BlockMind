@@ -1,0 +1,72 @@
+skill_id: auto_mine_diamonds
+name: 自动挖钻石
+tags:
+- gathering
+- mine
+- diamond
+- 挖矿
+- 钻石
+priority: 3
+task_level: L2
+description: 自动前往钻石层挖钻石
+author: community
+version: 2
+market:
+  category: gathering
+  difficulty: intermediate
+  mc_versions:
+  - 1.19.4
+  - 1.20.x
+  - 1.21.x
+  description_long: '智能钻石挖掘：
+
+    - 自动前往 Y=-59 钻石层
+
+    - 使用铁镐以上工具
+
+    - 自动放置火把照明
+
+    - 遇到岩浆自动绕路
+
+    - 背包满自动返回'
+  license: MIT
+  keywords:
+  - 钻石
+  - diamond
+  - 挖矿
+  - 自动
+  rating: 4.7
+  download_count: 234
+when:
+  all:
+  - inventory.has('iron_pickaxe') or inventory.has('diamond_pickaxe')
+do:
+- action: smart_navigate
+  args:
+    y: -59
+    allow_break: true
+    use_cache: true
+- action: loop
+  args:
+    while: not inventory.is_full()
+    do:
+    - action: scan_blocks
+      args:
+        radius: 16
+        filter: type == 'diamond_ore'
+    - action: smart_navigate
+      args:
+        target: scanned.position
+        allow_break: true
+    - action: dig_block
+      args:
+        position: scanned.position
+- action: smart_navigate
+  args:
+    target: home
+    use_cache: true
+until:
+  any:
+  - inventory.is_full()
+  - self.health() < 6
+  - task_interrupted()

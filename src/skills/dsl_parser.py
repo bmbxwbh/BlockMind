@@ -3,7 +3,7 @@ import yaml
 import logging
 from pathlib import Path
 from typing import List, Optional
-from src.skills.models import SkillDSL, WhenClause, DoStep, LoopBlock, UntilClause
+from src.skills.models import SkillDSL, WhenClause, DoStep, LoopBlock, UntilClause, SkillMarketMeta
 
 
 class DSLParser:
@@ -26,11 +26,23 @@ class DSLParser:
         data = yaml.safe_load(yaml_content)
         return self.parse_dict(data)
 
+    def parse(self, data: dict) -> SkillDSL:
+        """从字典解析（别名）"""
+        return self.parse_dict(data)
+
     def parse_dict(self, data: dict) -> SkillDSL:
         """从字典解析"""
         when = WhenClause(**data.get("when", {}))
         until = UntilClause(**data.get("until", {}))
         do_steps = self._parse_do(data.get("do", []))
+
+        # 解析市场元数据
+        market_meta = None
+        if "market" in data and isinstance(data["market"], dict):
+            try:
+                market_meta = SkillMarketMeta(**data["market"])
+            except Exception:
+                pass
 
         return SkillDSL(
             skill_id=data["skill_id"],
@@ -44,6 +56,7 @@ class DSLParser:
             author=data.get("author", "system"),
             version=data.get("version", 1),
             task_level=data.get("task_level", "L2"),
+            market_meta=market_meta,
         )
 
     def _parse_do(self, do_data: list) -> List[DoStep]:

@@ -1,0 +1,59 @@
+skill_id: auto_sugar_cane
+name: 自动收割甘蔗
+tags:
+- farming
+- sugar_cane
+- auto
+- 甘蔗
+- 自动
+priority: 4
+task_level: L2
+description: 自动收割成熟甘蔗并补种
+author: community
+version: 1
+market:
+  category: farming
+  difficulty: beginner
+  mc_versions:
+  - 1.19.4
+  - 1.20.x
+  - 1.21.x
+  description_long: '自动循环收割甘蔗田：
+
+    - 扫描周围甘蔗方块
+
+    - 收割3格高的成熟甘蔗
+
+    - 自动补种
+
+    - 存入附近箱子'
+  license: MIT
+  keywords:
+  - 甘蔗
+  - sugar_cane
+  - 自动农场
+  rating: 4.2
+  download_count: 89
+when:
+  all:
+  - world.any_entity(type='sugar_cane', radius=32)
+do:
+- action: scan_blocks
+  args:
+    radius: 32
+    filter: type == 'sugar_cane'
+- action: smart_navigate
+  args:
+    target: scanned.position
+    use_cache: true
+- action: dig_block
+  args:
+    position: scanned.position
+- action: place_block
+  args:
+    item: sugar_cane
+    position: scanned.position
+until:
+  any:
+  - inventory.is_full()
+  - task_interrupted()

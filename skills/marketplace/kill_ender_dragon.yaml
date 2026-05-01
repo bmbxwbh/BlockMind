@@ -1,0 +1,69 @@
+skill_id: kill_ender_dragon
+name: 击杀末影龙
+tags:
+- combat
+- boss
+- ender
+- dragon
+- 末地
+priority: 1
+task_level: L3
+description: 自动前往末地击杀末影龙，含准备工作
+author: community
+version: 1
+market:
+  category: combat
+  difficulty: advanced
+  mc_versions:
+  - 1.20.4
+  - 1.21.x
+  description_long: '完整的末影龙击杀流程：
+
+    1. 检查装备（钻石剑+弓+末影珍珠）
+
+    2. 前往末地传送门
+
+    3. 摧毁末影水晶
+
+    4. 攻击末影龙
+
+    5. 拾取龙蛋'
+  license: MIT
+  keywords:
+  - 末影龙
+  - boss
+  - 末地
+  - ender_dragon
+  rating: 4.5
+  download_count: 42
+when:
+  all:
+  - inventory.has('diamond_sword')
+  - inventory.has('bow')
+do:
+- action: smart_navigate
+  args:
+    target: end_portal
+    allow_break: true
+- action: scan_entities
+  args:
+    radius: 64
+    filter: type == 'ender_crystal'
+- action: loop
+  args:
+    while: entity_exists('ender_crystal')
+    do:
+    - action: attack
+      args:
+        target: entity.position
+- action: loop
+  args:
+    while: entity_exists('ender_dragon')
+    do:
+    - action: attack
+      args:
+        target: entity.position
+until:
+  any:
+  - not entity_exists('ender_dragon')
+  - task_interrupted()

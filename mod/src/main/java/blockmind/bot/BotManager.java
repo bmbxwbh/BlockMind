@@ -188,18 +188,24 @@ public class BotManager {
         try {
             net.minecraft.network.ClientConnection conn =
                 new net.minecraft.network.ClientConnection(net.minecraft.network.NetworkSide.SERVERBOUND);
-            // 反射注入 EmbeddedChannel
+            // 反射注入 EmbeddedChannel — 遍历所有字段找到 Channel 类型
+            boolean found = false;
             for (Field f : net.minecraft.network.ClientConnection.class.getDeclaredFields()) {
-                if (f.getType() == io.netty.channel.Channel.class) {
+                BlockMindMod.LOGGER.info("[BlockMind] ClientConnection field: {} type: {}", f.getName(), f.getType().getName());
+                if (io.netty.channel.Channel.class.isAssignableFrom(f.getType())) {
                     f.setAccessible(true);
                     f.set(conn, new io.netty.channel.embedded.EmbeddedChannel());
-                    BlockMindMod.LOGGER.info("[BlockMind] FakeChannel injected: {}", f.getName());
-                    return conn;
+                    BlockMindMod.LOGGER.info("[BlockMind] ✅ FakeChannel injected into: {}", f.getName());
+                    found = true;
+                    break;
                 }
             }
-            BlockMindMod.LOGGER.error("[BlockMind] Cannot find Channel field");
+            if (!found) {
+                BlockMindMod.LOGGER.error("[BlockMind] No Channel field found in ClientConnection!");
+            }
+            return conn;
         } catch (Exception e) {
-            BlockMindMod.LOGGER.error("[BlockMind] Failed to create fake connection: {}", e.getMessage());
+            BlockMindMod.LOGGER.error("[BlockMind] Failed to create fake connection: {}", e.getMessage(), e);
         }
         return new net.minecraft.network.ClientConnection(net.minecraft.network.NetworkSide.SERVERBOUND);
     }

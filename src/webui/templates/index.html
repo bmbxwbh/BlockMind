@@ -131,6 +131,9 @@
         <div class="mx-nav-item" onclick="showPage('skills',this)">
             <span class="mx-nav-icon">🛠️</span><span class="mx-nav-label">Skill 管理</span>
         </div>
+        <div class="mx-nav-item" onclick="showPage('marketplace',this)">
+            <span class="mx-nav-icon">🛒</span><span class="mx-nav-label">Skill 市场</span>
+        </div>
         <div class="mx-nav-item" onclick="showPage('memory',this)">
             <span class="mx-nav-icon">🧠</span><span class="mx-nav-label">记忆系统</span>
         </div>
@@ -250,6 +253,115 @@
                         </div>
                         <textarea class="bm-yaml-editor" id="skillYamlEditor" placeholder="# 选择一个 Skill 进行编辑..." spellcheck="false"></textarea>
                     </div>
+                </div>
+            </div>
+
+            <!-- ══ Skill 市场 ══ -->
+            <div class="mx-page" id="page-marketplace">
+                <div class="mx-page-head">
+                    <h1 class="mx-page-title">🛒 Skill 市场</h1>
+                    <p class="mx-page-sub">浏览、导入、分享社区技能</p>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">
+                    <div class="mx-card" style="padding:16px;text-align:center">
+                        <div style="font-size:24px;font-weight:700;color:var(--mx-primary)" id="mpTotal">-</div>
+                        <div style="font-size:12px;color:var(--mx-t3)">可用 Skill</div>
+                    </div>
+                    <div class="mx-card" style="padding:16px;text-align:center">
+                        <div style="font-size:24px;font-weight:700;color:var(--mx-green)" id="mpInstalled">-</div>
+                        <div style="font-size:12px;color:var(--mx-t3)">已安装</div>
+                    </div>
+                    <div class="mx-card" style="padding:16px;text-align:center">
+                        <div style="font-size:24px;font-weight:700;color:var(--mx-amber)" id="mpUpdates">-</div>
+                        <div style="font-size:12px;color:var(--mx-t3)">可更新</div>
+                    </div>
+                    <div class="mx-card" style="padding:16px;text-align:center">
+                        <div style="font-size:24px;font-weight:700;color:#bc8cff" id="mpRemote">-</div>
+                        <div style="font-size:12px;color:var(--mx-t3)">社区仓库</div>
+                    </div>
+                </div>
+
+                <!-- 搜索 + 操作栏 -->
+                <div class="mx-card" style="margin-bottom:16px">
+                    <div class="mx-card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                        <div class="mx-input-wrap" style="flex:1;min-width:200px">
+                            <input class="mx-input" id="mpSearch" placeholder="🔍 搜索 Skill（名称/标签/描述）..." oninput="debounce(marketplaceSearch,300)()">
+                        </div>
+                        <select class="mx-input" id="mpCategory" style="max-width:160px" onchange="marketplaceSearch()">
+                            <option value="">全部分类</option>
+                            <option value="combat">⚔️ 战斗</option>
+                            <option value="farming">🌾 农业</option>
+                            <option value="building">🏗️ 建造</option>
+                            <option value="gathering">⛏️ 采集</option>
+                            <option value="navigation">🧭 导航</option>
+                            <option value="storage">📦 存储</option>
+                            <option value="survival">❤️ 生存</option>
+                            <option value="automation">⚙️ 自动化</option>
+                            <option value="general">📋 通用</option>
+                        </select>
+                        <select class="mx-input" id="mpSort" style="max-width:140px" onchange="marketplaceSearch()">
+                            <option value="popular">🔥 热门</option>
+                            <option value="newest">🆕 最新</option>
+                            <option value="rating">⭐ 评分</option>
+                        </select>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="marketplaceSearch()">刷新</button>
+                        <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="showImportModal()">📥 导入</button>
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="checkMarketUpdates()">🔄 检查更新</button>
+                    </div>
+                </div>
+
+                <!-- Skill 卡片列表 -->
+                <div id="mpSkillGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+                    <div style="grid-column:1/-1;text-align:center;color:var(--mx-t3);padding:40px">加载中...</div>
+                </div>
+            </div>
+
+            <!-- 导入弹窗 -->
+            <div class="mx-modal-overlay" id="importModal">
+                <div class="mx-modal" style="max-width:600px">
+                    <div class="mx-modal-header">
+                        <h3 class="mx-modal-title">📥 导入 Skill</h3>
+                        <button class="mx-modal-close" onclick="closeImportModal()">&times;</button>
+                    </div>
+                    <div class="mx-modal-body">
+                        <div style="display:flex;gap:8px;margin-bottom:16px">
+                            <button class="mx-btn mx-btn-primary mx-btn-sm" id="importTabYaml" onclick="switchImportTab('yaml')">YAML 内容</button>
+                            <button class="mx-btn mx-btn-secondary mx-btn-sm" id="importTabUrl" onclick="switchImportTab('url')">从 URL</button>
+                        </div>
+                        <div id="importYamlPanel">
+                            <textarea class="bm-yaml-editor" id="importYaml" placeholder="粘贴 Skill YAML 内容..." style="min-height:250px" spellcheck="false"></textarea>
+                        </div>
+                        <div id="importUrlPanel" style="display:none">
+                            <div class="mx-input-wrap">
+                                <input class="mx-input" id="importUrl" placeholder="https://raw.githubusercontent.com/.../skill.yaml">
+                            </div>
+                            <p style="font-size:12px;color:var(--mx-t3);margin-top:8px">支持 GitHub raw 链接和直链</p>
+                        </div>
+                        <div style="margin-top:12px">
+                            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                                <input type="checkbox" id="importForce"> 强制覆盖已存在的同 ID Skill
+                            </label>
+                        </div>
+                        <div id="importResult" style="margin-top:12px;display:none"></div>
+                    </div>
+                    <div class="mx-modal-footer">
+                        <button class="mx-btn mx-btn-ghost" onclick="closeImportModal()">取消</button>
+                        <button class="mx-btn mx-btn-primary" onclick="doImport()">导入</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skill 详情弹窗 -->
+            <div class="mx-modal-overlay" id="skillDetailModal">
+                <div class="mx-modal" style="max-width:700px">
+                    <div class="mx-modal-header">
+                        <h3 class="mx-modal-title" id="detailTitle">Skill 详情</h3>
+                        <button class="mx-modal-close" onclick="closeDetailModal()">&times;</button>
+                    </div>
+                    <div class="mx-modal-body" id="detailBody"></div>
+                    <div class="mx-modal-footer" id="detailFooter"></div>
                 </div>
             </div>
 
@@ -853,6 +965,222 @@ async function testModelConfig() {
         diag.style.display = 'block';
         diag.innerHTML = `<div class="bm-diagnostic"><h4 style="margin-bottom:8px;color:var(--mx-error)">❌ 诊断信息</h4><pre>${JSON.stringify(r, null, 2)}</pre></div>`;
     }
+}
+
+// ══ Skill 市场 ══
+let _mpDebounceTimer = null;
+function debounce(fn, ms) { return function(){ clearTimeout(_mpDebounceTimer); _mpDebounceTimer = setTimeout(fn, ms); }; }
+
+async function loadMarketplace() {
+    loadMarketStats();
+    marketplaceSearch();
+}
+
+async function loadMarketStats() {
+    const r = await api('/api/marketplace/stats');
+    if (!r) return;
+    const local = r.local || {};
+    const remote = r.remote || {};
+    setText('mpTotal', local.total_available || 0);
+    setText('mpInstalled', local.total_installed || 0);
+    setText('mpRemote', remote.total_skills || 0);
+    // Updates count loaded separately
+    try {
+        const u = await api('/api/marketplace/updates/check');
+        setText('mpUpdates', u?.total || 0);
+    } catch(e) { setText('mpUpdates', 0); }
+}
+
+async function marketplaceSearch() {
+    const q = document.getElementById('mpSearch')?.value || '';
+    const cat = document.getElementById('mpCategory')?.value || '';
+    const sort = document.getElementById('mpSort')?.value || 'popular';
+    let url = `/api/marketplace/search?q=${encodeURIComponent(q)}`;
+    if (cat) url += `&category=${cat}`;
+    const r = await api(url);
+    const grid = document.getElementById('mpSkillGrid');
+    if (!r || !r.skills || r.skills.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--mx-t3);padding:40px">暂无 Skill，点击「导入」添加第一个吧～</div>';
+        return;
+    }
+    // Sort locally
+    let skills = r.skills;
+    if (sort === 'popular') skills.sort((a,b) => (b.download_count||0) - (a.download_count||0));
+    else if (sort === 'rating') skills.sort((a,b) => (b.rating||0) - (a.rating||0));
+
+    const catIcons = {combat:'⚔️',farming:'🌾',building:'🏗️',gathering:'⛏️',navigation:'🧭',storage:'📦',survival:'❤️',automation:'⚙️',general:'📋'};
+    grid.innerHTML = skills.map(s => {
+        const icon = catIcons[s.category] || '📋';
+        const installed = s.installed ? '<span class="bm-tag bm-tag-l1">已安装</span>' : '';
+        const stars = s.rating ? '⭐'.repeat(Math.round(s.rating)) : '';
+        return `<div class="mx-card" style="padding:16px;cursor:pointer" onclick="showSkillDetail('${s.skill_id}')">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                <div>
+                    <div style="font-size:15px;font-weight:600">${icon} ${s.name || s.skill_id}</div>
+                    <div style="font-size:11px;color:var(--mx-t3);margin-top:2px">${s.skill_id}</div>
+                </div>
+                <div>${installed}</div>
+            </div>
+            <div style="font-size:12px;color:var(--mx-t2);margin-bottom:8px;line-height:1.5">${s.description || '暂无描述'}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <span class="bm-tag bm-tag-${s.task_level?.toLowerCase() || 'l2'}">${s.task_level||'L2'}</span>
+                    ${s.difficulty ? `<span class="bm-tag" style="background:var(--mx-s2);color:var(--mx-t2)">${s.difficulty}</span>` : ''}
+                </div>
+                <div style="font-size:11px;color:var(--mx-t3)">${stars} ${s.author||''}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function showSkillDetail(skillId) {
+    const r = await api(`/api/marketplace/${skillId}`);
+    if (!r) { if(typeof MxToast!=='undefined') MxToast.error('获取详情失败'); return; }
+    document.getElementById('detailTitle').textContent = `🛒 ${r.name || r.skill_id}`;
+    const meta = r.market_meta || {};
+    const catIcons = {combat:'⚔️',farming:'🌾',building:'🏗️',gathering:'⛏️',navigation:'🧭',storage:'📦',survival:'❤️',automation:'⚙️',general:'📋'};
+
+    document.getElementById('detailBody').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div><span style="color:var(--mx-t3)">ID:</span> <code>${r.skill_id}</code></div>
+            <div><span style="color:var(--mx-t3)">版本:</span> v${r.version||1}</div>
+            <div><span style="color:var(--mx-t3)">分类:</span> ${catIcons[meta.category]||'📋'} ${meta.category||'general'}</div>
+            <div><span style="color:var(--mx-t3)">难度:</span> ${meta.difficulty||'beginner'}</div>
+            <div><span style="color:var(--mx-t3)">级别:</span> <span class="bm-tag bm-tag-${r.task_level?.toLowerCase()||'l2'}">${r.task_level||'L2'}</span></div>
+            <div><span style="color:var(--mx-t3)">优先级:</span> ${r.priority||5}</div>
+            <div><span style="color:var(--mx-t3)">作者:</span> ${r.author||'system'}</div>
+            <div><span style="color:var(--mx-t3)">许可:</span> ${meta.license||'MIT'}</div>
+        </div>
+        ${r.description ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">描述</div><div style="font-size:13px;color:var(--mx-t2)">${r.description}</div></div>` : ''}
+        ${meta.description_long ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">详细说明</div><div style="font-size:13px;color:var(--mx-t2);line-height:1.6">${meta.description_long}</div></div>` : ''}
+        ${r.tags?.length ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">标签</div><div style="display:flex;gap:6px;flex-wrap:wrap">${r.tags.map(t=>`<span class="bm-tag" style="background:var(--mx-s2);color:var(--mx-t2)">${t}</span>`).join('')}</div></div>` : ''}
+        <div style="margin-bottom:16px">
+            <div style="font-weight:600;margin-bottom:8px">执行步骤 (${r.do_steps?.length||0})</div>
+            <div class="bm-log" style="max-height:200px">${JSON.stringify(r.do_steps||[], null, 2)}</div>
+        </div>
+        ${meta.mc_versions?.length ? `<div style="font-size:12px;color:var(--mx-t3)">兼容: MC ${meta.mc_versions.join(', ')}</div>` : ''}
+    `;
+
+    const isInstalled = r.installed;
+    document.getElementById('detailFooter').innerHTML = `
+        <button class="mx-btn mx-btn-ghost" onclick="exportSkill('${r.skill_id}')">📤 导出</button>
+        <button class="mx-btn mx-btn-ghost" onclick="submitSkill('${r.skill_id}')">🚀 提交到社区</button>
+        ${isInstalled
+            ? `<button class="mx-btn mx-btn-secondary" onclick="uninstallSkill('${r.skill_id}')">❌ 卸载</button>`
+            : `<button class="mx-btn mx-btn-primary" onclick="installSkill('${r.skill_id}')">✅ 安装</button>`
+        }
+    `;
+    document.getElementById('skillDetailModal').classList.add('open');
+}
+
+function closeDetailModal() { document.getElementById('skillDetailModal').classList.remove('open'); }
+
+async function installSkill(skillId) {
+    const r = await api(`/api/marketplace/${skillId}/install`, {method:'POST'});
+    if (r?.success) {
+        if(typeof MxToast!=='undefined') MxToast.success(`已安装: ${skillId}`);
+        closeDetailModal();
+        marketplaceSearch();
+        loadMarketStats();
+    } else {
+        if(typeof MxToast!=='undefined') MxToast.error(r?.message || '安装失败');
+    }
+}
+
+async function uninstallSkill(skillId) {
+    const r = await api(`/api/marketplace/${skillId}/uninstall`, {method:'POST'});
+    if (r?.success) {
+        if(typeof MxToast!=='undefined') MxToast.success(`已卸载: ${skillId}`);
+        closeDetailModal();
+        marketplaceSearch();
+        loadMarketStats();
+    }
+}
+
+async function exportSkill(skillId) {
+    const r = await api(`/api/marketplace/${skillId}/export`, {method:'POST'});
+    if (r?.content) {
+        const blob = new Blob([r.content], {type:'text/yaml'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${skillId}.yaml`; a.click();
+        URL.revokeObjectURL(url);
+        if(typeof MxToast!=='undefined') MxToast.success('已导出');
+    }
+}
+
+async function submitSkill(skillId) {
+    if (!confirm(`确定要将 ${skillId} 提交到社区注册中心吗？需要配置 GitHub Token。`)) return;
+    const category = prompt('请输入分类（combat/farming/building/gathering/navigation/storage/survival/automation/general）:', 'general');
+    if (!category) return;
+    const r = await api('/api/marketplace/submit', {
+        method: 'POST',
+        body: JSON.stringify({skill_id: skillId, category}),
+    });
+    if (r?.success) {
+        if(typeof MxToast!=='undefined') MxToast.success('已提交！PR: ' + (r.pr_url||''));
+    } else {
+        if(typeof MxToast!=='undefined') MxToast.error(r?.message || '提交失败');
+    }
+}
+
+// 导入弹窗
+function showImportModal() {
+    document.getElementById('importResult').style.display = 'none';
+    document.getElementById('importYaml').value = '';
+    document.getElementById('importUrl').value = '';
+    document.getElementById('importModal').classList.add('open');
+}
+function closeImportModal() { document.getElementById('importModal').classList.remove('open'); }
+function switchImportTab(tab) {
+    document.getElementById('importYamlPanel').style.display = tab==='yaml' ? '' : 'none';
+    document.getElementById('importUrlPanel').style.display = tab==='url' ? '' : 'none';
+    document.getElementById('importTabYaml').className = tab==='yaml' ? 'mx-btn mx-btn-primary mx-btn-sm' : 'mx-btn mx-btn-secondary mx-btn-sm';
+    document.getElementById('importTabUrl').className = tab==='url' ? 'mx-btn mx-btn-primary mx-btn-sm' : 'mx-btn mx-btn-secondary mx-btn-sm';
+}
+
+async function doImport() {
+    const yaml = document.getElementById('importYaml').value.trim();
+    const url = document.getElementById('importUrl').value.trim();
+    const force = document.getElementById('importForce').checked;
+    if (!yaml && !url) {
+        if(typeof MxToast!=='undefined') MxToast.warning('请提供 YAML 内容或 URL');
+        return;
+    }
+    const body = {force};
+    if (yaml) body.content = yaml;
+    else body.url = url;
+
+    const r = await api('/api/marketplace/import', {method:'POST', body: JSON.stringify(body)});
+    const resultEl = document.getElementById('importResult');
+    resultEl.style.display = 'block';
+    if (r?.success) {
+        resultEl.innerHTML = `<div style="color:var(--mx-green);font-size:13px">✅ ${r.message}</div>`;
+        if(typeof MxToast!=='undefined') MxToast.success(r.message);
+        setTimeout(() => { closeImportModal(); marketplaceSearch(); loadMarketStats(); }, 1500);
+    } else {
+        resultEl.innerHTML = `<div style="color:var(--mx-error);font-size:13px">❌ ${r?.detail || r?.message || '导入失败'}</div>`;
+    }
+}
+
+async function checkMarketUpdates() {
+    const r = await api('/api/marketplace/updates/check');
+    if (!r) return;
+    setText('mpUpdates', r.total || 0);
+    if (r.total > 0) {
+        if(typeof MxToast!=='undefined') MxToast.info(`发现 ${r.total} 个更新`);
+    } else {
+        if(typeof MxToast!=='undefined') MxToast.success('所有 Skill 都是最新版本');
+    }
+}
+
+// showPage hook for marketplace
+const _origShowPage = typeof showPage === 'function' ? showPage : null;
+if (_origShowPage) {
+    window.showPage = function(pageId, el) {
+        _origShowPage(pageId, el);
+        if (pageId === 'marketplace') loadMarketplace();
+    };
 }
 
 // ══ WebSocket ══

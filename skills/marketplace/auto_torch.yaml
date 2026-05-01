@@ -1,0 +1,49 @@
+skill_id: auto_torch
+name: 自动插火把
+tags:
+- automation
+- torch
+- light
+- 火把
+- 照明
+- 自动
+priority: 4
+task_level: L1
+description: 自动在暗处放置火把防止刷怪
+author: community
+version: 1
+market:
+  category: automation
+  difficulty: beginner
+  mc_versions:
+  - 1.19.4
+  - 1.20.x
+  - 1.21.x
+  description_long: 巡逻并自动在光照等级低的地方放置火把，防止怪物生成。
+  license: MIT
+  keywords:
+  - 火把
+  - torch
+  - 照明
+  - 防怪
+  rating: 4.0
+  download_count: 67
+when:
+  all:
+  - inventory.has('torch')
+do:
+- action: scan_blocks
+  args:
+    radius: 16
+    filter: light_level < 7
+- action: smart_navigate
+  args:
+    target: scanned.position
+- action: place_block
+  args:
+    item: torch
+    position: scanned.position
+until:
+  any:
+  - not inventory.has('torch')
+  - task_interrupted()

@@ -349,8 +349,12 @@ class SkillMarketplace:
         ]
         categories = {}
         for sid in available:
-            meta = self._index.get(sid, {})
-            cat = meta.get("category", "general")
+            skill = self._find_in_marketplace(sid)
+            cat = "general"
+            if skill and skill.market_meta:
+                cat = skill.market_meta.category
+            elif sid in self._index:
+                cat = self._index[sid].get("category", "general")
             categories[cat] = categories.get(cat, 0) + 1
         return {
             "total_available": len(available),
