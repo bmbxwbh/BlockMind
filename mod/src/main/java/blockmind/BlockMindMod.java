@@ -5,6 +5,7 @@ import blockmind.bot.BotManager;
 import blockmind.collector.StateCollector;
 import blockmind.executor.ActionExecutor;
 import blockmind.event.EventListener;
+import blockmind.compat.VersionCompat;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import org.slf4j.Logger;
@@ -32,6 +33,8 @@ public class BlockMindMod implements DedicatedServerModInitializer {
     public void onInitializeServer() {
         LOGGER.info("========================================");
         LOGGER.info("  BlockMind Mod v1.1.0 Loading...");
+        LOGGER.info("  MC Version: {} (detected by VersionCompat)", VersionCompat.getVersionString());
+        LOGGER.info("  SyncedClientOptions: {}", VersionCompat.hasSyncedClientOptions() ? "YES" : "NO (legacy mode)");
         LOGGER.info("  [NEW] FakePlayer Bot Support");
         LOGGER.info("========================================");
 

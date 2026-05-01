@@ -338,7 +338,7 @@ SmartNavigator.goto(x, y, z)
 |------|------|
 | Python | 3.10+ |
 | Java | 17+ |
-| Minecraft | 1.19.4 - 1.21.4 |
+| Minecraft | 1.20.0 - 1.21.4 |
 | Fabric Loader | 0.15+ |
 
 ---
@@ -351,7 +351,7 @@ SmartNavigator.goto(x, y, z)
 
 | 文件 | 说明 |
 |------|------|
-| `blockmind-mod-1.0.0.jar` | Fabric Mod（放入服务端 mods/） |
+| `blockmind-mod-{version}.jar` | Fabric Mod（按 MC 版本选择，放入 mods/） |
 | `Source code` (zip/tar) | 完整源码 |
 
 ### Linux / macOS 一键启动
@@ -367,6 +367,42 @@ chmod +x start.sh
 ```
 
 > `start.sh` 自动：检测 Python/Java → 安装依赖 → 扫描已有 MC 服务端 → 选版本安装 → 启动全部
+
+### 多版本构建
+
+BlockMind Mod 支持 **MC 1.20.0 ~ 1.21.4** 全版本。构建时指定目标版本：
+
+```bash
+cd mod
+
+# 构建默认版本 (1.20.4)
+./gradlew build
+
+# 构建指定版本
+./gradlew build -PmcVersion=1.21.4
+
+# 查看版本信息
+./gradlew printVersionInfo
+
+# 构建所有支持版本（CI 自动执行）
+./gradlew buildAllVersions
+```
+
+| MC 版本 | Yarn Mappings | Fabric API | 状态 |
+|---------|---------------|------------|------|
+| 1.20.0 | `1.20+build.1` | `0.87.0+1.20` | ✅ 支持 |
+| 1.20.1 | `1.20.1+build.10` | `0.89.3+1.20.1` | ✅ 支持 |
+| 1.20.2 | `1.20.2+build.4` | `0.91.0+1.20.2` | ✅ 支持 |
+| 1.20.3 | `1.20.3+build.1` | `0.91.6+1.20.3` | ✅ 支持 |
+| 1.20.4 | `1.20.4+build.3` | `0.92.0+1.20.4` | ✅ **默认** |
+| 1.20.6 | `1.20.6+build.1` | `0.97.8+1.20.6` | ✅ 支持 |
+| 1.21 | `1.21+build.9` | `0.100.4+1.21` | ✅ 支持 |
+| 1.21.1 | `1.21.1+build.3` | `0.102.0+1.21.1` | ✅ 支持 |
+| 1.21.2 | `1.21.2+build.1` | `0.106.1+1.21.2` | ✅ 支持 |
+| 1.21.3 | `1.21.3+build.1` | `0.107.0+1.21.3` | ✅ 支持 |
+| 1.21.4 | `1.21.4+build.8` | `0.111.2+1.21.4` | ✅ 支持 |
+
+> **版本兼容机制**：Mod 使用 `VersionCompat` 兼容层，运行时自动检测 MC 版本并适配 API 差异（如 `SyncedClientOptions`、聊天事件回调签名等），无需手动选择。
 
 ### Windows 一键启动
 

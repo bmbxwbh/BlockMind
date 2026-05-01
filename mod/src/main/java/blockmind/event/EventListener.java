@@ -1,7 +1,7 @@
 package blockmind.event;
 
+import blockmind.compat.VersionCompat;
 import com.google.gson.JsonObject;
-import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -26,13 +26,13 @@ public class EventListener {
      * 注册事件监听
      */
     public void register() {
-        // 聊天消息监听
-        ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
+        // 聊天消息监听 — 使用 VersionCompat 适配不同版本的 callback 签名
+        VersionCompat.registerChatListener((playerName, messageText) -> {
             JsonObject event = new JsonObject();
             event.addProperty("type", "chat");
             JsonObject data = new JsonObject();
-            data.addProperty("player", sender.getName().getString());
-            data.addProperty("message", message.getContent().getString());
+            data.addProperty("player", playerName);
+            data.addProperty("message", messageText);
             event.add("data", data);
             broadcastEvent(event);
         });

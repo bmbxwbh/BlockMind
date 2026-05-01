@@ -3,11 +3,35 @@ plugins {
     id 'java'
 }
 
-version = "1.0.0"
+// ── 版本参数化 ──
+// 通过 -PmcVersion=1.21.4 或 gradle.properties 指定目标 MC 版本
+def mcVersion = project.findProperty('mcVersion') ?: '1.20.4'
+
+// 版本映射表
+def versionMap = [
+    '1.20.0': [yarn: '1.20+build.1:v2',       fabricApi: '0.87.0+1.20',   loader: '0.15.3', loom: '1.6-SNAPSHOT'],
+    '1.20.1': [yarn: '1.20.1+build.10:v2',     fabricApi: '0.89.3+1.20.1', loader: '0.15.3', loom: '1.6-SNAPSHOT'],
+    '1.20.2': [yarn: '1.20.2+build.4:v2',      fabricApi: '0.91.0+1.20.2', loader: '0.15.3', loom: '1.6-SNAPSHOT'],
+    '1.20.3': [yarn: '1.20.3+build.1:v2',      fabricApi: '0.91.6+1.20.3', loader: '0.15.3', loom: '1.6-SNAPSHOT'],
+    '1.20.4': [yarn: '1.20.4+build.3:v2',      fabricApi: '0.92.0+1.20.4', loader: '0.15.3', loom: '1.6-SNAPSHOT'],
+    '1.20.6': [yarn: '1.20.6+build.1:v2',      fabricApi: '0.97.8+1.20.6', loader: '0.15.11', loom: '1.7-SNAPSHOT'],
+    '1.21':   [yarn: '1.21+build.9:v2',        fabricApi: '0.100.4+1.21',  loader: '0.15.11', loom: '1.7-SNAPSHOT'],
+    '1.21.1': [yarn: '1.21.1+build.3:v2',      fabricApi: '0.102.0+1.21.1', loader: '0.16.0', loom: '1.7-SNAPSHOT'],
+    '1.21.2': [yarn: '1.21.2+build.1:v2',      fabricApi: '0.106.1+1.21.2', loader: '0.16.9', loom: '1.8-SNAPSHOT'],
+    '1.21.3': [yarn: '1.21.3+build.1:v2',      fabricApi: '0.107.0+1.21.3', loader: '0.16.9', loom: '1.8-SNAPSHOT'],
+    '1.21.4': [yarn: '1.21.4+build.8:v2',      fabricApi: '0.111.2+1.21.4', loader: '0.16.9', loom: '1.8-SNAPSHOT'],
+]
+
+def versionInfo = versionMap[mcVersion]
+if (versionInfo == null) {
+    throw new GradleException("Unsupported MC version: ${mcVersion}. Supported: ${versionMap.keySet().sort().join(', ')}")
+}
+
+version = "1.1.0"
 group = "blockmind"
 
 base {
-    archivesName = "blockmind-mod"
+    archivesName = "blockmind-mod-${mcVersion}"
 }
 
 repositories {
@@ -16,16 +40,12 @@ repositories {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:1.20.4"
-    mappings "net.fabricmc:yarn:1.20.4+build.3:v2"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.92.0+1.20.4"
-    modImplementation "net.fabricmc:fabric-loader:0.15.3"
+    minecraft "com.mojang:minecraft:${mcVersion}"
+    mappings "net.fabricmc:yarn:${versionInfo.yarn}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${versionInfo.fabricApi}"
+    modImplementation "net.fabricmc:fabric-loader:${versionInfo.loader}"
 
     // Baritone — 运行时可选依赖
-    // 在 CI 环境中 JitPack 可能不可用，所以不作为编译依赖
-    // 如果服务器安装了 Baritone mod，运行时自动检测并启用高级寻路
-    // 如果没有，回退到基础直线移动
-    // 本地开发时可取消注释以下行：
     // compileOnly "com.github.cabaletta:baritone:1.19.4"
 }
 
@@ -41,5 +61,52 @@ tasks.withType(JavaCompile).configureEach {
 jar {
     from("LICENSE") {
         rename { "${it}_${base.archivesName.get()}" }
+    }
+    manifest {
+        attributes(
+            "Implementation-Version": project.version,
+            "Minecraft-Version": mcVersion,
+            "Fabric-API": versionInfo.fabricApi,
+        )
+    }
+}
+
+// ── 多版本批量构建 ──
+task buildAllVersions {
+    group = "build"
+    description = "构建所有支持的 MC 版本 JAR"
+    dependsOn = versionMap.keySet().collect { v ->
+        // 每个版本用独立的 Gradle 调用
+        tasks.register("build_${v.replace('.', '_')}") {
+            doLast {
+                exec {
+                    commandLine "./gradlew", "build", "-PmcVersion=${v}", "--no-daemon"
+                }
+            }
+        }
+    }
+}
+
+// ── 版本信息输出 ──
+task printVersionInfo {
+    doLast {
+        println "═══════════════════════════════════════"
+        println "  BlockMind Mod — Version Info"
+        println "═══════════════════════════════════════"
+        println "  Target MC:   ${mcVersion}"
+        println "  Yarn:        ${versionInfo.yarn}"
+        println "  Fabric API:  ${versionInfo.fabricApi}"
+        println "  Loader:      ${versionInfo.loader}"
+        println "  Mod Version: ${project.version}"
+        println "  Output JAR:  blockmind-mod-${mcVersion}.jar"
+        println "═══════════════════════════════════════"
+        println ""
+        println "  Supported versions: ${versionMap.keySet().sort().join(', ')}"
+        println ""
+        println "  Build for specific version:"
+        println "    ./gradlew build -PmcVersion=1.21.4"
+        println ""
+        println "  Build all versions:"
+        println "    ./gradlew buildAllVersions"
     }
 }

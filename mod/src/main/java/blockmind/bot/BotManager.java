@@ -1,9 +1,9 @@
 package blockmind.bot;
 
 import blockmind.BlockMindMod;
+import blockmind.compat.VersionCompat;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
-import net.minecraft.network.packet.c2s.common.SyncedClientOptions;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -51,10 +51,15 @@ public class BotManager {
         try {
             GameProfile profile = new GameProfile(BOT_UUID, botName);
             ServerWorld world = server.getOverworld();
-            SyncedClientOptions clientOptions = SyncedClientOptions.createDefault();
 
-            // 使用 BotPlayer 子类，覆盖所有网络相关方法
-            botPlayer = new BotPlayer(server, world, profile, clientOptions);
+            // 使用 VersionCompat 自动适配不同 MC 版本的构造函数
+            ServerPlayerEntity player = VersionCompat.createPlayer(server, world, profile);
+            if (!(player instanceof BotPlayer)) {
+                // VersionCompat 返回了原版 ServerPlayerEntity，包装为 BotPlayer
+                botPlayer = new BotPlayer(server, world, profile);
+            } else {
+                botPlayer = (BotPlayer) player;
+            }
 
             BlockPos spawnPos = world.getSpawnPos();
             botPlayer.refreshPositionAndAngles(
