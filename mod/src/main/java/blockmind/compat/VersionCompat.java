@@ -52,7 +52,7 @@ public class VersionCompat {
         try {
             Class<?> fabricLoader = Class.forName("net.fabricmc.loader.api.FabricLoader");
             Object loader = fabricLoader.getMethod("getInstance").invoke(null);
-            Object mcMod = loader.getMethod("getModContainer", String.class).invoke(loader, "minecraft");
+            Object mcMod = loader.getClass().getMethod("getModContainer", String.class).invoke(loader, "minecraft");
             if (mcMod != null) {
                 Object metadata = mcMod.getClass().getMethod("getMetadata").invoke(mcMod);
                 Object version = metadata.getClass().getMethod("getVersion").invoke(metadata);
