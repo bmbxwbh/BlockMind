@@ -414,13 +414,22 @@ class SkillMarketplace:
         return self._find_in_marketplace(skill_id)
 
     def _find_in_marketplace(self, skill_id: str) -> Optional[SkillDSL]:
-        """在 marketplace 目录查找 Skill"""
+        """在 marketplace 目录查找 Skill（先按文件名，再遍历内容）"""
+        # 快速路径：文件名匹配
         path = self.marketplace_path / f"{skill_id}.yaml"
         if path.exists():
             try:
                 return self.parser.parse_file(str(path))
             except Exception:
                 pass
+        # 慢路径：遍历所有文件查找 skill_id
+        for yaml_file in self.marketplace_path.glob("*.yaml"):
+            try:
+                skill = self.parser.parse_file(str(yaml_file))
+                if skill.skill_id == skill_id:
+                    return skill
+            except Exception:
+                continue
         return None
 
     def _save_to_marketplace(self, skill: SkillDSL) -> None:
