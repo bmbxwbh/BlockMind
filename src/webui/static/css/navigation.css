@@ -103,19 +103,19 @@
 
 .mx-btm-item{
   display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:6px 16px;border-radius:var(--mx-r-sm);
+  padding:6px 12px;border-radius:14px;
   cursor:pointer;color:var(--mx-t3);
   transition:all var(--mx-d2) var(--mx-spring);
   -webkit-tap-highlight-color:transparent;
   position:relative;
+  flex:1;
 }
-.mx-btm-item.active{color:var(--mx-primary)}
+.mx-btm-item.active{
+  color:var(--mx-primary);
+  background:var(--mx-primary-glow);
+}
 .mx-btm-item.active::before{
-  content:'';position:absolute;top:2px;left:50%;
-  width:5px;height:5px;
-  background:var(--mx-primary);
-  border-radius:50%;transform:translateX(-50%);
-  animation:mx-dot-in var(--mx-d2) var(--mx-spring);
+  display:none;
 }
 .mx-btm-item span{font-size:10px;font-weight:600}
 .mx-btm-item:active{transform:scale(0.88)}
@@ -187,10 +187,10 @@
   .mx-logo-text{font-size:14px}
   .mx-avatar{width:28px;height:28px;font-size:12px}
 
-  /* BottomNav 加大触控区 */
-  .mx-btm-item{padding:8px 16px;min-width:56px}
-  .mx-btm-item span{font-size:11px}
-  .mx-btm-item svg{width:24px;height:24px}
+  /* BottomNav floating pill */
+  .mx-bottom-nav{left:8px;right:8px;bottom:8px;padding:5px 6px}
+  .mx-btm-item{padding:7px 8px;min-width:44px}
+  .mx-btm-item span{font-size:10px}
 
   /* Sidebar section */
   .mx-sidebar-section{font-size:10px}
