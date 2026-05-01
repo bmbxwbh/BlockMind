@@ -1,21 +1,32 @@
 skill_id: collect
-name: 采集
-tags: ["采集", "收集", "捡东西"]
+name: 采集掉落物
+tags: ["采集", "收集", "捡东西", "collect", "pickup"]
 priority: 4
-task_level: L2
+task_level: L1
+author: system
+version: 2
+description: 扫描附近掉落物并逐个拾取，优先捡贵重物品
 
 when:
-  all: []
+  all:
+    - "not inventory.is_full()"
 
 do:
-  - action: scan_blocks
-    args: {radius: 16, sort_by: "distance"}
-  - action: walk_to
-    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
-  - action: dig_block
-    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  - action: scan_entities
+    args: {radius: 32, filter: "type == 'item'", sort_by: "distance"}
+  - action: smart_navigate
+    args:
+      target: "entity.position"
+      allow_break: false
+      allow_place: false
+      use_cache: false
+  - action: wait
+    args: {seconds: 1}
 
 until:
   any:
+    - "not world.any_entity(type='item', radius=32)"
     - "inventory.is_full()"
     - "task_interrupted()"
+
+# 记忆增强：记住物品密集区域（如战斗后掉落区）

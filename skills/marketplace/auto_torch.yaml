@@ -1,49 +1,48 @@
 skill_id: auto_torch
 name: 自动插火把
-tags:
-- automation
-- torch
-- light
-- 火把
-- 照明
-- 自动
+tags: ["automation", "torch", "light", "火把", "照明", "自动"]
 priority: 4
 task_level: L1
-description: 自动在暗处放置火把防止刷怪
 author: community
-version: 1
+version: 2
+description: 巡逻并自动在光照等级低的地方放置火把防止刷怪
+
+when:
+  all:
+    - "inventory.has('torch') or inventory.count('torch') > 0"
+
+do:
+  - action: scan_blocks
+    args: {radius: 32, filter: "light_level < 7", sort_by: "distance"}
+  - action: smart_navigate
+    args:
+      target: "scanned.position"
+      allow_break: false
+      allow_place: true
+      use_cache: false
+  - action: place_block
+    args: {item: "torch", x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+  - action: wait
+    args: {seconds: 0.5}
+
+until:
+  any:
+    - "not world.any_block(filter='light_level < 7', radius=32)"
+    - "inventory.count('torch') == 0"
+    - "task_interrupted()"
+
 market:
   category: automation
   difficulty: beginner
-  mc_versions:
-  - 1.19.4
-  - 1.20.x
-  - 1.21.x
-  description_long: 巡逻并自动在光照等级低的地方放置火把，防止怪物生成。
+  mc_versions: ["1.19.4", "1.20.x", "1.21.x"]
+  description_long: |
+    巡逻并自动在光照等级低于7的地方放置火把，防止怪物生成。
+
+    - 扫描32格内光照不足的方块
+    - 智能导航到目标位置
+    - 自动放置火把
+    - 火把用完自动停止
   license: MIT
-  keywords:
-  - 火把
-  - torch
-  - 照明
-  - 防怪
-  rating: 4.0
-  download_count: 67
-when:
-  all:
-  - inventory.has('torch')
-do:
-- action: scan_blocks
-  args:
-    radius: 16
-    filter: light_level < 7
-- action: smart_navigate
-  args:
-    target: scanned.position
-- action: place_block
-  args:
-    item: torch
-    position: scanned.position
-until:
-  any:
-  - not inventory.has('torch')
-  - task_interrupted()
+  keywords: ["火把", "torch", "照明", "防怪", "light"]
+  rating: 4.2
+  download_count: 128

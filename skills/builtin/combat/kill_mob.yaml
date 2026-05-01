@@ -1,26 +1,30 @@
 skill_id: kill_mob
 name: 杀怪
-tags: ["杀怪", "打怪", "战斗"]
+tags: ["杀怪", "打怪", "战斗", "combat"]
 priority: 3
 task_level: L2
+author: system
+version: 2
+description: 扫描周围敌对怪物并逐个击杀，血量过低时自动撤退
 
 when:
   all:
     - "self.health() > 10"
-    - "inventory.has('iron_sword') or inventory.has('diamond_sword')"
+    - "inventory.has('iron_sword') or inventory.has('diamond_sword') or inventory.has('stone_sword')"
 
 do:
   - action: scan_entities
     args: {radius: 16, filter: "hostile == true", sort_by: "distance"}
-  # 战斗时允许破坏方块（绕路需要）
   - action: smart_navigate
     args:
       target: "entity.position"
       allow_break: true
       allow_place: false
-      use_cache: false                  # 战斗不走缓存（动态目标）
+      use_cache: false
   - action: attack
     args: {entity_id: "entity.id"}
+  - action: wait
+    args: {seconds: 0.5}
 
 until:
   any:
@@ -28,7 +32,4 @@ until:
     - "self.health() < 6"
     - "task_interrupted()"
 
-# 记忆增强：
-# 1. 战斗导航不使用缓存（目标动态移动）
-# 2. 允许破坏方块绕路（紧急情况）
-# 3. 自动避开建筑保护区（不在基地里打怪）
+# 记忆增强：战斗策略会沉淀到策略记忆，下次遇到同类怪物更高效

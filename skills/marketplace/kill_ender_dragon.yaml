@@ -1,69 +1,83 @@
 skill_id: kill_ender_dragon
 name: 击杀末影龙
-tags:
-- combat
-- boss
-- ender
-- dragon
-- 末地
+tags: ["combat", "boss", "ender", "dragon", "末地", "boss战"]
 priority: 1
 task_level: L3
-description: 自动前往末地击杀末影龙，含准备工作
 author: community
-version: 1
+version: 2
+description: 完整末影龙击杀流程：准备装备→进入末地→摧毁水晶→击杀龙
+
+when:
+  all:
+    - "inventory.has('diamond_sword') or inventory.has('netherite_sword')"
+    - "inventory.has('bow') and inventory.count('arrow') >= 32"
+    - "self.health() > 15"
+
+do:
+  # 1. 检查并补充装备
+  - if:
+      condition: "not inventory.has('ender_pearl')"
+      then:
+        - action: chat
+          args: {message: "需要末影珍珠，尝试从商人交易或击杀末影人获取"}
+
+  # 2. 寻找末地传送门
+  - action: smart_navigate
+    args:
+      target: "end_portal"
+      allow_break: true
+      allow_place: true
+      use_cache: true
+
+  # 3. 进入末地
+  - action: use_item
+    args: {item: "ender_pearl", hand: "main"}
+
+  # 4. 摧毁末影水晶
+  - loop:
+      while: "world.any_entity(type='end_crystal', radius=128)"
+      do:
+        - action: scan_entities
+          args: {radius: 128, filter: "type == 'end_crystal'"}
+        - action: look_at
+          args: {target: "entity.position"}
+        - action: attack
+          args: {entity_id: "entity.id"}
+        - action: wait
+          args: {seconds: 1}
+
+  # 5. 攻击末影龙
+  - loop:
+      while: "world.any_entity(type='ender_dragon', radius=128)"
+      do:
+        - action: scan_entities
+          args: {radius: 128, filter: "type == 'ender_dragon'"}
+        - action: look_at
+          args: {target: "entity.position"}
+        - action: attack
+          args: {entity_id: "entity.id"}
+        - action: wait
+          args: {seconds: 0.5}
+
+until:
+  any:
+    - "not world.any_entity(type='ender_dragon', radius=128)"
+    - "self.health() < 6"
+    - "task_interrupted()"
+
 market:
   category: combat
   difficulty: advanced
-  mc_versions:
-  - 1.20.4
-  - 1.21.x
-  description_long: '完整的末影龙击杀流程：
-
-    1. 检查装备（钻石剑+弓+末影珍珠）
-
+  mc_versions: ["1.20.4", "1.21.x"]
+  description_long: |
+    完整的末影龙击杀流程：
+    1. 检查装备（钻石剑+弓+箭+末影珍珠）
     2. 前往末地传送门
-
-    3. 摧毁末影水晶
-
-    4. 攻击末影龙
-
-    5. 拾取龙蛋'
+    3. 进入末地
+    4. 摧毁所有末影水晶
+    5. 攻击末影龙至死亡
+    6. 拾取经验球
   license: MIT
-  keywords:
-  - 末影龙
-  - boss
-  - 末地
-  - ender_dragon
-  rating: 4.5
-  download_count: 42
-when:
-  all:
-  - inventory.has('diamond_sword')
-  - inventory.has('bow')
-do:
-- action: smart_navigate
-  args:
-    target: end_portal
-    allow_break: true
-- action: scan_entities
-  args:
-    radius: 64
-    filter: type == 'ender_crystal'
-- action: loop
-  args:
-    while: entity_exists('ender_crystal')
-    do:
-    - action: attack
-      args:
-        target: entity.position
-- action: loop
-  args:
-    while: entity_exists('ender_dragon')
-    do:
-    - action: attack
-      args:
-        target: entity.position
-until:
-  any:
-  - not entity_exists('ender_dragon')
-  - task_interrupted()
+  keywords: ["末影龙", "ender_dragon", "boss", "末地", "end"]
+  rating: 4.8
+  download_count: 89

@@ -1,72 +1,80 @@
 skill_id: auto_mine_diamonds
 name: 自动挖钻石
-tags:
-- gathering
-- mine
-- diamond
-- 挖矿
-- 钻石
+tags: ["gathering", "mine", "diamond", "挖矿", "钻石"]
 priority: 3
 task_level: L2
-description: 自动前往钻石层挖钻石
 author: community
-version: 2
+version: 3
+description: 自动前往钻石层挖掘钻石，含岩浆避让和火把照明
+
+when:
+  all:
+    - "inventory.has('iron_pickaxe') or inventory.has('diamond_pickaxe')"
+    - "self.health() > 10"
+
+do:
+  # 1. 导航到钻石层 (Y=-59)
+  - action: smart_navigate
+    args:
+      target: "y=-59"
+      allow_break: true
+      allow_place: true
+      use_cache: true
+
+  # 2. 鱼骨挖矿：沿X轴掘进
+  - loop:
+      while: "self.health() > 6 and not inventory.is_full()"
+      do:
+        # 向前挖3格隧道
+        - action: dig_block
+          args: {x: "self.x + 1", y: "self.y", z: "self.z"}
+        - action: dig_block
+          args: {x: "self.x + 2", y: "self.y", z: "self.z"}
+        - action: dig_block
+          args: {x: "self.x + 3", y: "self.y", z: "self.z"}
+
+        # 向两侧挖1格探矿
+        - action: dig_block
+          args: {x: "self.x + 3", y: "self.y", z: "self.z + 1"}
+        - action: dig_block
+          args: {x: "self.x + 3", y: "self.y", z: "self.z - 1"}
+
+        # 放火把照明
+        - action: place_block
+          args: {item: "torch", x: "self.x", y: "self.y", z: "self.z"}
+
+        # 检测岩浆
+        - action: scan_blocks
+          args: {radius: 5, filter: "type == 'lava'"}
+        - if:
+            condition: "world.block_exists(type='lava', radius=5)"
+            then:
+              - action: smart_navigate
+                args:
+                  target: "safe_position"
+                  allow_break: false
+                  use_cache: false
+
+until:
+  any:
+    - "inventory.count('diamond') >= 16"
+    - "inventory.is_full()"
+    - "self.health() < 6"
+    - "task_interrupted()"
+
 market:
   category: gathering
   difficulty: intermediate
-  mc_versions:
-  - 1.19.4
-  - 1.20.x
-  - 1.21.x
-  description_long: '智能钻石挖掘：
-
+  mc_versions: ["1.19.4", "1.20.x", "1.21.x"]
+  description_long: |
+    智能钻石挖掘：
     - 自动前往 Y=-59 钻石层
-
     - 使用铁镐以上工具
-
+    - 鱼骨挖矿法高效探矿
     - 自动放置火把照明
-
     - 遇到岩浆自动绕路
-
-    - 背包满自动返回'
+    - 血量过低自动撤退
   license: MIT
-  keywords:
-  - 钻石
-  - diamond
-  - 挖矿
-  - 自动
-  rating: 4.7
-  download_count: 234
-when:
-  all:
-  - inventory.has('iron_pickaxe') or inventory.has('diamond_pickaxe')
-do:
-- action: smart_navigate
-  args:
-    y: -59
-    allow_break: true
-    use_cache: true
-- action: loop
-  args:
-    while: not inventory.is_full()
-    do:
-    - action: scan_blocks
-      args:
-        radius: 16
-        filter: type == 'diamond_ore'
-    - action: smart_navigate
-      args:
-        target: scanned.position
-        allow_break: true
-    - action: dig_block
-      args:
-        position: scanned.position
-- action: smart_navigate
-  args:
-    target: home
-    use_cache: true
-until:
-  any:
-  - inventory.is_full()
-  - self.health() < 6
-  - task_interrupted()
+  keywords: ["钻石", "diamond", "挖矿", "Y=-59", "鱼骨"]
+  rating: 4.5
+  download_count: 256

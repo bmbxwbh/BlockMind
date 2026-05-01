@@ -1,59 +1,72 @@
 skill_id: auto_sugar_cane
 name: 自动收割甘蔗
-tags:
-- farming
-- sugar_cane
-- auto
-- 甘蔗
-- 自动
+tags: ["farming", "sugar_cane", "auto", "甘蔗", "自动", "农业"]
 priority: 4
 task_level: L2
-description: 自动收割成熟甘蔗并补种
 author: community
-version: 1
+version: 2
+description: 自动循环收割成熟甘蔗并补种，存入附近箱子
+
+when:
+  all:
+    - "inventory.has('sugar_cane') or world.any_block(type='sugar_cane', radius=32)"
+
+do:
+  # 1. 扫描甘蔗
+  - action: scan_blocks
+    args: {radius: 32, filter: "type == 'sugar_cane'", sort_by: "distance"}
+
+  # 2. 导航到甘蔗位置
+  - action: smart_navigate
+    args:
+      target: "scanned.position"
+      allow_break: false
+      allow_place: false
+      use_cache: true
+
+  # 3. 收割（从底部挖，一次拿整株）
+  - action: dig_block
+    args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+
+  # 4. 补种
+  - if:
+      condition: "inventory.count('sugar_cane') > 0"
+      then:
+        - action: place_block
+          args: {item: "sugar_cane", x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
+
+  # 5. 背包满时存入箱子
+  - if:
+      condition: "inventory.is_full()"
+      then:
+        - action: smart_navigate
+          args:
+            target: "chest"
+            allow_break: false
+            use_cache: true
+        - action: interact_block
+          args: {target: "chest"}
+        - action: deposit_items
+          args: {items: ["sugar_cane"], count: "all"}
+
+until:
+  any:
+    - "not world.any_block(type='sugar_cane', radius=32)"
+    - "inventory.is_full() and not world.any_block(type='chest', radius=16)"
+    - "task_interrupted()"
+
 market:
   category: farming
   difficulty: beginner
-  mc_versions:
-  - 1.19.4
-  - 1.20.x
-  - 1.21.x
-  description_long: '自动循环收割甘蔗田：
-
+  mc_versions: ["1.19.4", "1.20.x", "1.21.x"]
+  description_long: |
+    自动循环收割甘蔗田：
     - 扫描周围甘蔗方块
-
     - 收割3格高的成熟甘蔗
-
     - 自动补种
-
-    - 存入附近箱子'
+    - 存入附近箱子
+    - 背包满自动存放
   license: MIT
-  keywords:
-  - 甘蔗
-  - sugar_cane
-  - 自动农场
-  rating: 4.2
-  download_count: 89
-when:
-  all:
-  - world.any_entity(type='sugar_cane', radius=32)
-do:
-- action: scan_blocks
-  args:
-    radius: 32
-    filter: type == 'sugar_cane'
-- action: smart_navigate
-  args:
-    target: scanned.position
-    use_cache: true
-- action: dig_block
-  args:
-    position: scanned.position
-- action: place_block
-  args:
-    item: sugar_cane
-    position: scanned.position
-until:
-  any:
-  - inventory.is_full()
-  - task_interrupted()
+  keywords: ["甘蔗", "sugar_cane", "收割", "自动化", "农业"]
+  rating: 4.0
+  download_count: 95

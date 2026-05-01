@@ -1,26 +1,36 @@
 skill_id: fish
 name: 钓鱼
-tags: ["钓鱼", "捕鱼"]
+tags: ["钓鱼", "捕鱼", "fishing", "fish"]
 priority: 5
 task_level: L2
+author: system
+version: 2
+description: 前往已知水域钓鱼，等待鱼上钩后收杆
 
 when:
   all:
     - "inventory.has('fishing_rod')"
 
 do:
-  # 智能导航到已知水域（记忆系统）
   - action: smart_navigate
     args:
-      target: "water_point"             # 记忆中的水域位置
+      target: "water"
       allow_break: false
+      allow_place: false
       use_cache: true
   - action: look_at
-    args: {x: "water_x", y: "water_y", z: "water_z"}
+    args: {target: "water_surface"}
+  - action: use_item
+    args: {item: "fishing_rod", hand: "main"}
   - action: wait
-    args: {seconds: 30}
+    args: {seconds: 15}
+  - action: use_item
+    args: {item: "fishing_rod", hand: "main"}
 
 until:
   any:
-    - "inventory.count('raw_cod') >= 16"
+    - "inventory.count('raw_cod') >= 16 or inventory.count('raw_salmon') >= 8"
+    - "inventory.is_full()"
     - "task_interrupted()"
+
+# 记忆增强：记住水域位置和最佳钓鱼点

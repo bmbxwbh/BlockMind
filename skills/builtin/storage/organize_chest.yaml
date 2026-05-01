@@ -1,21 +1,31 @@
 skill_id: organize_chest
 name: 整理箱子
-tags: ["整理箱子", "整理仓库"]
+tags: ["整理箱子", "整理仓库", "chest", "organize", "storage"]
 priority: 4
 task_level: L1
+author: system
+version: 2
+description: 导航到箱子位置并整理物品，按类别分类存放
 
 when:
   all:
     - "self.position() near home"
+    - "not inventory.is_full()"
 
 do:
-  # 智能导航到箱子位置
   - action: smart_navigate
     args:
       target: "chest"
       allow_break: false
+      allow_place: false
       use_cache: true
+  - action: interact_block
+    args: {target: "chest"}
+  - action: inventory_sort
+    args: {mode: "category"}
 
 until:
   any:
     - "task_interrupted()"
+
+# 记忆增强：记住箱子位置和物品分类规则

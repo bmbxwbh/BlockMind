@@ -1,21 +1,23 @@
 skill_id: mine_ore
 name: 挖矿
-tags: ["挖矿", "采矿", "开矿"]
+tags: ["挖矿", "采矿", "开矿", "mining", "ore"]
 priority: 4
 task_level: L2
+author: system
+version: 2
+description: 扫描附近矿脉并智能导航挖掘，自动避开危险区域
 
 when:
   all:
-    - "inventory.has('iron_pickaxe') or inventory.has('diamond_pickaxe')"
+    - "inventory.has('iron_pickaxe') or inventory.has('diamond_pickaxe') or inventory.has('stone_pickaxe')"
 
 do:
   - action: scan_blocks
     args: {radius: 32, filter: "type contains 'ore'", sort_by: "distance"}
-  # 智能导航到矿石位置（自动避开危险区域）
   - action: smart_navigate
     args:
       target: "scanned.position"
-      allow_break: true                 # 挖矿时可以破坏方块
+      allow_break: true
       allow_place: false
       use_cache: true
   - action: dig_block
@@ -25,10 +27,7 @@ until:
   any:
     - "inventory.count('iron_ore') >= 32"
     - "inventory.count('diamond') >= 5"
+    - "inventory.is_full()"
     - "task_interrupted()"
 
-# 记忆增强：
-# 1. 自动避开岩浆等危险区域
-# 2. 如果在保护区内发现矿石，跳过
-# 3. 缓存矿洞路径
-# 4. 自动注册矿石聚集点到记忆
+# 记忆增强：成功挖到矿石的路径会被缓存，危险区域（岩浆/深坑）加入黑名单

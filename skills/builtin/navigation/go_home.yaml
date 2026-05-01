@@ -1,20 +1,23 @@
 skill_id: go_home
 name: 回家
-tags: ["回家", "回基地", "导航"]
+tags: ["回家", "回基地", "导航", "home", "navigate"]
 priority: 2
 task_level: L1
+author: system
+version: 2
+description: 使用智能导航系统返回记忆中的家/基地位置
 
 when:
-  all: []
+  all:
+    - "not self.position() near home"
 
 do:
-  # 使用智能导航系统（自动查询记忆中的家位置、缓存路径、保护区）
   - action: smart_navigate
     args:
-      target: "home"                    # 从记忆系统获取家位置
-      allow_break: false                # 不破坏建筑
-      allow_place: false                # 不放置方块
-      use_cache: true                   # 优先使用缓存路径
+      target: "home"
+      allow_break: false
+      allow_place: false
+      use_cache: true
 
 until:
   any:

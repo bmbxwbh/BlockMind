@@ -1,13 +1,15 @@
 skill_id: eat_food
 name: 进食
-tags: ["吃东西", "进食", "生存"]
+tags: ["吃东西", "进食", "生存", "eat", "food", "hunger"]
 priority: 2
 task_level: L1
+author: system
+version: 2
+description: 饥饿时自动进食背包中的食物，优先吃面包
 
 when:
   all:
     - "self.hunger() < 15"
-    - "inventory.count('bread') > 0 or inventory.count('cooked_beef') > 0"
 
 do:
   - if:
@@ -16,8 +18,20 @@ do:
         - action: eat
           args: {item: "bread"}
       else:
-        - action: eat
-          args: {item: "cooked_beef"}
+        - if:
+            condition: "inventory.count('cooked_beef') > 0"
+            then:
+              - action: eat
+                args: {item: "cooked_beef"}
+            else:
+              - if:
+                  condition: "inventory.count('cooked_porkchop') > 0"
+                  then:
+                    - action: eat
+                      args: {item: "cooked_porkchop"}
+                  else:
+                    - action: eat
+                      args: {item: "apple"}
 
 until:
   any:

@@ -1,36 +1,37 @@
 skill_id: chop_tree
 name: 砍树
-tags: ["砍树", "伐木", "收集木材"]
+tags: ["砍树", "伐木", "收集木材", "chop", "wood", "log"]
 priority: 4
 task_level: L2
+author: system
+version: 2
+description: 寻找最近的树木并砍伐，从上往下逐层采集
 
 when:
   all:
-    - "inventory.has('wooden_axe') or inventory.has('stone_axe') or inventory.has('iron_axe')"
+    - "inventory.has('wooden_axe') or inventory.has('stone_axe') or inventory.has('iron_axe') or inventory.has('diamond_axe')"
 
 do:
   - action: scan_blocks
-    args: {radius: 32, filter: "type == 'oak_log'", sort_by: "distance"}
-  # 智能导航到树木位置（避开建筑保护区）
+    args: {radius: 32, filter: "type contains 'log'", sort_by: "distance"}
   - action: smart_navigate
     args:
       target: "scanned.position"
-      allow_break: false                # 不破坏路上的建筑
+      allow_break: false
+      allow_place: false
       use_cache: true
   - loop:
-      while: "world.entity_exists(scanned.id)"
+      while: "world.block_exists(scanned.position) and self.distance_to(scanned.position) < 5"
       do:
         - action: dig_block
           args: {x: "scanned.position.x", y: "scanned.position.y", z: "scanned.position.z"}
         - action: wait
-          args: {seconds: 1}
+          args: {seconds: 0.8}
 
 until:
   any:
-    - "inventory.count('oak_log') >= 64"
+    - "inventory.count('oak_log') >= 64 or inventory.count('birch_log') >= 64"
+    - "inventory.is_full()"
     - "task_interrupted()"
 
-# 记忆增强：
-# 1. 自动避开建筑保护区
-# 2. 如果树木在保护区内，跳过该树木
-# 3. 缓存从基地到树林的路径
+# 记忆增强：记住树木密集区域，下次优先去那里

@@ -1,24 +1,41 @@
 skill_id: deposit_items
 name: 存放物品
-tags: ["存东西", "存放物品", "仓库"]
+tags: ["存东西", "存放物品", "仓库", "deposit", "storage"]
 priority: 3
 task_level: L1
+author: system
+version: 2
+description: 将背包中的矿物和建材存入家附近的箱子
 
 when:
   all:
-    - "inventory.count('oak_log') > 0 or inventory.count('cobblestone') > 0"
+    - "inventory.used_slots() > 20"
 
 do:
-  # 智能导航到家/仓库
   - action: smart_navigate
     args:
       target: "home"
       allow_break: false
+      allow_place: false
       use_cache: true
-  - action: place_block
-    args: {item: "chest", x: "chest_x", y: "chest_y", z: "chest_z"}
+  - action: scan_blocks
+    args: {radius: 8, filter: "type == 'chest'", sort_by: "distance"}
+  - action: smart_navigate
+    args:
+      target: "scanned.position"
+      allow_break: false
+      allow_place: false
+      use_cache: false
+  - action: interact_block
+    args: {target: "chest"}
+  - action: deposit_items
+    args:
+      items: ["cobblestone", "dirt", "gravel", "andesite", "diorite", "granite"]
+      count: "all"
 
 until:
   any:
-    - "inventory.empty_slots() >= 20"
+    - "inventory.used_slots() <= 10"
     - "task_interrupted()"
+
+# 记忆增强：记住箱子位置和存放偏好

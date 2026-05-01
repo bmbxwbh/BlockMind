@@ -1,59 +1,69 @@
 skill_id: build_glass_house
 name: 建造玻璃房子
-tags:
-- building
-- house
-- glass
-- 建造
-- 房子
-- 玻璃
+tags: ["building", "house", "glass", "建造", "房子", "玻璃"]
 priority: 5
 task_level: L3
-description: 在当前位置建造一个5x5玻璃房子
 author: community
-version: 1
+version: 2
+description: 在当前位置建造一个5x5x3玻璃房子，含门和火把照明
+
+when:
+  all:
+    - "inventory.count('glass') >= 100"
+    - "inventory.has('oak_door')"
+
+do:
+  # 1. 在脚下放地板（5x5 石头）
+  - loop:
+      over: "floor_positions_5x5"
+      do:
+        - action: place_block
+          args: {item: "cobblestone", x: "pos.x", y: "self.y - 1", z: "pos.z"}
+
+  # 2. 建四面墙（5宽x3高 玻璃）
+  - loop:
+      over: "wall_positions_5x5x3"
+      do:
+        - action: place_block
+          args: {item: "glass", x: "pos.x", y: "pos.y", z: "pos.z"}
+
+  # 3. 留门位置（正面中央2格）
+  - action: dig_block
+    args: {x: "self.x + 2", y: "self.y", z: "self.z"}
+  - action: dig_block
+    args: {x: "self.x + 2", y: "self.y + 1", z: "self.z"}
+
+  # 4. 放门
+  - action: place_block
+    args: {item: "oak_door", x: "self.x + 2", y: "self.y", z: "self.z"}
+
+  # 5. 封顶（5x5 玻璃）
+  - loop:
+      over: "floor_positions_5x5"
+      do:
+        - action: place_block
+          args: {item: "glass", x: "pos.x", y: "self.y + 3", z: "pos.z"}
+
+  # 6. 放火把照明
+  - action: place_block
+    args: {item: "torch", x: "self.x", y: "self.y", z: "self.z"}
+
+until:
+  any:
+    - "task_interrupted()"
+
 market:
   category: building
   difficulty: intermediate
-  mc_versions:
-  - 1.20.x
-  - 1.21.x
-  description_long: '自动建造玻璃房子：
-
-    - 5x5 底座
-
-    - 3格高墙壁
-
+  mc_versions: ["1.20.x", "1.21.x"]
+  description_long: |
+    自动建造玻璃房子：
+    - 5x5 石头底座
+    - 3格高玻璃墙壁
+    - 正面留门并安装木门
     - 玻璃屋顶
-
-    - 留门位置
-
-    - 放置火把照明'
+    - 内部火把照明
   license: MIT
-  keywords:
-  - 玻璃房子
-  - 建造
-  - glass_house
-  rating: 4.8
-  download_count: 156
-when:
-  all:
-  - inventory.count('glass') >= 64
-do:
-- action: walk_to
-  args:
-    x: self.position.x
-    y: self.position.y
-    z: self.position.z
-- action: loop
-  args:
-    while: has_blocks_to_place()
-    do:
-    - action: place_block
-      args:
-        item: glass
-        position: next_build_pos()
-until:
-  any:
-  - build_complete()
-  - task_interrupted()
+  keywords: ["玻璃", "房子", "建造", "glass", "house", "build"]
+  rating: 3.8
+  download_count: 72
