@@ -1,60 +1,54 @@
-// ── 版本参数化 ──
-ext.mcVersion = project.findProperty('mcVersion') ?: '26.1.2'
-
-// 版本映射表
-ext.versionMap = [
-    '1.20.0': [yarn: '1.20+build.1:v2',       fabricApi: '0.87.0+1.20',    loader: '0.15.3',  loom: '1.6-SNAPSHOT', java: 17],
-    '1.20.1': [yarn: '1.20.1+build.10:v2',     fabricApi: '0.89.3+1.20.1',  loader: '0.15.3',  loom: '1.6-SNAPSHOT', java: 17],
-    '1.20.2': [yarn: '1.20.2+build.4:v2',      fabricApi: '0.91.0+1.20.2',  loader: '0.15.3',  loom: '1.6-SNAPSHOT', java: 17],
-    '1.20.3': [yarn: '1.20.3+build.1:v2',      fabricApi: '0.91.6+1.20.3',  loader: '0.15.3',  loom: '1.6-SNAPSHOT', java: 17],
-    '1.20.4': [yarn: '1.20.4+build.3:v2',      fabricApi: '0.92.0+1.20.4',  loader: '0.15.3',  loom: '1.6-SNAPSHOT', java: 17],
-    '1.20.6': [yarn: '1.20.6+build.1:v2',      fabricApi: '0.97.8+1.20.6',  loader: '0.15.11', loom: '1.7-SNAPSHOT', java: 21],
-    '1.21':   [yarn: '1.21+build.9:v2',        fabricApi: '0.100.4+1.21',   loader: '0.15.11', loom: '1.7-SNAPSHOT', java: 21],
-    '1.21.1': [yarn: '1.21.1+build.3:v2',      fabricApi: '0.102.0+1.21.1', loader: '0.16.0',  loom: '1.7-SNAPSHOT', java: 21],
-    '1.21.2': [yarn: '1.21.2+build.1:v2',      fabricApi: '0.106.1+1.21.2', loader: '0.16.9',  loom: '1.8-SNAPSHOT', java: 21],
-    '1.21.3': [yarn: '1.21.3+build.1:v2',      fabricApi: '0.107.0+1.21.3', loader: '0.16.9',  loom: '1.8-SNAPSHOT', java: 21],
-    '1.21.4': [yarn: '1.21.4+build.8:v2',      fabricApi: '0.111.2+1.21.4', loader: '0.16.9',  loom: '1.8-SNAPSHOT', java: 21],
-    '26.1':   [yarn: null,                      fabricApi: '0.145.1+26.1',   loader: '0.18.4',  loom: '1.15.5',       java: 25],
-    '26.1.1': [yarn: null,                      fabricApi: '0.145.4+26.1.1', loader: '0.19.2',  loom: '1.15.5',       java: 25],
-    '26.1.2': [yarn: null,                      fabricApi: '0.147.0+26.1.2', loader: '0.19.2',  loom: '1.15.5',       java: 25],
-]
-
-ext.versionInfo = ext.versionMap[ext.mcVersion]
-if (ext.versionInfo == null) {
-    throw new GradleException("Unsupported MC version: ${ext.mcVersion}. Supported: ${ext.versionMap.keySet().sort().join(', ')}")
-}
-
-// ── 动态加载 Loom（不同 MC 版本需要不同 loom 版本）──
+// ── 动态加载 Loom ──
 buildscript {
+    def mcVer = project.findProperty('mcVersion') ?: '26.1.2'
+    def loomMap = [
+        '1.20.0': '1.6-SNAPSHOT', '1.20.1': '1.6-SNAPSHOT', '1.20.2': '1.6-SNAPSHOT',
+        '1.20.3': '1.6-SNAPSHOT', '1.20.4': '1.6-SNAPSHOT', '1.20.6': '1.7-SNAPSHOT',
+        '1.21': '1.7-SNAPSHOT', '1.21.1': '1.7-SNAPSHOT', '1.21.2': '1.8-SNAPSHOT',
+        '1.21.3': '1.8-SNAPSHOT', '1.21.4': '1.8-SNAPSHOT',
+        '26.1': '1.15.5', '26.1.1': '1.15.5', '26.1.2': '1.15.5',
+    ]
     repositories {
         maven { url 'https://maven.fabricmc.net/' }
         gradlePluginPortal()
         mavenCentral()
     }
     dependencies {
-        // ext 在 buildscript 闭包里不可用，直接读 property
-        def mcVer = project.findProperty('mcVersion') ?: '26.1.2'
-        def loomVersions = [
-            '1.20.0': '1.6-SNAPSHOT', '1.20.1': '1.6-SNAPSHOT', '1.20.2': '1.6-SNAPSHOT',
-            '1.20.3': '1.6-SNAPSHOT', '1.20.4': '1.6-SNAPSHOT', '1.20.6': '1.7-SNAPSHOT',
-            '1.21': '1.7-SNAPSHOT', '1.21.1': '1.7-SNAPSHOT', '1.21.2': '1.8-SNAPSHOT',
-            '1.21.3': '1.8-SNAPSHOT', '1.21.4': '1.8-SNAPSHOT',
-            '26.1': '1.15.5', '26.1.1': '1.15.5', '26.1.2': '1.15.5',
-        ]
-        def loomVer = loomVersions[mcVer] ?: '1.15.5'
-        classpath "net.fabricmc:fabric-loom:${loomVer}"
+        classpath "net.fabricmc:fabric-loom:${loomMap[mcVer] ?: '1.15.5'}"
     }
 }
 
 apply plugin: 'fabric-loom'
 apply plugin: 'java'
 
+// ── 版本参数化 ──
+def mcVersion = project.findProperty('mcVersion') ?: '26.1.2'
+
+def versionMap = [
+    '1.20.0': [yarn: '1.20+build.1:v2',       fabricApi: '0.87.0+1.20',    loader: '0.15.3',  java: 17],
+    '1.20.1': [yarn: '1.20.1+build.10:v2',     fabricApi: '0.89.3+1.20.1',  loader: '0.15.3',  java: 17],
+    '1.20.2': [yarn: '1.20.2+build.4:v2',      fabricApi: '0.91.0+1.20.2',  loader: '0.15.3',  java: 17],
+    '1.20.3': [yarn: '1.20.3+build.1:v2',      fabricApi: '0.91.6+1.20.3',  loader: '0.15.3',  java: 17],
+    '1.20.4': [yarn: '1.20.4+build.3:v2',      fabricApi: '0.92.0+1.20.4',  loader: '0.15.3',  java: 17],
+    '1.20.6': [yarn: '1.20.6+build.1:v2',      fabricApi: '0.97.8+1.20.6',  loader: '0.15.11', java: 21],
+    '1.21':   [yarn: '1.21+build.9:v2',        fabricApi: '0.100.4+1.21',   loader: '0.15.11', java: 21],
+    '1.21.1': [yarn: '1.21.1+build.3:v2',      fabricApi: '0.102.0+1.21.1', loader: '0.16.0',  java: 21],
+    '1.21.2': [yarn: '1.21.2+build.1:v2',      fabricApi: '0.106.1+1.21.2', loader: '0.16.9',  java: 21],
+    '1.21.3': [yarn: '1.21.3+build.1:v2',      fabricApi: '0.107.0+1.21.3', loader: '0.16.9',  java: 21],
+    '1.21.4': [yarn: '1.21.4+build.8:v2',      fabricApi: '0.111.2+1.21.4', loader: '0.16.9',  java: 21],
+    '26.1':   [yarn: null,                      fabricApi: '0.145.1+26.1',   loader: '0.18.4',  java: 25],
+    '26.1.1': [yarn: null,                      fabricApi: '0.145.4+26.1.1', loader: '0.19.2',  java: 25],
+    '26.1.2': [yarn: null,                      fabricApi: '0.147.0+26.1.2', loader: '0.19.2',  java: 25],
+]
+
+def vi = versionMap[mcVersion]
+if (vi == null) {
+    throw new GradleException("Unsupported MC version: ${mcVersion}. Supported: ${versionMap.keySet().sort().join(', ')}")
+}
+
 version = "1.2.0"
 group = "blockmind"
-
-base {
-    archivesName = "blockmind-mod-${ext.mcVersion}"
-}
+base { archivesName = "blockmind-mod-${mcVersion}" }
 
 repositories {
     mavenCentral()
@@ -63,72 +57,40 @@ repositories {
 }
 
 // ── 版本分源码 ──
-if (ext.mcVersion.startsWith('26')) {
+if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v26/java'
-} else if (ext.mcVersion.startsWith('1.21')) {
+} else if (mcVersion.startsWith('1.21')) {
     sourceSets.main.java.srcDir 'src/v1_21/java'
 } else {
     sourceSets.main.java.srcDir 'src/v1_20/java'
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:${ext.mcVersion}"
-
-    if (ext.versionInfo.yarn != null) {
-        mappings "net.fabricmc:yarn:${ext.versionInfo.yarn}"
-    }
-
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${ext.versionInfo.fabricApi}"
-    modImplementation "net.fabricmc:fabric-loader:${ext.versionInfo.loader}"
+    minecraft "com.mojang:minecraft:${mcVersion}"
+    if (vi.yarn != null) { mappings "net.fabricmc:yarn:${vi.yarn}" }
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${vi.fabricApi}"
+    modImplementation "net.fabricmc:fabric-loader:${vi.loader}"
 }
 
-def javaVer = ext.versionInfo.java ?: 17
 java {
-    sourceCompatibility = JavaVersion.toVersion(javaVer)
-    targetCompatibility = JavaVersion.toVersion(javaVer)
+    sourceCompatibility = JavaVersion.toVersion(vi.java ?: 17)
+    targetCompatibility = JavaVersion.toVersion(vi.java ?: 17)
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
-}
+tasks.withType(JavaCompile).configureEach { options.encoding = "UTF-8" }
 
 jar {
-    from("LICENSE") {
-        rename { "${it}_${base.archivesName.get()}" }
-    }
+    from("LICENSE") { rename { "${it}_${base.archivesName.get()}" } }
     manifest {
-        attributes(
-            "Implementation-Version": project.version,
-            "Minecraft-Version": ext.mcVersion,
-            "Fabric-API": ext.versionInfo.fabricApi,
-        )
+        attributes("Implementation-Version": project.version, "Minecraft-Version": mcVersion, "Fabric-API": vi.fabricApi)
     }
 }
 
 task buildAllVersions {
     group = "build"
-    description = "构建所有支持的 MC 版本 JAR"
-    dependsOn = ext.versionMap.keySet().collect { v ->
+    dependsOn = versionMap.keySet().collect { v ->
         tasks.register("build_${v.replace('.', '_')}") {
-            doLast {
-                exec { commandLine "./gradlew", "build", "-PmcVersion=${v}", "--no-daemon" }
-            }
+            doLast { exec { commandLine "./gradlew", "build", "-PmcVersion=${v}", "--no-daemon" } }
         }
-    }
-}
-
-task printVersionInfo {
-    doLast {
-        println "═══════════════════════════════════════"
-        println "  BlockMind Mod — Version Info"
-        println "═══════════════════════════════════════"
-        println "  Target MC:   ${ext.mcVersion}"
-        println "  Yarn:        ${ext.versionInfo.yarn ?: '(intermediary direct)'}"
-        println "  Fabric API:  ${ext.versionInfo.fabricApi}"
-        println "  Loader:      ${ext.versionInfo.loader}"
-        println "  Loom:        ${ext.versionInfo.loom}"
-        println "  Java:        ${ext.versionInfo.java ?: 17}"
-        println "  Mod Version: ${project.version}"
-        println "═══════════════════════════════════════"
     }
 }
