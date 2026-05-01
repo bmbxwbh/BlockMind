@@ -5,6 +5,11 @@ plugins {
 
 def mcVersion = project.findProperty('mcVersion') ?: '26.1.2'
 
+// MC 26.x ships already unobfuscated — tell Loom to skip remapping entirely
+if (mcVersion.startsWith('26')) {
+    project.ext.'fabric.loom.disableObfuscation' = 'true'
+}
+
 // 版本映射表 — Fabric API 版本从 maven 实际查询校验
 def versionMap = [
     '1.20':   [yarn: '1.20+build.1:v2',        fabricApi: '0.83.0+1.20',    loader: '0.15.3',  java: 17],
