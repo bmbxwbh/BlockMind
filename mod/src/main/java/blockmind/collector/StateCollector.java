@@ -200,6 +200,10 @@ public class StateCollector {
      * 获取附近方块
      */
     public static JsonObject getBlocks(int radius, String type) {
+        return getBlocks(radius, type, 1000);
+    }
+
+    public static JsonObject getBlocks(int radius, String type, int maxBlocks) {
         JsonObject json = new JsonObject();
         JsonArray blocks = new JsonArray();
 
@@ -217,11 +221,17 @@ public class StateCollector {
         BlockPos playerPos = target.getBlockPos();
         World world = target.getWorld();
 
+        int count = 0;
+        boolean limitReached = false;
         for (int x = -radius; x <= radius; x++) {
+            if (limitReached) break;
             for (int y = -radius; y <= radius; y++) {
+                if (limitReached) break;
                 for (int z = -radius; z <= radius; z++) {
                     BlockPos pos = playerPos.add(x, y, z);
-                    String blockType = world.getBlockState(pos).getBlock().toString();
+                    var blockState = world.getBlockState(pos);
+                    if (blockState.isAir()) continue;
+                    String blockType = blockState.getBlock().toString();
 
                     if (type != null && !blockType.contains(type)) continue;
 
@@ -233,11 +243,18 @@ public class StateCollector {
                     block.add("position", blockPos);
                     block.addProperty("type", blockType);
                     blocks.add(block);
+                    count++;
+                    if (count >= maxBlocks) {
+                        limitReached = true;
+                        break;
+                    }
                 }
             }
         }
 
         json.add("blocks", blocks);
+        json.addProperty("count", count);
+        json.addProperty("max_blocks", maxBlocks);
         return json;
     }
 

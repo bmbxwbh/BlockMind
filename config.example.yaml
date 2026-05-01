@@ -14,7 +14,8 @@ mod:
   port: 25580
   timeout: 10.0
   no_mod_mode: false
-  expected_version: "1.0.0"
+  expected_version: "1.1.0"
+  bot_name: "BlockMind_Bot"
   ws_backoff:
     initial_backoff: 2.0
     max_backoff: 120.0
@@ -22,16 +23,16 @@ mod:
 ai:
   main_agent:
     provider: openai
-    api_key: your-api-key-here
+    api_key: YOUR_API_KEY_HERE
     model: gpt-5.4-mini
-    base_url: 'http://38.246.244.201:8317/v1'
+    base_url: ''
     temperature: 0.7
     max_tokens: 512
   operation_agent:
     provider: openai
-    api_key: your-api-key-here
+    api_key: YOUR_API_KEY_HERE
     model: gpt-5.4-mini
-    base_url: 'http://38.246.244.201:8317/v1'
+    base_url: ''
     temperature: 0.3
     max_tokens: 4096
 skills:

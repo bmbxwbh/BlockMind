@@ -6,6 +6,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -16,6 +19,8 @@ import java.util.function.Consumer;
 public class EventListener {
 
     private static final List<Consumer<JsonObject>> listeners = new ArrayList<>();
+    // Per-player state tracking: [lastHealth, lastHunger]
+    private static final Map<UUID, float[]> playerStates = new ConcurrentHashMap<>();
 
     /**
      * 注册事件监听
@@ -41,8 +46,8 @@ public class EventListener {
         });
     }
 
-    private static float lastHealth = 20.0f;
-    private static int lastHunger = 20;
+    private static final float DEFAULT_HEALTH = 20.0f;
+    private static final int DEFAULT_HUNGER = 20;
 
     /**
      * 检查玩家状态变化
@@ -50,6 +55,11 @@ public class EventListener {
     private void checkPlayerStatus(ServerPlayerEntity player) {
         float currentHealth = player.getHealth();
         int currentHunger = player.getHungerManager().getFoodLevel();
+
+        UUID playerId = player.getUuid();
+        float[] state = playerStates.computeIfAbsent(playerId,
+                id -> new float[]{DEFAULT_HEALTH, DEFAULT_HUNGER});
+        float lastHealth = state[0];
 
         // 检测伤害
         if (currentHealth < lastHealth) {
@@ -72,8 +82,8 @@ public class EventListener {
             broadcastEvent(event);
         }
 
-        lastHealth = currentHealth;
-        lastHunger = currentHunger;
+        state[0] = currentHealth;
+        state[1] = currentHunger;
     }
 
     /**

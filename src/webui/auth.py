@@ -1,5 +1,6 @@
 """WebUI 认证模块"""
 
+import bcrypt
 import hashlib
 import hmac
 import logging
@@ -27,14 +28,17 @@ class AuthManager:
 
     @staticmethod
     def _hash_password(password: str) -> str:
-        return hashlib.sha256(password.encode()).hexdigest()
+        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
     def verify_password(self, password: str) -> bool:
         """验证密码"""
-        return hmac.compare_digest(
-            self._hash_password(password),
-            self.password_hash,
-        )
+        try:
+            # bcrypt check (preferred)
+            return bcrypt.checkpw(password.encode(), self.password_hash.encode())
+        except ValueError:
+            # Legacy SHA256 backward compat
+            legacy = hashlib.sha256(password.encode()).hexdigest()
+            return hmac.compare_digest(legacy, self.password_hash)
 
     def create_session(self) -> str:
         """创建会话 Token"""

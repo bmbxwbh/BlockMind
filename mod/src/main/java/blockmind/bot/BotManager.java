@@ -24,11 +24,11 @@ public class BotManager {
     private static String botName = "BlockMind_Bot";
     private static final UUID BOT_UUID = UUID.fromString("a0b1c2d3-e4f5-6789-abcd-ef0123456789");
 
-    public static void setServer(MinecraftServer srv) {
+    public static synchronized void setServer(MinecraftServer srv) {
         server = srv;
     }
 
-    public static JsonObject spawn(String name) {
+    public static synchronized JsonObject spawn(String name) {
         JsonObject result = new JsonObject();
 
         if (server == null) {
@@ -87,7 +87,7 @@ public class BotManager {
         return result;
     }
 
-    public static JsonObject despawn() {
+    public static synchronized JsonObject despawn() {
         JsonObject result = new JsonObject();
         if (botPlayer == null) {
             result.addProperty("success", false);
@@ -109,7 +109,7 @@ public class BotManager {
         return result;
     }
 
-    public static JsonObject getStatus() {
+    public static synchronized JsonObject getStatus() {
         JsonObject result = new JsonObject();
         if (botPlayer == null) {
             result.addProperty("spawned", false);
@@ -140,7 +140,7 @@ public class BotManager {
         return result;
     }
 
-    public static ServerPlayerEntity getBot() { return botPlayer; }
-    public static boolean isSpawned() { return botPlayer != null; }
-    public static String getBotName() { return botName; }
+    public static synchronized ServerPlayerEntity getBot() { return botPlayer; }
+    public static synchronized boolean isSpawned() { return botPlayer != null; }
+    public static synchronized String getBotName() { return botName; }
 }

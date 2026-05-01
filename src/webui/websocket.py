@@ -32,9 +32,11 @@ class WSLogHandler(logging.Handler):
                 },
             }
             # 非阻塞广播（fire and forget）
-            asyncio.get_event_loop().create_task(self._ws.broadcast(msg))
-        except Exception:
-            pass
+            asyncio.get_running_loop().create_task(self._ws.broadcast(msg))
+        except Exception as e:
+            # 日志广播失败不应影响正常日志记录
+            if logging.getLogger("blockmind.webui.websocket").isEnabledFor(logging.DEBUG):
+                logging.getLogger("blockmind.webui.websocket").debug(f"日志广播失败: {e}")
 
 
 class WSManager:

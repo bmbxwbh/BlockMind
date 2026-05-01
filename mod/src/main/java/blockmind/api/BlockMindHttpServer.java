@@ -28,18 +28,23 @@ import java.util.concurrent.Executors;
 public class BlockMindHttpServer {
 
     private final int port;
+    private final String apiToken;
     private com.sun.net.httpserver.HttpServer server;
 
-    public BlockMindHttpServer(int port) {
+    public BlockMindHttpServer(int port, String apiToken) {
         this.port = port;
+        this.apiToken = apiToken;
     }
 
     public void start() throws IOException {
+        staticApiToken = this.apiToken;
         server = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newFixedThreadPool(4));
 
-        // ── 基础 API ──
+        // ── 基础 API（无需认证）──
         server.createContext("/health", new HealthHandler());
+
+        // ── 需要认证的 API ──
         server.createContext("/api/status", new StatusHandler());
         server.createContext("/api/world", new WorldHandler());
         server.createContext("/api/inventory", new InventoryHandler());
@@ -66,8 +71,9 @@ public class BlockMindHttpServer {
         server.createContext("/api/navigate/status", new NavigateStatusHandler());
 
         server.start();
-        BlockMindMod.LOGGER.info("[BlockMind] HTTP API listening on port {} ({} 导路引擎)",
-                port, PathfinderHandler.isBaritoneAvailable() ? "Baritone" : "基础");
+        BlockMindMod.LOGGER.info("[BlockMind] HTTP API listening on port {} ({} 导路引擎, 认证: {})",
+                port, PathfinderHandler.isBaritoneAvailable() ? "Baritone" : "基础",
+                (apiToken != null && !apiToken.isEmpty()) ? "已启用" : "未配置");
     }
 
     public void stop() {
@@ -77,6 +83,16 @@ public class BlockMindHttpServer {
     }
 
     // ─── 辅助方法 ─────────────────────────────────────
+
+    private static String staticApiToken;
+
+    static boolean checkAuth(HttpExchange exchange) throws IOException {
+        if (staticApiToken == null || staticApiToken.isEmpty()) return true;
+        String auth = exchange.getRequestHeaders().getFirst("Authorization");
+        if (auth != null && auth.equals("Bearer " + staticApiToken)) return true;
+        sendResponse(exchange, 401, "{\"error\":\"Unauthorized\",\"message\":\"需要有效的 API Token\"}");
+        return false;
+    }
 
     static void sendResponse(HttpExchange exchange, int statusCode, String json) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
@@ -106,6 +122,7 @@ public class BlockMindHttpServer {
     static class StatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             sendResponse(exchange, 200, StateCollector.getStatus().toString());
         }
     }
@@ -113,6 +130,7 @@ public class BlockMindHttpServer {
     static class WorldHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             sendResponse(exchange, 200, StateCollector.getWorld().toString());
         }
     }
@@ -120,6 +138,7 @@ public class BlockMindHttpServer {
     static class InventoryHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             sendResponse(exchange, 200, StateCollector.getInventory().toString());
         }
     }
@@ -168,6 +187,7 @@ public class BlockMindHttpServer {
     static class BotStatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             sendResponse(exchange, 200, BotManager.getStatus().toString());
         }
     }
@@ -265,6 +285,7 @@ public class BlockMindHttpServer {
     static class NavigateStatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             sendResponse(exchange, 200, PathfinderHandler.getStatus());
         }
     }

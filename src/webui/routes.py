@@ -1,6 +1,7 @@
 """WebUI API 路由 — RESTful 接口"""
 
 import logging
+import time
 from typing import Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -300,7 +301,6 @@ async def get_audit_log(
 @router.get("/api/system/health")
 async def system_health(request: Request):
     """系统健康检查（无需认证）"""
-    import time
     engine = request.app.state.engine
     components = {}
     # Mod 检查
@@ -757,7 +757,8 @@ async def marketplace_browse(
     # 先从远程注册中心获取
     try:
         remote_skills = registry.search(category=category, sort=sort)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"远程 Skill 注册中心查询失败: {e}")
         remote_skills = []
 
     # 合并本地 marketplace 数据

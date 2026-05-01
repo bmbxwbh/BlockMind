@@ -65,7 +65,19 @@ public class BlockMindMod implements DedicatedServerModInitializer {
 
     private void startHttpServer() {
         try {
-            httpServer = new BlockMindHttpServer(HTTP_PORT);
+            // 读取 API Token（优先环境变量，其次配置文件）
+            String apiToken = System.getenv("BLOCKMIND_API_TOKEN");
+            if (apiToken == null || apiToken.isEmpty()) {
+                try {
+                    java.util.Properties props = new java.util.Properties();
+                    java.io.File cfg = new java.io.File("config/blockmind.properties");
+                    if (cfg.exists()) {
+                        props.load(new java.io.FileInputStream(cfg));
+                        apiToken = props.getProperty("api_token", "");
+                    }
+                } catch (Exception ignored) {}
+            }
+            httpServer = new BlockMindHttpServer(HTTP_PORT, apiToken);
             httpServer.start();
             LOGGER.info("[BlockMind] HTTP API started on port {}", HTTP_PORT);
         } catch (Exception e) {

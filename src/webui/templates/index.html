@@ -662,6 +662,15 @@
 </div>
 
 <script>
+// ══ XSS helpers ══
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escapeJsAttr(str) {
+  if (typeof str !== 'string') return escapeHtml(str);
+  return escapeHtml(str.replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
 // ══ Theme persistence ══
 (function() {
     const saved = localStorage.getItem('bm_theme');
@@ -781,17 +790,17 @@ async function loadSkills() {
     const sel = document.getElementById('skillEditorSelect');
     if (sel) {
         const cur = sel.value;
-        sel.innerHTML = '<option value="">选择 Skill...</option>' + skills.map(s => `<option value="${s.skill_id}">${s.name || s.skill_id}</option>`).join('');
+        sel.innerHTML = '<option value="">选择 Skill...</option>' + skills.map(s => `<option value="${escapeHtml(s.skill_id)}">${escapeHtml(s.name || s.skill_id)}</option>`).join('');
         if (cur) sel.value = cur;
     }
 }
 function renderSkills(list) {
     document.getElementById('skillTable').innerHTML = list.map(s => `<tr>
-        <td><code>${s.skill_id}</code></td><td>${s.name}</td>
-        <td><span class="bm-tag bm-tag-${(s.task_level||'L2').toLowerCase()}">${s.task_level||'L2'}</span></td>
+        <td><code>${escapeHtml(s.skill_id)}</code></td><td>${escapeHtml(s.name)}</td>
+        <td><span class="bm-tag bm-tag-${escapeHtml((s.task_level||'L2').toLowerCase())}">${escapeHtml(s.task_level||'L2')}</span></td>
         <td>${s.priority}</td><td>${s.usage_count}</td><td>${(s.success_rate*100).toFixed(0)}%</td>
-        <td><button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="editSkill('${s.skill_id}')" title="编辑">📝</button>
-        <button class="mx-btn mx-btn-danger mx-btn-sm" onclick="deleteSkill('${s.skill_id}')">删除</button></td>
+        <td><button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="editSkill('${escapeJsAttr(s.skill_id)}')" title="编辑">📝</button>
+        <button class="mx-btn mx-btn-danger mx-btn-sm" onclick="deleteSkill('${escapeJsAttr(s.skill_id)}')">删除</button></td>
     </tr>`).join('');
 }
 function filterSkills() {
@@ -962,25 +971,25 @@ async function loadMemory() {
     const zoneList = document.getElementById('memZoneList');
     if (d.zones?.length) {
         zoneList.innerHTML = d.zones.slice(0,10).map(z =>
-            `<div class="bm-memory-item"><span class="label">[${z.type}]</span> <span class="value">${z.name}</span> <span class="label">@ ${z.center}</span></div>`
+            `<div class="bm-memory-item"><span class="label">[${escapeHtml(z.type)}]</span> <span class="value">${escapeHtml(z.name)}</span> <span class="label">@ ${escapeHtml(z.center)}</span></div>`
         ).join('');
     }
     const pathList = document.getElementById('memPathList');
     if (d.paths?.length) {
         pathList.innerHTML = d.paths.slice(0,10).map(p =>
-            `<div class="bm-memory-item"><span class="value">${p.start} → ${p.end}</span> <span class="label">成功率 ${(p.success_rate*100).toFixed(0)}%</span></div>`
+            `<div class="bm-memory-item"><span class="value">${escapeHtml(p.start)} → ${escapeHtml(p.end)}</span> <span class="label">成功率 ${(p.success_rate*100).toFixed(0)}%</span></div>`
         ).join('');
     }
     const stratList = document.getElementById('memStrategyList');
     if (d.strategies?.length) {
         stratList.innerHTML = d.strategies.slice(0,10).map(s =>
-            `<div class="bm-memory-item"><span class="value">${s.description}</span> <span class="label">成功率 ${(s.success_rate*100).toFixed(0)}%</span></div>`
+            `<div class="bm-memory-item"><span class="value">${escapeHtml(s.description)}</span> <span class="label">成功率 ${(s.success_rate*100).toFixed(0)}%</span></div>`
         ).join('');
     }
     const playerList = document.getElementById('memPlayerList');
     if (d.players?.length) {
         playerList.innerHTML = d.players.map(p =>
-            `<div class="bm-memory-item"><span class="value">${p.name}</span> <span class="label">交互 ${p.interaction_count} 次</span> ${p.home?`<span class="label">家: ${p.home}</span>`:''}</div>`
+            `<div class="bm-memory-item"><span class="value">${escapeHtml(p.name)}</span> <span class="label">交互 ${p.interaction_count} 次</span> ${p.home?`<span class="label">家: ${escapeHtml(p.home)}</span>`:''}</div>`
         ).join('');
     }
 }
@@ -1023,7 +1032,7 @@ async function loadModelConfig() {
     const d = await api('/api/config/model'); if (!d) return;
     const providers = d.providers||[];
     ['mainProvider','opProvider'].forEach(id => {
-        document.getElementById(id).innerHTML = providers.map(p => `<option value="${p}">${p}</option>`).join('');
+        document.getElementById(id).innerHTML = providers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
     });
     if (d.main_agent) {
         document.getElementById('mainProvider').value = d.main_agent.provider;
@@ -1062,7 +1071,7 @@ async function testModelConfig() {
     } else {
         if(typeof MxToast!=='undefined') MxToast.error(r?.error||'连接失败');
         diag.style.display = 'block';
-        diag.innerHTML = `<div class="bm-diagnostic"><h4 style="margin-bottom:8px;color:var(--mx-error)">❌ 诊断信息</h4><pre>${JSON.stringify(r, null, 2)}</pre></div>`;
+        diag.innerHTML = `<div class="bm-diagnostic"><h4 style="margin-bottom:8px;color:var(--mx-error)">❌ 诊断信息</h4><pre>${escapeHtml(JSON.stringify(r, null, 2))}</pre></div>`;
     }
 }
 
@@ -1112,21 +1121,21 @@ async function marketplaceSearch() {
         const icon = catIcons[s.category] || '📋';
         const installed = s.installed ? '<span class="bm-tag bm-tag-l1">已安装</span>' : '';
         const stars = s.rating ? '⭐'.repeat(Math.round(s.rating)) : '';
-        return `<div class="mx-card" style="padding:16px;cursor:pointer" onclick="showSkillDetail('${s.skill_id}')">
+        return `<div class="mx-card" style="padding:16px;cursor:pointer" onclick="showSkillDetail('${escapeJsAttr(s.skill_id)}')">
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
                 <div>
-                    <div style="font-size:15px;font-weight:600">${icon} ${s.name || s.skill_id}</div>
-                    <div style="font-size:11px;color:var(--mx-t3);margin-top:2px">${s.skill_id}</div>
+                    <div style="font-size:15px;font-weight:600">${icon} ${escapeHtml(s.name || s.skill_id)}</div>
+                    <div style="font-size:11px;color:var(--mx-t3);margin-top:2px">${escapeHtml(s.skill_id)}</div>
                 </div>
                 <div>${installed}</div>
             </div>
-            <div style="font-size:12px;color:var(--mx-t2);margin-bottom:8px;line-height:1.5">${s.description || '暂无描述'}</div>
+            <div style="font-size:12px;color:var(--mx-t2);margin-bottom:8px;line-height:1.5">${escapeHtml(s.description || '暂无描述')}</div>
             <div style="display:flex;justify-content:space-between;align-items:center">
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
-                    <span class="bm-tag bm-tag-${s.task_level?.toLowerCase() || 'l2'}">${s.task_level||'L2'}</span>
-                    ${s.difficulty ? `<span class="bm-tag" style="background:var(--mx-s2);color:var(--mx-t2)">${s.difficulty}</span>` : ''}
+                    <span class="bm-tag bm-tag-${escapeHtml(s.task_level?.toLowerCase() || 'l2')}">${escapeHtml(s.task_level||'L2')}</span>
+                    ${s.difficulty ? `<span class="bm-tag" style="background:var(--mx-s2);color:var(--mx-t2)">${escapeHtml(s.difficulty)}</span>` : ''}
                 </div>
-                <div style="font-size:11px;color:var(--mx-t3)">${stars} ${s.author||''}</div>
+                <div style="font-size:11px;color:var(--mx-t3)">${stars} ${escapeHtml(s.author||'')}</div>
             </div>
         </div>`;
     }).join('');
@@ -1141,32 +1150,32 @@ async function showSkillDetail(skillId) {
 
     document.getElementById('detailBody').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-            <div><span style="color:var(--mx-t3)">ID:</span> <code>${r.skill_id}</code></div>
+            <div><span style="color:var(--mx-t3)">ID:</span> <code>${escapeHtml(r.skill_id)}</code></div>
             <div><span style="color:var(--mx-t3)">版本:</span> v${r.version||1}</div>
-            <div><span style="color:var(--mx-t3)">分类:</span> ${catIcons[meta.category]||'📋'} ${meta.category||'general'}</div>
-            <div><span style="color:var(--mx-t3)">难度:</span> ${meta.difficulty||'beginner'}</div>
-            <div><span style="color:var(--mx-t3)">级别:</span> <span class="bm-tag bm-tag-${r.task_level?.toLowerCase()||'l2'}">${r.task_level||'L2'}</span></div>
+            <div><span style="color:var(--mx-t3)">分类:</span> ${catIcons[meta.category]||'📋'} ${escapeHtml(meta.category||'general')}</div>
+            <div><span style="color:var(--mx-t3)">难度:</span> ${escapeHtml(meta.difficulty||'beginner')}</div>
+            <div><span style="color:var(--mx-t3)">级别:</span> <span class="bm-tag bm-tag-${escapeHtml(r.task_level?.toLowerCase()||'l2')}">${escapeHtml(r.task_level||'L2')}</span></div>
             <div><span style="color:var(--mx-t3)">优先级:</span> ${r.priority||5}</div>
-            <div><span style="color:var(--mx-t3)">作者:</span> ${r.author||'system'}</div>
-            <div><span style="color:var(--mx-t3)">许可:</span> ${meta.license||'MIT'}</div>
+            <div><span style="color:var(--mx-t3)">作者:</span> ${escapeHtml(r.author||'system')}</div>
+            <div><span style="color:var(--mx-t3)">许可:</span> ${escapeHtml(meta.license||'MIT')}</div>
         </div>
-        ${r.description ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">描述</div><div style="font-size:13px;color:var(--mx-t2)">${r.description}</div></div>` : ''}
-        ${meta.description_long ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">详细说明</div><div style="font-size:13px;color:var(--mx-t2);line-height:1.6">${meta.description_long}</div></div>` : ''}
-        ${r.tags?.length ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">标签</div><div style="display:flex;gap:6px;flex-wrap:wrap">${r.tags.map(t=>`<span class="bm-tag" style="background:var(--mx-s2);color:var(--mx-t2)">${t}</span>`).join('')}</div></div>` : ''}
+        ${r.description ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">描述</div><div style="font-size:13px;color:var(--mx-t2)">${escapeHtml(r.description)}</div></div>` : ''}
+        ${meta.description_long ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">详细说明</div><div style="font-size:13px;color:var(--mx-t2);line-height:1.6">${escapeHtml(meta.description_long)}</div></div>` : ''}
+        ${r.tags?.length ? `<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:4px">标签</div><div style="display:flex;gap:6px;flex-wrap:wrap">${r.tags.map(t=>`<span class="bm-tag" style="background:var(--mx-s2);color:var(--mx-t2)">${escapeHtml(t)}</span>`).join('')}</div></div>` : ''}
         <div style="margin-bottom:16px">
             <div style="font-weight:600;margin-bottom:8px">执行步骤 (${r.do_steps?.length||0})</div>
-            <div class="bm-log" style="max-height:200px">${JSON.stringify(r.do_steps||[], null, 2)}</div>
+            <div class="bm-log" style="max-height:200px">${escapeHtml(JSON.stringify(r.do_steps||[], null, 2))}</div>
         </div>
-        ${meta.mc_versions?.length ? `<div style="font-size:12px;color:var(--mx-t3)">兼容: MC ${meta.mc_versions.join(', ')}</div>` : ''}
+        ${meta.mc_versions?.length ? `<div style="font-size:12px;color:var(--mx-t3)">兼容: MC ${meta.mc_versions.map(v=>escapeHtml(v)).join(', ')}</div>` : ''}
     `;
 
     const isInstalled = r.installed;
     document.getElementById('detailFooter').innerHTML = `
-        <button class="mx-btn mx-btn-ghost" onclick="exportSkill('${r.skill_id}')">📤 导出</button>
-        <button class="mx-btn mx-btn-ghost" onclick="submitSkill('${r.skill_id}')">🚀 提交到社区</button>
+        <button class="mx-btn mx-btn-ghost" onclick="exportSkill('${escapeJsAttr(r.skill_id)}')">📤 导出</button>
+        <button class="mx-btn mx-btn-ghost" onclick="submitSkill('${escapeJsAttr(r.skill_id)}')">🚀 提交到社区</button>
         ${isInstalled
-            ? `<button class="mx-btn mx-btn-secondary" onclick="uninstallSkill('${r.skill_id}')">❌ 卸载</button>`
-            : `<button class="mx-btn mx-btn-primary" onclick="installSkill('${r.skill_id}')">✅ 安装</button>`
+            ? `<button class="mx-btn mx-btn-secondary" onclick="uninstallSkill('${escapeJsAttr(r.skill_id)}')">❌ 卸载</button>`
+            : `<button class="mx-btn mx-btn-primary" onclick="installSkill('${escapeJsAttr(r.skill_id)}')">✅ 安装</button>`
         }
     `;
     document.getElementById('skillDetailModal').classList.add('open');
@@ -1254,11 +1263,11 @@ async function doImport() {
     const resultEl = document.getElementById('importResult');
     resultEl.style.display = 'block';
     if (r?.success) {
-        resultEl.innerHTML = `<div style="color:var(--mx-green);font-size:13px">✅ ${r.message}</div>`;
+        resultEl.innerHTML = `<div style="color:var(--mx-green);font-size:13px">✅ ${escapeHtml(r.message)}</div>`;
         if(typeof MxToast!=='undefined') MxToast.success(r.message);
         setTimeout(() => { closeImportModal(); marketplaceSearch(); loadMarketStats(); }, 1500);
     } else {
-        resultEl.innerHTML = `<div style="color:var(--mx-error);font-size:13px">❌ ${r?.detail || r?.message || '导入失败'}</div>`;
+        resultEl.innerHTML = `<div style="color:var(--mx-error);font-size:13px">❌ ${escapeHtml(r?.detail || r?.message || '导入失败')}</div>`;
     }
 }
 
@@ -1290,7 +1299,7 @@ function connectWS() {
         const msg = JSON.parse(e.data);
         const log = document.getElementById('eventLog');
         const time = new Date().toLocaleTimeString();
-        log.innerHTML += `<div class="bm-log-entry"><span style="color:var(--mx-t3)">${time}</span> <span style="color:var(--mx-primary)">[${msg.type}]</span> ${JSON.stringify(msg.data||{})}</div>`;
+        log.innerHTML += `<div class="bm-log-entry"><span style="color:var(--mx-t3)">${time}</span> <span style="color:var(--mx-primary)">[${escapeHtml(msg.type)}]</span> ${escapeHtml(JSON.stringify(msg.data||{}))}</div>`;
         log.scrollTop = log.scrollHeight;
     };
     ws.onclose = () => setTimeout(connectWS, 3000);
@@ -1361,11 +1370,11 @@ async function sendCommand() {
     if (!msg) return;
     input.value = '';
     const hist = document.getElementById('commandHistory');
-    hist.innerHTML += `<div style="padding:8px;margin-bottom:4px;background:var(--mx-primary-glow);border-radius:8px;text-align:right"><b>你:</b> ${msg}</div>`;
+    hist.innerHTML += `<div style="padding:8px;margin-bottom:4px;background:var(--mx-primary-glow);border-radius:8px;text-align:right"><b>你:</b> ${escapeHtml(msg)}</div>`;
     hist.scrollTop = hist.scrollHeight;
     const r = await api('/api/command/panel', {method:'POST', body:JSON.stringify({message:msg})});
     const reply = r?.success ? r.response : (r?.error || '请求失败');
-    hist.innerHTML += `<div style="padding:8px;margin-bottom:4px;background:var(--mx-s2);border-radius:8px"><b>🧠 AI:</b> ${typeof reply === 'string' ? reply : JSON.stringify(reply)}</div>`;
+    hist.innerHTML += `<div style="padding:8px;margin-bottom:4px;background:var(--mx-s2);border-radius:8px"><b>🧠 AI:</b> ${escapeHtml(typeof reply === 'string' ? reply : JSON.stringify(reply))}</div>`;
     hist.scrollTop = hist.scrollHeight;
 }
 async function loadChatHistory() {
@@ -1373,7 +1382,7 @@ async function loadChatHistory() {
     if (!r?.history?.length) return;
     const hist = document.getElementById('commandHistory');
     hist.innerHTML = r.history.map(h =>
-        `<div style="padding:6px;margin-bottom:4px;border-bottom:1px solid var(--mx-divider)"><b>${h.role}:</b> ${h.content}</div>`
+        `<div style="padding:6px;margin-bottom:4px;border-bottom:1px solid var(--mx-divider)"><b>${escapeHtml(h.role)}:</b> ${escapeHtml(h.content)}</div>`
     ).join('');
 }
 
@@ -1384,8 +1393,8 @@ async function loadTaskQueue() {
     document.getElementById('taskRunning').textContent = r.running?.length || 0;
     document.getElementById('taskCompleted').textContent = r.completed_count || 0;
     document.getElementById('taskFailed').textContent = r.failed_count || 0;
-    const rows = [...(r.running||[]).map(t => `<tr><td><code>${t.id}</code></td><td>${t.name}</td><td><span class="bm-tag" style="background:var(--mx-primary-glow);color:var(--mx-primary)">执行中</span></td></tr>`),
-        ...(r.pending||[]).map(t => `<tr><td><code>${t.id}</code></td><td>${t.name}</td><td><span class="bm-tag" style="background:var(--mx-amber-glow);color:var(--mx-amber)">待执行</span></td></tr>`)];
+    const rows = [...(r.running||[]).map(t => `<tr><td><code>${escapeHtml(t.id)}</code></td><td>${escapeHtml(t.name)}</td><td><span class="bm-tag" style="background:var(--mx-primary-glow);color:var(--mx-primary)">执行中</span></td></tr>`),
+        ...(r.pending||[]).map(t => `<tr><td><code>${escapeHtml(t.id)}</code></td><td>${escapeHtml(t.name)}</td><td><span class="bm-tag" style="background:var(--mx-amber-glow);color:var(--mx-amber)">待执行</span></td></tr>`)];
     document.getElementById('taskTable').innerHTML = rows.join('') || '<tr><td colspan="3" style="text-align:center;color:var(--mx-t3)">暂无任务</td></tr>';
 }
 
@@ -1400,7 +1409,7 @@ function appendLog(data) {
     logBuffer.push(data);
     if (logBuffer.length > MAX_LOG_LINES) logBuffer.shift();
     el.innerHTML = logBuffer.map(l =>
-        `<div style="margin-bottom:2px"><span style="color:var(--mx-t3)">${l.timestamp||''}</span> <span style="color:${colors[l.level]||'var(--mx-t2)'}">[${l.level}]</span> <span>${l.message}</span></div>`
+        `<div style="margin-bottom:2px"><span style="color:var(--mx-t3)">${escapeHtml(l.timestamp||'')}</span> <span style="color:${colors[l.level]||'var(--mx-t2)'}">[${escapeHtml(l.level)}]</span> <span>${escapeHtml(l.message)}</span></div>`
     ).join('');
     el.scrollTop = el.scrollHeight;
 }

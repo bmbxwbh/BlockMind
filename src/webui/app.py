@@ -34,9 +34,12 @@ def create_app(engine=None, config=None) -> FastAPI:
     )
 
     # CORS
+    allowed_origins = ["http://localhost:19951", "http://127.0.0.1:19951"]
+    if config and getattr(config, "cors_origins", None):
+        allowed_origins = config.cors_origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -78,8 +81,11 @@ def create_app(engine=None, config=None) -> FastAPI:
 
     # WebSocket 端点
     @app.websocket("/ws")
-    async def websocket_endpoint(ws):
-        await engine.state.ws_manager.connect(ws)
+    async def websocket_endpoint(ws, token: str = None):
+        if not token or not app.state.auth_manager.verify_session(token):
+            await ws.close(code=4001, reason="Unauthorized")
+            return
+        await app.state.ws_manager.connect(ws)
         try:
             while True:
                 data = await ws.receive_text()
