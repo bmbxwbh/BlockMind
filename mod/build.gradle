@@ -50,6 +50,9 @@ if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v1_20/java'
 }
 
+// Exclude client-only code from server builds
+sourceSets.main.java.exclude 'blockmind/client/**'
+
 dependencies {
     minecraft "com.mojang:minecraft:${mcVersion}"
     if (vi.yarn != null) { mappings "net.fabricmc:yarn:${vi.yarn}" }
