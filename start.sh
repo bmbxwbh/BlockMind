@@ -114,6 +114,15 @@ load_strings() {
         T_RUNNING="运行中"
         T_SKIPPED="已跳过"
         T_READY="就绪"
+        T_INSTALLED="BlockMind 已安装"
+        T_START="启动 (Start)"
+        T_REPAIR="修复 (Repair — reinstall dependencies)"
+        T_REMOVE="卸载 (Remove — delete all data)"
+        T_REINSTALL="重新安装 (Reinstall — remove + fresh install)"
+        T_CONFIRM_REMOVE="确认删除所有数据？(y/N): "
+        T_UNINSTALLED="已卸载"
+        T_CANCEL_REMOVE="取消卸载"
+        T_INSTALLING="正在安装..."
     else
         T_TITLE="🧠 BlockMind One-click Start"
         T_PY_NOT_FOUND="Python 3.10+ not found"
@@ -155,6 +164,68 @@ load_strings() {
         T_RUNNING="Running"
         T_SKIPPED="Skipped"
         T_READY="Ready"
+        T_INSTALLED="BlockMind is already installed"
+        T_START="Start"
+        T_REPAIR="Repair — reinstall dependencies"
+        T_REMOVE="Remove — delete all data"
+        T_REINSTALL="Reinstall — remove + fresh install"
+        T_CONFIRM_REMOVE="Confirm delete all data? (y/N): "
+        T_UNINSTALLED="Uninstalled"
+        T_CANCEL_REMOVE="Uninstall cancelled"
+        T_INSTALLING="Installing..."
+    fi
+}
+
+# ── Installation detection ──
+INSTALL_MODE=""
+detect_installation() {
+    INSTALLED=false
+    [ -d '.venv' ] && INSTALLED=true
+    [ -f 'config.yaml' ] && INSTALLED=true
+    [ -d 'data/memory' ] && INSTALLED=true
+    [ -d 'mc-server' ] && INSTALLED=true
+
+    if $INSTALLED; then
+        echo ""
+        echo -e "${CYAN}  ╔══════════════════════════════════════╗${NC}"
+        echo -e "${CYAN}  ║   $T_INSTALLED          ║${NC}"
+        echo -e "${CYAN}  ╚══════════════════════════════════════╝${NC}"
+        echo ""
+        echo "    1) $T_START"
+        echo "    2) $T_REPAIR"
+        echo "    3) $T_REMOVE"
+        echo "    4) $T_REINSTALL"
+        echo ""
+        read -rp "  [1/2/3/4]: " install_choice
+        case "${install_choice:-1}" in
+            1) INSTALL_MODE="start" ;;
+            2) INSTALL_MODE="repair" ;;
+            3)
+                read -rp "  $T_CONFIRM_REMOVE" confirm
+                if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                    rm -rf .venv config.yaml data/ mc-server/
+                    info "$T_UNINSTALLED"
+                    exit 0
+                else
+                    info "$T_CANCEL_REMOVE"
+                    detect_installation
+                fi
+                ;;
+            4)
+                read -rp "  $T_CONFIRM_REMOVE" confirm
+                if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                    rm -rf .venv config.yaml data/ mc-server/
+                    info "$T_UNINSTALLED"
+                    INSTALL_MODE="install"
+                else
+                    info "$T_CANCEL_REMOVE"
+                    detect_installation
+                fi
+                ;;
+            *) INSTALL_MODE="start" ;;
+        esac
+    else
+        INSTALL_MODE="install"
     fi
 }
 
@@ -211,7 +282,13 @@ setup_python_env() {
 
 # ── Install dependencies ──
 install_dependencies() {
-    if ! $PYTHON -c "import fastapi" 2>/dev/null; then
+    # Skip if start mode (already installed)
+    if [ "$INSTALL_MODE" = "start" ]; then
+        info "$T_DEPS_INSTALLED (start mode, skipping)"
+        return 0
+    fi
+
+    if [ "$INSTALL_MODE" = "repair" ] || ! $PYTHON -c "import fastapi" 2>/dev/null; then
         info "$T_INSTALL_DEPS"
         
         # Upgrade pip first
@@ -222,11 +299,19 @@ install_dependencies() {
         
         # Install with progress
         echo -e "${CYAN}  Installing packages...${NC}"
-        $PYTHON -m pip install -r requirements.txt -q $PIP_MIRROR 2>/dev/null || \
-        $PYTHON -m pip install -r requirements.txt -q --break-system-packages $PIP_MIRROR 2>/dev/null || \
-        $PYTHON -m pip install -r requirements.txt $PIP_MIRROR || {
-            error "Failed to install dependencies. Check your network connection."
-        }
+        if [ "$INSTALL_MODE" = "repair" ]; then
+            $PYTHON -m pip install --force-reinstall -r requirements.txt -q $PIP_MIRROR 2>/dev/null || \
+            $PYTHON -m pip install --force-reinstall -r requirements.txt -q --break-system-packages $PIP_MIRROR 2>/dev/null || \
+            $PYTHON -m pip install --force-reinstall -r requirements.txt $PIP_MIRROR || {
+                error "Failed to install dependencies. Check your network connection."
+            }
+        else
+            $PYTHON -m pip install -r requirements.txt -q $PIP_MIRROR 2>/dev/null || \
+            $PYTHON -m pip install -r requirements.txt -q --break-system-packages $PIP_MIRROR 2>/dev/null || \
+            $PYTHON -m pip install -r requirements.txt $PIP_MIRROR || {
+                error "Failed to install dependencies. Check your network connection."
+            }
+        fi
         info "$T_DEPS_INSTALLED"
     else
         info "$T_DEPS_INSTALLED (already installed)"
@@ -452,6 +537,9 @@ main() {
     echo -e "${CYAN}  ║   $T_TITLE                            ║${NC}"
     echo -e "${CYAN}  ╚══════════════════════════════════════╝${NC}"
     echo ""
+    
+    # Check if already installed
+    detect_installation
     
     # Step 1: Check Python
     check_python

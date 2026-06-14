@@ -47,6 +47,19 @@ set "T_WEBUI=WebUI 地址: http://localhost:19951"
 set "T_PRESS_STOP=按 Ctrl+C 停止"
 set "T_EXITED=👋 BlockMind 已退出"
 set "T_SUMMARY=📋 启动摘要"
+set "T_INSTALLED=BlockMind 已安装"
+set "T_MENU_START=启动"
+set "T_MENU_REPAIR=修复 (重新安装依赖)"
+set "T_MENU_REMOVE=卸载 (删除所有数据)"
+set "T_MENU_REINSTALL=重新安装"
+set "T_MENU_CHOICE=[1/2/3/4]:"
+set "T_CONFIRM_DELETE=确认删除所有数据？(y/N):"
+set "T_UNINSTALLED=已卸载"
+set "T_CANCEL_DELETE=取消卸载"
+set "T_REINSTALL_READY=已卸载，准备重新安装..."
+set "T_INVALID_CHOICE=无效选择，默认启动"
+set "T_SKIP_DEPS=跳过依赖安装 (启动模式)"
+set "T_FORCE_REINSTALL=强制重新安装依赖..."
 goto :start_run
 
 :lang_en
@@ -81,6 +94,19 @@ set "T_WEBUI=WebUI URL: http://localhost:19951"
 set "T_PRESS_STOP=Press Ctrl+C to stop"
 set "T_EXITED=👋 BlockMind exited"
 set "T_SUMMARY=📋 Startup Summary"
+set "T_INSTALLED=BlockMind is installed"
+set "T_MENU_START=Start"
+set "T_MENU_REPAIR=Repair (reinstall dependencies)"
+set "T_MENU_REMOVE=Uninstall (delete all data)"
+set "T_MENU_REINSTALL=Reinstall"
+set "T_MENU_CHOICE=[1/2/3/4]:"
+set "T_CONFIRM_DELETE=Confirm delete all data? (y/N):"
+set "T_UNINSTALLED=Uninstalled"
+set "T_CANCEL_DELETE=Cancel uninstall"
+set "T_REINSTALL_READY=Uninstalled, ready to reinstall..."
+set "T_INVALID_CHOICE=Invalid choice, default to start"
+set "T_SKIP_DEPS=Skipping dependency installation (Start mode)"
+set "T_FORCE_REINSTALL=Force reinstalling dependencies..."
 goto :start_run
 
 :start_run
@@ -92,6 +118,62 @@ echo   ╔═══════════════════════�
 echo   ║   %T_TITLE%
 echo   ╚══════════════════════════════════════╝
 echo.
+
+:: ── Installation Detection ──
+set INSTALLED=0
+if exist .venv set INSTALLED=1
+if exist config.yaml set INSTALLED=1
+if exist data\memory set INSTALLED=1
+if exist mc-server set INSTALLED=1
+set MODE=fresh
+
+if %INSTALLED%==1 (
+    echo   %T_INSTALLED%
+    echo.
+    echo     1^) %T_MENU_START%
+    echo     2^) %T_MENU_REPAIR%
+    echo     3^) %T_MENU_REMOVE%
+    echo     4^) %T_MENU_REINSTALL%
+    echo.
+    set /p INSTALL_CHOICE="  %T_MENU_CHOICE% "
+    if "!INSTALL_CHOICE!"=="1" (
+        set MODE=start
+    ) else if "!INSTALL_CHOICE!"=="2" (
+        set MODE=repair
+    ) else if "!INSTALL_CHOICE!"=="3" (
+        echo.
+        set /p CONFIRM="  %T_CONFIRM_DELETE% "
+        if /i "!CONFIRM!"=="y" (
+            if exist .venv rmdir /s /q .venv
+            if exist config.yaml del config.yaml
+            if exist data rmdir /s /q data
+            if exist mc-server rmdir /s /q mc-server
+            echo   %T_UNINSTALLED%
+            pause
+            exit /b 0
+        ) else (
+            echo   %T_CANCEL_DELETE%
+            goto :start_run
+        )
+    ) else if "!INSTALL_CHOICE!"=="4" (
+        echo.
+        set /p CONFIRM="  %T_CONFIRM_DELETE% "
+        if /i "!CONFIRM!"=="y" (
+            if exist .venv rmdir /s /q .venv
+            if exist config.yaml del config.yaml
+            if exist data rmdir /s /q data
+            if exist mc-server rmdir /s /q mc-server
+            echo   %T_REINSTALL_READY%
+            set MODE=reinstall
+        ) else (
+            echo   %T_CANCEL_DELETE%
+            goto :start_run
+        )
+    ) else (
+        echo   %T_INVALID_CHOICE%
+        set MODE=start
+    )
+)
 
 :: ── Environment Check ──
 echo   %T_ENV_CHECK%
@@ -131,6 +213,19 @@ echo.
 echo   %T_DEPS%
 echo   ──────────────────────────────────────
 
+if "%MODE%"=="start" (
+    echo   %T_SKIP_DEPS%
+    if exist .venv (
+        call .venv\Scripts\activate.bat
+    )
+    goto :deps_done
+)
+
+if "%MODE%"=="repair" (
+    echo   %T_FORCE_REINSTALL%
+    if exist .venv rmdir /s /q .venv
+)
+
 :: Create virtual environment if not exists
 if not exist .venv (
     echo   %T_DEPS_VENV%
@@ -163,6 +258,8 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 echo   %T_DEPS_OK%
+
+:deps_done
 
 echo.
 
