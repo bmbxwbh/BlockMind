@@ -51,9 +51,9 @@ if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v1_20/java'
 }
 
-// Exclude client-only code from server builds
-// Client classes are in src/client/ and will be compiled separately for client JARs
-sourceSets.main.java.exclude 'blockmind/client/**'
+// Client code uses reflection — compiles on server classpath
+// Include in main source set so it's compiled and included in JAR
+sourceSets.main.java.srcDir 'src/client/java'
 
 dependencies {
     minecraft "com.mojang:minecraft:${mcVersion}"
