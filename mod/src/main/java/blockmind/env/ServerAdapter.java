@@ -32,7 +32,7 @@ public class ServerAdapter implements GameAdapter {
     public Object getServer() { return server; }
 
     @Override
-    public JsonObject getStatus() { return StateCollector.getPlayerStatus(); }
+    public JsonObject getStatus() { return StateCollector.getStatus(); }
 
     @Override
     public JsonObject getInventory() { return StateCollector.getInventory(); }
@@ -41,23 +41,23 @@ public class ServerAdapter implements GameAdapter {
     public JsonObject getEntities(int radius) { return StateCollector.getEntities(radius); }
 
     @Override
-    public JsonObject getBlocks(int radius) { return StateCollector.getBlocks(radius); }
+    public JsonObject getBlocks(int radius) { return StateCollector.getBlocks(radius, "any"); }
 
     @Override
     public boolean move(double x, double y, double z, boolean sprint) {
-        var r = ActionExecutor.move(buildMoveJson(x, y, z, sprint));
+        var r = ActionExecutor.move(buildMoveJson(x, y, z, sprint).toString());
         return r.has("success") && r.get("success").getAsBoolean();
     }
 
     @Override
     public boolean dig(int x, int y, int z) {
-        var r = ActionExecutor.dig(buildPosJson(x, y, z));
+        var r = ActionExecutor.dig(buildPosJson(x, y, z).toString());
         return r.has("success") && r.get("success").getAsBoolean();
     }
 
     @Override
     public boolean place(String item, int x, int y, int z) {
-        var r = ActionExecutor.place(buildPlaceJson(item, x, y, z));
+        var r = ActionExecutor.place(buildPlaceJson(item, x, y, z).toString());
         return r.has("success") && r.get("success").getAsBoolean();
     }
 
@@ -79,13 +79,13 @@ public class ServerAdapter implements GameAdapter {
 
     @Override
     public boolean look(double x, double y, double z) {
-        var r = ActionExecutor.look(buildPosJson(x, y, z));
+        var r = ActionExecutor.look(buildPosJson(x, y, z).toString());
         return r.has("success") && r.get("success").getAsBoolean();
     }
 
     @Override
     public boolean chat(String message) {
-        var r = ActionExecutor.chat(buildChatJson(message));
+        var r = ActionExecutor.chat(buildChatJson(message).toString());
         return r.has("success") && r.get("success").getAsBoolean();
     }
 
