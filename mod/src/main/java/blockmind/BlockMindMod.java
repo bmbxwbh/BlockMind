@@ -47,10 +47,11 @@ public class BlockMindMod implements DedicatedServerModInitializer {
             LOGGER.info("[BlockMind] Server started, launching HTTP API...");
 
             // 初始化所有模块
-            StateCollector.setServer(server);
-            ActionExecutor.setServer(server);
-            BotManager.setServer(server);
-            PathfinderHandler.setServer(server);
+            Object srv = server;
+            StateCollector.setServer(srv);
+            ActionExecutor.setServer(srv);
+            BotManager.setServer(srv);
+            PathfinderHandler.setServer(srv);
 
             startHttpServer();
             new EventListener().register();
