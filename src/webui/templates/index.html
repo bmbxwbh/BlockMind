@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <title>BlockMind 控制面板</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <!-- MiSans 字体（本地加载，无 CDN） -->
     <style>
         @font-face { font-family: 'MiSans'; src: local('MiSans'), local('Mi Sans'); font-weight: 400; font-display: swap; }
@@ -65,6 +66,12 @@
         }
         .spinner { display:inline-block; width:20px; height:20px; border:2px solid var(--mx-border); border-top-color:var(--mx-primary); border-radius:50%; animation:spin 0.6s linear infinite; }
         @keyframes spin { to { transform:rotate(360deg); } }
+        [data-lucide] { width: 16px; height: 16px; vertical-align: -0.125em; }
+        .mx-nav-icon [data-lucide] { width: 18px; height: 18px; }
+        .mx-stat-icon [data-lucide] { width: 20px; height: 20px; }
+        .mx-logo-icon [data-lucide] { width: 24px; height: 24px; }
+        .mx-card-title [data-lucide] { width: 16px; height: 16px; }
+        .bm-stat-icon [data-lucide] { width: 20px; height: 20px; }
     </style>
 </head>
 <body>
@@ -73,7 +80,7 @@
 <div class="mx-modal-overlay" id="loginModal">
     <div class="mx-modal" style="max-width:360px">
         <div class="mx-modal-body" style="text-align:center;padding:32px">
-            <div style="font-size:48px;margin-bottom:16px">🧠</div>
+            <div style="font-size:48px;margin-bottom:16px"><i data-lucide="brain" style="width:48px;height:48px"></i></div>
             <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">BlockMind</h2>
             <p style="color:var(--mx-t3);margin-bottom:24px">Minecraft AI 玩伴控制面板</p>
             <label class="mx-label">密码</label>
@@ -101,8 +108,8 @@
             </div>
             <div class="mx-modal-body">
                 <div class="bm-editor-toolbar">
-                    <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="saveSkillFromModal()">💾 保存</button>
-                    <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="validateModalYaml()">✅ 校验</button>
+                    <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="saveSkillFromModal()"><i data-lucide="save"></i> 保存</button>
+                    <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="validateModalYaml()"><i data-lucide="check-circle"></i> 校验</button>
                     <span class="bm-editor-status" id="modalYamlStatus"></span>
                 </div>
                 <textarea class="bm-yaml-editor" id="skillYamlModalEditor" placeholder="# 加载中..." spellcheck="false"></textarea>
@@ -114,13 +121,13 @@
     <header class="mx-topbar">
         <div class="mx-topbar-left">
             <div class="mx-logo">
-                <div class="mx-logo-icon">🧠</div>
+                <div class="mx-logo-icon"><i data-lucide="brain" style="width:24px;height:24px"></i></div>
                 <span class="mx-logo-text">BlockMind</span>
             </div>
         </div>
         <div class="mx-topbar-right">
             <span style="font-size:13px;color:var(--mx-t3)"><span class="bm-status-dot" id="connDotM"></span> <span id="connTextM">--</span></span>
-            <button class="mx-btn-icon" onclick="MxTheme.toggle()">🌓</button>
+            <button class="mx-btn-icon" onclick="MxTheme.toggle()"><i data-lucide="sun-moon"></i></button>
         </div>
     </header>
 
@@ -128,34 +135,34 @@
     <aside class="mx-sidebar">
         <div class="mx-sidebar-section">导航</div>
         <div class="mx-nav-item active" onclick="showPage('dashboard',this)">
-            <span class="mx-nav-icon">📊</span><span class="mx-nav-label">仪表盘</span>
+            <span class="mx-nav-icon"><i data-lucide="layout-dashboard"></i></span><span class="mx-nav-label">仪表盘</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('skills',this)">
-            <span class="mx-nav-icon">🛠️</span><span class="mx-nav-label">Skill 管理</span>
+            <span class="mx-nav-icon"><i data-lucide="wrench"></i></span><span class="mx-nav-label">Skill 管理</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('marketplace',this)">
-            <span class="mx-nav-icon">🛒</span><span class="mx-nav-label">Skill 市场</span>
+            <span class="mx-nav-icon"><i data-lucide="shopping-bag"></i></span><span class="mx-nav-label">Skill 市场</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('memory',this)">
-            <span class="mx-nav-icon">🧠</span><span class="mx-nav-label">记忆系统</span>
+            <span class="mx-nav-icon"><i data-lucide="brain"></i></span><span class="mx-nav-label">记忆系统</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('model',this)">
-            <span class="mx-nav-icon">🤖</span><span class="mx-nav-label">模型配置</span>
+            <span class="mx-nav-icon"><i data-lucide="bot"></i></span><span class="mx-nav-label">模型配置</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('safety',this)">
-            <span class="mx-nav-icon">🛡️</span><span class="mx-nav-label">安全设置</span>
+            <span class="mx-nav-icon"><i data-lucide="shield"></i></span><span class="mx-nav-label">安全设置</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('logs',this)">
-            <span class="mx-nav-icon">📋</span><span class="mx-nav-label">日志中心</span>
+            <span class="mx-nav-icon"><i data-lucide="file-text"></i></span><span class="mx-nav-label">日志中心</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('system',this)">
-            <span class="mx-nav-icon">⚙️</span><span class="mx-nav-label">系统</span>
+            <span class="mx-nav-icon"><i data-lucide="settings"></i></span><span class="mx-nav-label">系统</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('command',this)">
-            <span class="mx-nav-icon">💬</span><span class="mx-nav-label">命令面板</span>
+            <span class="mx-nav-icon"><i data-lucide="message-square"></i></span><span class="mx-nav-label">命令面板</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('tasks',this)">
-            <span class="mx-nav-icon">🔄</span><span class="mx-nav-label">任务队列</span>
+            <span class="mx-nav-icon"><i data-lucide="refresh-cw"></i></span><span class="mx-nav-label">任务队列</span>
         </div>
     </aside>
 
@@ -168,7 +175,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:12px">
                 <span style="font-size:13px;color:var(--mx-t3)"><span class="bm-status-dot" id="connDotD"></span> <span id="connTextD">--</span></span>
-                <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="MxTheme.toggle()">🌓</button>
+                <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="MxTheme.toggle()"><i data-lucide="sun-moon"></i></button>
                 <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="doLogout()">退出</button>
             </div>
         </header>
@@ -184,30 +191,30 @@
                 </div>
                 <div class="mx-stat-grid" style="margin-bottom:24px">
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-error)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(233,70,52,0.1)">❤️</div>生命值</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(233,70,52,0.1)"><i data-lucide="heart"></i></div>生命值</div>
                         <div class="mx-stat-value" id="sHealth">--</div>
                     </div>
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-amber)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(251,191,36,0.1)">🍖</div>饥饿值</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(251,191,36,0.1)"><i data-lucide="beef"></i></div>饥饿值</div>
                         <div class="mx-stat-value" id="sHunger">--</div>
                     </div>
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-primary)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,130,255,0.1)">📍</div>坐标</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,130,255,0.1)"><i data-lucide="map-pin"></i></div>坐标</div>
                         <div class="mx-stat-value" id="sPos" style="font-size:18px">--</div>
                     </div>
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-green)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,211,153,0.1)">🌍</div>维度</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,211,153,0.1)"><i data-lucide="globe"></i></div>维度</div>
                         <div class="mx-stat-value" id="sDim" style="font-size:18px">--</div>
                     </div>
                 </div>
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">🎮 快捷操作</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="gamepad-2"></i> 快捷操作</span></div>
                     <div class="mx-card-body">
                         <div style="display:flex;gap:8px;flex-wrap:wrap">
-                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('status')">📊 状态</button>
-                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('stop')">⏹️ 停止</button>
-                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('safe')">🏠 回安全点</button>
-                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('memory')">🧠 记忆</button>
+                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('status')"><i data-lucide="bar-chart-3"></i> 状态</button>
+                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('stop')"><i data-lucide="square"></i> 停止</button>
+                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('safe')"><i data-lucide="home"></i> 回安全点</button>
+                            <button class="mx-btn mx-btn-secondary" onclick="sendCmd('memory')"><i data-lucide="brain"></i> 记忆</button>
                         </div>
                         <div class="bm-cmd-bar">
                             <div class="mx-input-wrap" style="flex:1"><input class="mx-input" id="cmdInput" placeholder="输入指令 (如: !stop, !come)" onkeydown="if(event.key==='Enter')sendCustomCmd()"></div>
@@ -216,7 +223,7 @@
                     </div>
                 </div>
                 <div class="mx-card" style="margin-top:16px">
-                    <div class="mx-card-head"><span class="mx-card-title">📡 实时事件</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="radio"></i> 实时事件</span></div>
                     <div class="mx-card-body"><div class="bm-log" id="eventLog"><span style="color:var(--mx-t3)">等待事件...</span></div></div>
                 </div>
             </div>
@@ -229,7 +236,7 @@
                 </div>
                 <div class="mx-card">
                     <div class="mx-card-head">
-                        <span class="mx-card-title">🛠️ 已缓存 Skill</span>
+                        <span class="mx-card-title"><i data-lucide="wrench"></i> 已缓存 Skill</span>
                         <div class="mx-input-wrap" style="width:240px"><input class="mx-input mx-input-sm" id="skillSearch" placeholder="搜索..." oninput="filterSkills()"></div>
                     </div>
                     <div class="mx-card-body">
@@ -242,15 +249,15 @@
                     </div>
                 </div>
                 <div class="mx-card" style="margin-top:16px">
-                    <div class="mx-card-head"><span class="mx-card-title">📝 YAML 编辑器</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="code-2"></i> YAML 编辑器</span></div>
                     <div class="mx-card-body">
                         <div class="bm-editor-toolbar">
                             <select class="mx-input mx-input-sm" id="skillEditorSelect" onchange="loadSkillForEdit()">
                                 <option value="">选择 Skill...</option>
                             </select>
-                            <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="loadSkillForEdit()">📥 加载</button>
-                            <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="saveSkillContent()">💾 保存</button>
-                            <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="validateYaml()">✅ 校验</button>
+                            <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="loadSkillForEdit()"><i data-lucide="upload"></i> 加载</button>
+                            <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="saveSkillContent()"><i data-lucide="save"></i> 保存</button>
+                            <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="validateYaml()"><i data-lucide="check-circle"></i> 校验</button>
                             <span class="bm-editor-status" id="yamlStatus"></span>
                         </div>
                         <textarea class="bm-yaml-editor" id="skillYamlEditor" placeholder="# 选择一个 Skill 进行编辑..." spellcheck="false"></textarea>
@@ -261,7 +268,7 @@
             <!-- ══ Skill 市场 ══ -->
             <div class="mx-page" id="page-marketplace">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">🛒 Skill 市场</h1>
+                    <h1 class="mx-page-title"><i data-lucide="shopping-bag"></i> Skill 市场</h1>
                     <p class="mx-page-sub">浏览、导入、分享社区技能</p>
                 </div>
 
@@ -289,28 +296,28 @@
                 <div class="mx-card" style="margin-bottom:16px">
                     <div class="mx-card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
                         <div class="mx-input-wrap" style="flex:1;min-width:200px">
-                            <input class="mx-input" id="mpSearch" placeholder="🔍 搜索 Skill（名称/标签/描述）..." oninput="debounce(marketplaceSearch,300)()">
+                            <input class="mx-input" id="mpSearch" placeholder="<i data-lucide='search'></i> 搜索 Skill（名称/标签/描述）..." oninput="debounce(marketplaceSearch,300)()">
                         </div>
                         <select class="mx-input" id="mpCategory" style="max-width:160px" onchange="marketplaceSearch()">
                             <option value="">全部分类</option>
-                            <option value="combat">⚔️ 战斗</option>
-                            <option value="farming">🌾 农业</option>
-                            <option value="building">🏗️ 建造</option>
-                            <option value="gathering">⛏️ 采集</option>
-                            <option value="navigation">🧭 导航</option>
-                            <option value="storage">📦 存储</option>
-                            <option value="survival">❤️ 生存</option>
-                            <option value="automation">⚙️ 自动化</option>
-                            <option value="general">📋 通用</option>
+                            <option value="combat"><i data-lucide="swords"></i> 战斗</option>
+                            <option value="farming"><i data-lucide="wheat"></i> 农业</option>
+                            <option value="building"><i data-lucide="construction"></i> 建造</option>
+                            <option value="gathering"><i data-lucide="pickaxe"></i> 采集</option>
+                            <option value="navigation"><i data-lucide="compass"></i> 导航</option>
+                            <option value="storage"><i data-lucide="package"></i> 存储</option>
+                            <option value="survival"><i data-lucide="heart-pulse"></i> 生存</option>
+                            <option value="automation"><i data-lucide="cog"></i> 自动化</option>
+                            <option value="general"><i data-lucide="file-text"></i> 通用</option>
                         </select>
                         <select class="mx-input" id="mpSort" style="max-width:140px" onchange="marketplaceSearch()">
-                            <option value="popular">🔥 热门</option>
-                            <option value="newest">🆕 最新</option>
-                            <option value="rating">⭐ 评分</option>
+                            <option value="popular"><i data-lucide="flame"></i> 热门</option>
+                            <option value="newest"><i data-lucide="clock"></i> 最新</option>
+                            <option value="rating"><i data-lucide="star"></i> 评分</option>
                         </select>
                         <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="marketplaceSearch()">刷新</button>
-                        <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="showImportModal()">📥 导入</button>
-                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="checkMarketUpdates()">🔄 检查更新</button>
+                        <button class="mx-btn mx-btn-primary mx-btn-sm" onclick="showImportModal()"><i data-lucide="upload"></i> 导入</button>
+                        <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="checkMarketUpdates()"><i data-lucide="refresh-cw"></i> 检查更新</button>
                     </div>
                 </div>
 
@@ -324,7 +331,7 @@
             <div class="mx-modal-overlay" id="importModal">
                 <div class="mx-modal" style="max-width:600px">
                     <div class="mx-modal-header">
-                        <h3 class="mx-modal-title">📥 导入 Skill</h3>
+                        <h3 class="mx-modal-title"><i data-lucide="upload"></i> 导入 Skill</h3>
                         <button class="mx-modal-close" onclick="closeImportModal()">&times;</button>
                     </div>
                     <div class="mx-modal-body">
@@ -374,44 +381,44 @@
                     <p class="mx-page-sub">空间 / 路径 / 策略三层记忆</p>
                 </div>
                 <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-                    <button class="mx-btn mx-btn-sm" onclick="backupMemory()">💾 备份</button>
-                    <button class="mx-btn mx-btn-sm" onclick="cleanupMemory()">🧹 清理</button>
-                    <button class="mx-btn mx-btn-sm" onclick="exportMemory()">📤 导出</button>
-                    <button class="mx-btn mx-btn-sm" onclick="importMemoryPrompt()">📥 导入</button>
+                    <button class="mx-btn mx-btn-sm" onclick="backupMemory()"><i data-lucide="save"></i> 备份</button>
+                    <button class="mx-btn mx-btn-sm" onclick="cleanupMemory()"><i data-lucide="broom"></i> 清理</button>
+                    <button class="mx-btn mx-btn-sm" onclick="exportMemory()"><i data-lucide="download"></i> 导出</button>
+                    <button class="mx-btn mx-btn-sm" onclick="importMemoryPrompt()"><i data-lucide="upload"></i> 导入</button>
                 </div>
                 <div class="mx-stat-grid" style="margin-bottom:16px">
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-primary)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,130,255,0.1)">🏗️</div>区域</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,130,255,0.1)"><i data-lucide="map-pin"></i></div>区域</div>
                         <div class="mx-stat-value" id="memZones">0</div>
                     </div>
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-green)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,211,153,0.1)">🛤️</div>路径</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,211,153,0.1)"><i data-lucide="route"></i></div>路径</div>
                         <div class="mx-stat-value" id="memPaths">0</div>
                     </div>
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-amber)">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(251,191,36,0.1)">💡</div>策略</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(251,191,36,0.1)"><i data-lucide="lightbulb"></i></div>策略</div>
                         <div class="mx-stat-value" id="memStrategies">0</div>
                     </div>
                     <div class="mx-stat" style="--mx-stat-accent:#bc8cff">
-                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(188,140,255,0.1)">👤</div>玩家</div>
+                        <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(188,140,255,0.1)"><i data-lucide="user"></i></div>玩家</div>
                         <div class="mx-stat-value" id="memPlayers">0</div>
                     </div>
                 </div>
                 <div class="bm-memory-grid">
                     <div class="bm-memory-card">
-                        <h4>🏗️ 空间记忆</h4>
+                        <h4><i data-lucide="map-pin"></i> 空间记忆</h4>
                         <div id="memZoneList"><div class="bm-memory-item"><span class="label">暂无数据</span></div></div>
                     </div>
                     <div class="bm-memory-card">
-                        <h4>🛤️ 路径缓存</h4>
+                        <h4><i data-lucide="route"></i> 路径缓存</h4>
                         <div id="memPathList"><div class="bm-memory-item"><span class="label">暂无数据</span></div></div>
                     </div>
                     <div class="bm-memory-card">
-                        <h4>💡 策略记录</h4>
+                        <h4><i data-lucide="lightbulb"></i> 策略记录</h4>
                         <div id="memStrategyList"><div class="bm-memory-item"><span class="label">暂无数据</span></div></div>
                     </div>
                     <div class="bm-memory-card">
-                        <h4>👤 玩家记忆</h4>
+                        <h4><i data-lucide="user"></i> 玩家记忆</h4>
                         <div id="memPlayerList"><div class="bm-memory-item"><span class="label">暂无数据</span></div></div>
                     </div>
                 </div>
@@ -423,12 +430,12 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                         <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
                     </div>
-                    <h1 class="mx-page-title">🤖 模型配置</h1>
+                    <h1 class="mx-page-title"><i data-lucide="bot"></i> 模型配置</h1>
                     <p class="mx-page-sub">双 Agent 架构 · 主 Agent 聊天 + 操作 Agent 执行</p>
                 </div>
                 <div class="mx-grid-2">
                     <div class="bm-agent-card">
-                        <h3>💬 主 Agent（聊天）</h3>
+                        <h3><i data-lucide="message-square"></i> 主 Agent（聊天）</h3>
                         <p>维护对话历史，识别指令，回复玩家</p>
                         <label class="mx-label">Provider</label>
                         <div class="mx-input-wrap"><select class="mx-input" id="mainProvider"></select></div>
@@ -446,7 +453,7 @@
                         </div>
                     </div>
                     <div class="bm-agent-card">
-                        <h3>⚙️ 操作 Agent（执行）</h3>
+                        <h3><i data-lucide="cog"></i> 操作 Agent（执行）</h3>
                         <p>无状态执行，生成 Skill / 推理动作，用完即弃</p>
                         <label class="mx-label">Provider</label>
                         <div class="mx-input-wrap"><select class="mx-input" id="opProvider"></select></div>
@@ -465,8 +472,8 @@
                     </div>
                 </div>
                 <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-                    <button class="mx-btn mx-btn-primary" onclick="saveModelConfig()">💾 保存配置</button>
-                    <button class="mx-btn mx-btn-secondary" onclick="testModelConfig()">🔗 测试连接</button>
+                    <button class="mx-btn mx-btn-primary" onclick="saveModelConfig()"><i data-lucide="save"></i> 保存配置</button>
+                    <button class="mx-btn mx-btn-secondary" onclick="testModelConfig()"><i data-lucide="link"></i> 测试连接</button>
                 </div>
                 <div id="modelTestResult" style="margin-top:12px;display:none"></div>
                 <div id="modelDiagnostic" style="display:none"></div>
@@ -478,11 +485,11 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                         <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
                     </div>
-                    <h1 class="mx-page-title">🛡️ 安全设置</h1>
+                    <h1 class="mx-page-title"><i data-lucide="shield"></i> 安全设置</h1>
                     <p class="mx-page-sub">五级安全体系配置</p>
                 </div>
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">🛡️ 风险等级</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="shield-alert"></i> 风险等级</span></div>
                     <div class="mx-card-body">
                         <div class="mx-table-wrap">
                             <table class="mx-table">
@@ -499,7 +506,7 @@
                     </div>
                 </div>
                 <div class="mx-card" style="margin-top:16px">
-                    <div class="mx-card-head"><span class="mx-card-title">📋 审计日志</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="scroll-text"></i> 审计日志</span></div>
                     <div class="mx-card-body"><div class="bm-log" id="auditLog" style="max-height:300px">加载中...</div></div>
                 </div>
             </div>
@@ -510,11 +517,11 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                         <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
                     </div>
-                    <h1 class="mx-page-title">📋 日志中心</h1>
+                    <h1 class="mx-page-title"><i data-lucide="file-text"></i> 日志中心</h1>
                     <p class="mx-page-sub">系统运行日志</p>
                 </div>
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">📋 系统日志</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="file-text"></i> 系统日志</span></div>
                     <div class="mx-card-body"><div class="bm-log" id="systemLog" style="max-height:500px"><span style="color:var(--mx-t3)">等待连接...</span></div></div>
                 </div>
             </div>
@@ -522,39 +529,39 @@
             <!-- ══ 更多（功能聚合页） ══ -->
             <div class="mx-page" id="page-system">
                 <div class="mx-page-head">
-                    <h1 class="mx-page-title">⚙️ 更多功能</h1>
+                    <h1 class="mx-page-title"><i data-lucide="settings"></i> 更多功能</h1>
                     <p class="mx-page-sub">系统管理与高级设置</p>
                 </div>
 
                 <!-- 功能入口网格 -->
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px">
                     <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('model',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
-                        <div style="font-size:32px;margin-bottom:8px">🤖</div>
+                        <div style="font-size:32px;margin-bottom:8px"><i data-lucide="bot" style="width:32px;height:32px"></i></div>
                         <div style="font-size:14px;font-weight:600">模型配置</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">双 Agent · Provider</div>
                     </div>
                     <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('command',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
-                        <div style="font-size:32px;margin-bottom:8px">💬</div>
+                        <div style="font-size:32px;margin-bottom:8px"><i data-lucide="message-square" style="width:32px;height:32px"></i></div>
                         <div style="font-size:14px;font-weight:600">命令面板</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">自然语言指令</div>
                     </div>
                     <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('tasks',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
-                        <div style="font-size:32px;margin-bottom:8px">📋</div>
+                        <div style="font-size:32px;margin-bottom:8px"><i data-lucide="file-text" style="width:32px;height:32px"></i></div>
                         <div style="font-size:14px;font-weight:600">任务队列</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">执行状态 · 历史</div>
                     </div>
                     <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('safety',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
-                        <div style="font-size:32px;margin-bottom:8px">🛡️</div>
+                        <div style="font-size:32px;margin-bottom:8px"><i data-lucide="shield" style="width:32px;height:32px"></i></div>
                         <div style="font-size:14px;font-weight:600">安全设置</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">五级风控 · 审计</div>
                     </div>
                     <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('logs',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
-                        <div style="font-size:32px;margin-bottom:8px">📋</div>
+                        <div style="font-size:32px;margin-bottom:8px"><i data-lucide="file-text" style="width:32px;height:32px"></i></div>
                         <div style="font-size:14px;font-weight:600">日志中心</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">实时日志流</div>
                     </div>
                     <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('system',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
-                        <div style="font-size:32px;margin-bottom:8px">📊</div>
+                        <div style="font-size:32px;margin-bottom:8px"><i data-lucide="activity" style="width:32px;height:32px"></i></div>
                         <div style="font-size:14px;font-weight:600">Token 统计</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">用量 · 成本</div>
                     </div>
@@ -562,7 +569,7 @@
 
                 <!-- 系统状态卡片 -->
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">🔗 系统状态</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="link"></i> 系统状态</span></div>
                     <div class="mx-card-body">
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                             <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--mx-s1);border-radius:var(--mx-r-sm)">
@@ -599,28 +606,28 @@
 
                 <!-- 快速命令 -->
                 <div class="mx-card" style="margin-top:16px">
-                    <div class="mx-card-head"><span class="mx-card-title">⚡ 快速命令</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="zap"></i> 快速命令</span></div>
                     <div class="mx-card-body" style="display:flex;gap:8px;flex-wrap:wrap">
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/status')">📊 状态</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/come')">🏠 回家</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/follow')">👣 跟随</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/stop')">⏹️ 停止</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/eat')">🍖 进食</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/mine')">⛏️ 挖矿</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/tree')">🪓 砍树</button>
-                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/sleep')">😴 睡觉</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/status')"><i data-lucide="bar-chart-3"></i> 状态</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/come')"><i data-lucide="home"></i> 回家</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/follow')"><i data-lucide="footprints"></i> 跟随</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/stop')"><i data-lucide="square"></i> 停止</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/eat')"><i data-lucide="beef"></i> 进食</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/mine')"><i data-lucide="pickaxe"></i> 挖矿</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/tree')"><i data-lucide="axe"></i> 砍树</button>
+                        <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/sleep')"><i data-lucide="moon"></i> 睡觉</button>
                     </div>
                 </div>
 
                 <!-- Token 使用统计 -->
                 <div class="mx-card" style="margin-top:16px">
-                    <div class="mx-card-head"><span class="mx-card-title">📊 Token 使用统计</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="activity"></i> Token 使用统计</span></div>
                     <div class="mx-card-body"><div id="tokenStats"><span class="text-secondary">加载中...</span></div></div>
                 </div>
 
                 <!-- 系统资源 -->
                 <div class="mx-card" style="margin-top:16px">
-                    <div class="mx-card-head"><span class="mx-card-title">💻 系统资源</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="monitor"></i> 系统资源</span></div>
                     <div class="mx-card-body"><div id="systemResources"><span class="text-secondary">加载中...</span></div></div>
                 </div>
             </div>
@@ -631,7 +638,7 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                         <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
                     </div>
-                    <h1 class="mx-page-title">💬 命令面板</h1>
+                    <h1 class="mx-page-title"><i data-lucide="message-square"></i> 命令面板</h1>
                     <p class="mx-page-sub">发送自然语言指令给 AI</p>
                 </div>
                 <div class="mx-card" style="margin-bottom:16px">
@@ -641,7 +648,7 @@
                     </div>
                 </div>
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">💬 对话历史</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="message-square"></i> 对话历史</span></div>
                     <div class="mx-card-body"><div id="commandHistory" style="max-height:400px;overflow-y:auto;font-size:13px"></div></div>
                 </div>
             </div>
@@ -652,7 +659,7 @@
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                         <button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="showPage('system')">← 返回</button>
                     </div>
-                    <h1 class="mx-page-title">📋 任务队列</h1>
+                    <h1 class="mx-page-title"><i data-lucide="refresh-cw"></i> 任务队列</h1>
                     <p class="mx-page-sub">查看待执行和执行中的任务</p>
                 </div>
                 <div class="bm-stat-grid" style="margin-bottom:16px">
@@ -662,7 +669,7 @@
                     <div class="mx-stat"><div class="mx-stat-label">失败</div><div class="mx-stat-value" id="taskFailed">0</div></div>
                 </div>
                 <div class="mx-card">
-                    <div class="mx-card-head"><span class="mx-card-title">📋 任务列表</span></div>
+                    <div class="mx-card-head"><span class="mx-card-title"><i data-lucide="refresh-cw"></i> 任务列表</span></div>
                     <div class="mx-card-body"><div class="mx-table-wrap"><table class="mx-table"><thead><tr><th>ID</th><th>名称</th><th>状态</th></tr></thead><tbody id="taskTable"></tbody></table></div></div>
                 </div>
             </div>
@@ -672,11 +679,11 @@
     <!-- 底部导航（手机端） — 悬浮胶囊 -->
     <nav class="mx-bottom-nav">
         <ul class="mx-bottom-nav-items">
-            <li class="mx-btm-item active" onclick="showPage('dashboard',this)"><span>📊</span><span>仪表盘</span></li>
-            <li class="mx-btm-item" onclick="showPage('skills',this)"><span>🛠️</span><span>Skill</span></li>
-            <li class="mx-btm-item" onclick="showPage('marketplace',this)"><span>🛒</span><span>市场</span></li>
-            <li class="mx-btm-item" onclick="showPage('memory',this)"><span>🧠</span><span>记忆</span></li>
-            <li class="mx-btm-item" onclick="showPage('system',this)"><span>⚙️</span><span>更多</span></li>
+            <li class="mx-btm-item active" onclick="showPage('dashboard',this)"><span><i data-lucide="layout-dashboard"></i></span><span>仪表盘</span></li>
+            <li class="mx-btm-item" onclick="showPage('skills',this)"><span><i data-lucide="wrench"></i></span><span>Skill</span></li>
+            <li class="mx-btm-item" onclick="showPage('marketplace',this)"><span><i data-lucide="shopping-bag"></i></span><span>市场</span></li>
+            <li class="mx-btm-item" onclick="showPage('memory',this)"><span><i data-lucide="brain"></i></span><span>记忆</span></li>
+            <li class="mx-btm-item" onclick="showPage('system',this)"><span><i data-lucide="settings"></i></span><span>更多</span></li>
         </ul>
     </nav>
 </div>
@@ -744,7 +751,7 @@ function doLogout() {
 }
 
 // ══ 初始化 ══
-function init() { loadModelConfig(); loadDashboard(); loadSkills(); loadMemory(); loadSystemStatus(); connectWS(); setInterval(loadDashboard, 5000); initSwipeGesture(); }
+function init() { loadModelConfig(); loadDashboard(); loadSkills(); loadMemory(); loadSystemStatus(); connectWS(); setInterval(loadDashboard, 5000); initSwipeGesture(); lucide.createIcons(); }
 
 // ══ API ══
 async function api(path, opts={}) {
@@ -819,10 +826,11 @@ function renderSkills(list) {
         <td><code>${escapeHtml(s.skill_id)}</code></td><td>${escapeHtml(s.name)}</td>
         <td><span class="bm-tag bm-tag-${escapeHtml((s.task_level||'L2').toLowerCase())}">${escapeHtml(s.task_level||'L2')}</span></td>
         <td>${s.priority}</td><td>${s.usage_count}</td><td>${(s.success_rate*100).toFixed(0)}%</td>
-        <td><button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="editSkill('${escapeJsAttr(s.skill_id)}')" title="编辑">📝</button>
-        <button class="mx-btn mx-btn-sm" onclick="executeSkill('${escapeJsAttr(s.skill_id)}')" title="执行">▶️</button>
+        <td><button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="editSkill('${escapeJsAttr(s.skill_id)}')" title="编辑"><i data-lucide="code-2"></i></button>
+        <button class="mx-btn mx-btn-sm" onclick="executeSkill('${escapeJsAttr(s.skill_id)}')" title="执行"><i data-lucide="play"></i></button>
         <button class="mx-btn mx-btn-danger mx-btn-sm" onclick="deleteSkill('${escapeJsAttr(s.skill_id)}')">删除</button></td>
     </tr>`).join('');
+    lucide.createIcons();
 }
 function filterSkills() {
     const q = document.getElementById('skillSearch').value.toLowerCase();
@@ -1093,7 +1101,8 @@ async function testModelConfig() {
     } else {
         if(typeof MxToast!=='undefined') MxToast.error(r?.error||'连接失败');
         diag.style.display = 'block';
-        diag.innerHTML = `<div class="bm-diagnostic"><h4 style="margin-bottom:8px;color:var(--mx-error)">❌ 诊断信息</h4><pre>${escapeHtml(JSON.stringify(r, null, 2))}</pre></div>`;
+        diag.innerHTML = `<div class="bm-diagnostic"><h4 style="margin-bottom:8px;color:var(--mx-error)"><i data-lucide="x-circle"></i> 诊断信息</h4><pre>${escapeHtml(JSON.stringify(r, null, 2))}</pre></div>`;
+        lucide.createIcons();
     }
 }
 
@@ -1138,15 +1147,15 @@ async function marketplaceSearch() {
     if (sort === 'popular') skills.sort((a,b) => (b.download_count||0) - (a.download_count||0));
     else if (sort === 'rating') skills.sort((a,b) => (b.rating||0) - (a.rating||0));
 
-    const catIcons = {combat:'⚔️',farming:'🌾',building:'🏗️',gathering:'⛏️',navigation:'🧭',storage:'📦',survival:'❤️',automation:'⚙️',general:'📋'};
+    const catIcons = {combat:'swords',farming:'wheat',building:'construction',gathering:'pickaxe',navigation:'compass',storage:'package',survival:'heart-pulse',automation:'cog',general:'file-text'};
     grid.innerHTML = skills.map(s => {
-        const icon = catIcons[s.category] || '📋';
+        const icon = catIcons[s.category] || 'file-text';
         const installed = s.installed ? '<span class="bm-tag bm-tag-l1">已安装</span>' : '';
-        const stars = s.rating ? '⭐'.repeat(Math.round(s.rating)) : '';
+        const stars = s.rating ? '<i data-lucide="star"></i>'.repeat(Math.round(s.rating)) : '';
         return `<div class="mx-card" style="padding:16px;cursor:pointer" onclick="showSkillDetail('${escapeJsAttr(s.skill_id)}')">
             <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
                 <div>
-                    <div style="font-size:15px;font-weight:600">${icon} ${escapeHtml(s.name || s.skill_id)}</div>
+                    <div style="font-size:15px;font-weight:600"><i data-lucide="${icon}"></i> ${escapeHtml(s.name || s.skill_id)}</div>
                     <div style="font-size:11px;color:var(--mx-t3);margin-top:2px">${escapeHtml(s.skill_id)}</div>
                 </div>
                 <div>${installed}</div>
@@ -1161,20 +1170,21 @@ async function marketplaceSearch() {
             </div>
         </div>`;
     }).join('');
+    lucide.createIcons();
 }
 
 async function showSkillDetail(skillId) {
     const r = await api(`/api/marketplace/${skillId}`);
     if (!r) { if(typeof MxToast!=='undefined') MxToast.error('获取详情失败'); return; }
-    document.getElementById('detailTitle').textContent = `🛒 ${r.name || r.skill_id}`;
+    document.getElementById('detailTitle').innerHTML = `<i data-lucide="shopping-bag"></i> ${r.name || r.skill_id}`;
     const meta = r.market_meta || {};
-    const catIcons = {combat:'⚔️',farming:'🌾',building:'🏗️',gathering:'⛏️',navigation:'🧭',storage:'📦',survival:'❤️',automation:'⚙️',general:'📋'};
+    const catIcons = {combat:'swords',farming:'wheat',building:'construction',gathering:'pickaxe',navigation:'compass',storage:'package',survival:'heart-pulse',automation:'cog',general:'file-text'};
 
     document.getElementById('detailBody').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
             <div><span style="color:var(--mx-t3)">ID:</span> <code>${escapeHtml(r.skill_id)}</code></div>
             <div><span style="color:var(--mx-t3)">版本:</span> v${r.version||1}</div>
-            <div><span style="color:var(--mx-t3)">分类:</span> ${catIcons[meta.category]||'📋'} ${escapeHtml(meta.category||'general')}</div>
+            <div><span style="color:var(--mx-t3)">分类:</span> <i data-lucide="${catIcons[meta.category]||'file-text'}"></i> ${escapeHtml(meta.category||'general')}</div>
             <div><span style="color:var(--mx-t3)">难度:</span> ${escapeHtml(meta.difficulty||'beginner')}</div>
             <div><span style="color:var(--mx-t3)">级别:</span> <span class="bm-tag bm-tag-${escapeHtml(r.task_level?.toLowerCase()||'l2')}">${escapeHtml(r.task_level||'L2')}</span></div>
             <div><span style="color:var(--mx-t3)">优先级:</span> ${r.priority||5}</div>
@@ -1193,14 +1203,15 @@ async function showSkillDetail(skillId) {
 
     const isInstalled = r.installed;
     document.getElementById('detailFooter').innerHTML = `
-        <button class="mx-btn mx-btn-ghost" onclick="exportSkill('${escapeJsAttr(r.skill_id)}')">📤 导出</button>
-        <button class="mx-btn mx-btn-ghost" onclick="submitSkill('${escapeJsAttr(r.skill_id)}')">🚀 提交到社区</button>
+        <button class="mx-btn mx-btn-ghost" onclick="exportSkill('${escapeJsAttr(r.skill_id)}')"><i data-lucide="download"></i> 导出</button>
+        <button class="mx-btn mx-btn-ghost" onclick="submitSkill('${escapeJsAttr(r.skill_id)}')"><i data-lucide="send"></i> 提交到社区</button>
         ${isInstalled
-            ? `<button class="mx-btn mx-btn-secondary" onclick="uninstallSkill('${escapeJsAttr(r.skill_id)}')">❌ 卸载</button>`
-            : `<button class="mx-btn mx-btn-primary" onclick="installSkill('${escapeJsAttr(r.skill_id)}')">✅ 安装</button>`
+            ? `<button class="mx-btn mx-btn-secondary" onclick="uninstallSkill('${escapeJsAttr(r.skill_id)}')"><i data-lucide="x"></i> 卸载</button>`
+            : `<button class="mx-btn mx-btn-primary" onclick="installSkill('${escapeJsAttr(r.skill_id)}')"><i data-lucide="check-circle"></i> 安装</button>`
         }
     `;
     document.getElementById('skillDetailModal').classList.add('open');
+    lucide.createIcons();
 }
 
 function closeDetailModal() { document.getElementById('skillDetailModal').classList.remove('open'); }
@@ -1285,12 +1296,13 @@ async function doImport() {
     const resultEl = document.getElementById('importResult');
     resultEl.style.display = 'block';
     if (r?.success) {
-        resultEl.innerHTML = `<div style="color:var(--mx-green);font-size:13px">✅ ${escapeHtml(r.message)}</div>`;
+        resultEl.innerHTML = `<div style="color:var(--mx-green);font-size:13px"><i data-lucide="check-circle"></i> ${escapeHtml(r.message)}</div>`;
         if(typeof MxToast!=='undefined') MxToast.success(r.message);
         setTimeout(() => { closeImportModal(); marketplaceSearch(); loadMarketStats(); }, 1500);
     } else {
-        resultEl.innerHTML = `<div style="color:var(--mx-error);font-size:13px">❌ ${escapeHtml(r?.detail || r?.message || '导入失败')}</div>`;
+        resultEl.innerHTML = `<div style="color:var(--mx-error);font-size:13px"><i data-lucide="x-circle"></i> ${escapeHtml(r?.detail || r?.message || '导入失败')}</div>`;
     }
+    lucide.createIcons();
 }
 
 async function checkMarketUpdates() {
@@ -1323,6 +1335,7 @@ function showPage(id, el) {
     if (id==='system') { loadTokenStats(); loadSystemResources(); }
     // Close mobile sidebar if open
     closeMobileSidebar();
+    lucide.createIcons();
 }
 
 // ══ 手机端侧边栏滑动手势 ══
@@ -1378,8 +1391,9 @@ async function sendCommand() {
     hist.scrollTop = hist.scrollHeight;
     const r = await api('/api/command/panel', {method:'POST', body:JSON.stringify({message:msg})});
     const reply = r?.success ? r.response : (r?.error || '请求失败');
-    hist.innerHTML += `<div style="padding:8px;margin-bottom:4px;background:var(--mx-s2);border-radius:8px"><b>🧠 AI:</b> ${escapeHtml(typeof reply === 'string' ? reply : JSON.stringify(reply))}</div>`;
+    hist.innerHTML += `<div style="padding:8px;margin-bottom:4px;background:var(--mx-s2);border-radius:8px"><b><i data-lucide="brain"></i> AI:</b> ${escapeHtml(typeof reply === 'string' ? reply : JSON.stringify(reply))}</div>`;
     hist.scrollTop = hist.scrollHeight;
+    lucide.createIcons();
 }
 async function loadChatHistory() {
     const r = await api('/api/chat/history');
@@ -1501,10 +1515,11 @@ async function loadAuditLog() {
         el.innerHTML = r.entries.map(e => `
           <div style="padding:8px 0;border-bottom:1px solid var(--mx-border);font-size:13px">
             <span style="color:var(--mx-t3)">${escapeHtml(e.time || '')}</span>
-            <span style="margin:0 8px;font-weight:600;color:${e.allowed ? 'var(--mx-success)' : 'var(--mx-error)'}">${e.allowed ? '✅' : '❌'}</span>
+            <span style="margin:0 8px;font-weight:600;color:${e.allowed ? 'var(--mx-success)' : 'var(--mx-error)'}">${e.allowed ? '<i data-lucide="check-circle"></i>' : '<i data-lucide="x-circle"></i>'}</span>
             <span>${escapeHtml(e.action || '')}</span>
           </div>
         `).join('');
+        lucide.createIcons();
     } catch(e) { el.innerHTML = '<div style="color:var(--mx-t3)">加载失败</div>'; }
 }
 
