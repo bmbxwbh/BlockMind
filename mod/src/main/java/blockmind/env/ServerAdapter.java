@@ -20,12 +20,7 @@ public class ServerAdapter implements GameAdapter {
 
     @Override
     public Object getWorld() {
-        try {
-            var compat = blockmind.compat.VersionCompat.getCompat();
-            return compat.getWorld(server);
-        } catch (Exception e) {
-            return null;
-        }
+        return null; // Not used in server mode
     }
 
     @Override
