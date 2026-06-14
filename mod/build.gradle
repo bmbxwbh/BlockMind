@@ -51,14 +51,8 @@ if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v1_20/java'
 }
 
-// Client-only source set
-sourceSets {
-    clientOnly {
-        java {
-            srcDir 'src/client/java'
-        }
-    }
-}
+// Exclude client-only code from server builds
+// Client classes are in src/client/ and will be compiled separately for client JARs
 sourceSets.main.java.exclude 'blockmind/client/**'
 
 dependencies {
@@ -67,10 +61,6 @@ dependencies {
     def modImpl = mcVersion.startsWith('26') ? 'implementation' : 'modImplementation'
     "${modImpl}" "net.fabricmc.fabric-api:fabric-api:${vi.fabricApi}"
     "${modImpl}" "net.fabricmc:fabric-loader:${vi.loader}"
-
-    // Client source set needs Minecraft client classpath
-    clientOnlyCompileOnly "com.mojang:minecraft:${mcVersion}"
-    if (vi.yarn != null) { clientOnlyImplementation "net.fabricmc:yarn:${vi.yarn}" }
 }
 
 java {
@@ -80,19 +70,11 @@ java {
 
 tasks.withType(JavaCompile).configureEach { options.encoding = "UTF-8" }
 
-// Build client classes task
-tasks.register('compileClient', JavaCompile) {
-    source = sourceSets.clientOnly.java
-    classpath = sourceSets.clientOnly.compileClasspath
-    destinationDirectory = layout.buildDirectory.dir('classes/java/client')
-}
-
 // Include client classes in the JAR
+// Note: Client code cannot be compiled during server builds (net.minecraft.client.* not available)
+// For client mode, a separate client JAR build is needed
 jar {
     from("LICENSE") { rename { "${it}_${base.archivesName.get()}" } }
-    from(sourceSets.clientOnly.output) {
-        include 'blockmind/client/**'
-    }
     manifest {
         attributes("Implementation-Version": project.version, "Minecraft-Version": mcVersion, "Fabric-API": vi.fabricApi)
     }
