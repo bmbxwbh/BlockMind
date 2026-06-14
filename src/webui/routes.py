@@ -250,11 +250,11 @@ async def execute_skill(skill_id: str, request: Request, _=Depends(require_auth)
     engine = get_engine(request)
     if not hasattr(engine, 'skill_runtime') or not engine.skill_runtime:
         raise HTTPException(status_code=500, detail="Skill 引擎未初始化")
-    
+
     skill = engine.skill_storage.get(skill_id)
     if not skill:
         raise HTTPException(status_code=404, detail=f"Skill {skill_id} 不存在")
-    
+
     try:
         result = await engine.skill_runtime.execute_skill_object(skill)
         return {
@@ -710,12 +710,12 @@ async def command_panel(req: CommandPanelRequest, request: Request, _=Depends(re
         raise HTTPException(status_code=500, detail="AI 未初始化")
     try:
         result = await engine.main_agent.chat(req.message)
-        
+
         # If task detected, dispatch to operation agent
         if result.get("has_task") and result.get("task_description"):
             import asyncio
             asyncio.create_task(engine._dispatch_to_operation_agent(result["task_description"]))
-        
+
         return {"success": True, "response": result}
     except Exception as e:
         return {"success": False, "error": str(e)}

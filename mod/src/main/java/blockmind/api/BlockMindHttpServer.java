@@ -5,6 +5,7 @@ import blockmind.bot.BotManager;
 import blockmind.collector.StateCollector;
 import blockmind.executor.ActionExecutor;
 import blockmind.pathfinding.PathfinderHandler;
+import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
