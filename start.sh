@@ -123,6 +123,13 @@ load_strings() {
         T_UNINSTALLED="已卸载"
         T_CANCEL_REMOVE="取消卸载"
         T_INSTALLING="正在安装..."
+        T_SELECT_MODE="选择运行模式"
+        T_MODE_SERVER="服务端模式 — 自动下载安装 MC 服务端"
+        T_MODE_CLIENT="客户端模式 — 使用本地 Minecraft 客户端"
+        T_CLIENT_HINT="请先从 PCL2 或官方启动器安装 Minecraft"
+        T_CLIENT_HINT2="安装 BlockMind Mod 后放入 mods/ 目录"
+        T_CLIENT_WEBUI="启动后访问 http://localhost:19951 控制"
+        T_PCL2_URL="PCL2 下载: https://github.com/TCM-Corp/PCL/releases"
     else
         T_TITLE="🧠 BlockMind One-click Start"
         T_PY_NOT_FOUND="Python 3.10+ not found"
@@ -173,6 +180,13 @@ load_strings() {
         T_UNINSTALLED="Uninstalled"
         T_CANCEL_REMOVE="Uninstall cancelled"
         T_INSTALLING="Installing..."
+        T_SELECT_MODE="Select run mode"
+        T_MODE_SERVER="Server mode — auto-download MC server"
+        T_MODE_CLIENT="Client mode — use local Minecraft client"
+        T_CLIENT_HINT="Install Minecraft via PCL2 or official launcher first"
+        T_CLIENT_HINT2="Put BlockMind Mod into mods/ directory"
+        T_CLIENT_WEBUI="Access http://localhost:19951 to control"
+        T_PCL2_URL="PCL2 download: https://github.com/TCM-Corp/PCL/releases"
     fi
 }
 
@@ -226,6 +240,43 @@ detect_installation() {
         esac
     else
         INSTALL_MODE="install"
+    fi
+}
+
+# ── Mode selection ──
+RUN_MODE=""  # "server" or "client"
+
+select_mode() {
+    # If already installed and chose 'start', check if mc-server exists
+    if [ "$INSTALL_MODE" = "start" ] && [ -d 'mc-server' ]; then
+        RUN_MODE="server"
+        return
+    fi
+    
+    echo ""
+    echo -e "${CYAN}  ╔══════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}  ║   $T_SELECT_MODE                       ║${NC}"
+    echo -e "${CYAN}  ╚══════════════════════════════════════╝${NC}"
+    echo ""
+    echo "    1) $T_MODE_SERVER"
+    echo "    2) $T_MODE_CLIENT"
+    echo ""
+    read -rp "  [1/2]: " mode_choice
+    
+    case "${mode_choice:-1}" in
+        1) RUN_MODE="server" ;;
+        2) RUN_MODE="client" ;;
+        *) RUN_MODE="server" ;;
+    esac
+    
+    if [ "$RUN_MODE" = "client" ]; then
+        echo ""
+        echo -e "  ${YELLOW}$T_CLIENT_HINT${NC}"
+        echo -e "  ${YELLOW}$T_CLIENT_HINT2${NC}"
+        echo -e "  ${YELLOW}$T_PCL2_URL${NC}"
+        echo -e "  ${GREEN}$T_CLIENT_WEBUI${NC}"
+        echo ""
+        read -rp "  按回车继续... "
     fi
 }
 
@@ -516,10 +567,14 @@ show_summary() {
     echo -e "${CYAN}  ╠══════════════════════════════════════╣${NC}"
     echo -e "${CYAN}  ║   $T_WEBUI:  http://localhost:19951   ║${NC}"
     
-    if [ -n "$MC_PID" ] && kill -0 "$MC_PID" 2>/dev/null; then
-        echo -e "${CYAN}  ║   $T_MC_SERVER: $T_RUNNING (PID: $MC_PID)    ║${NC}"
+    if [ "$RUN_MODE" = "server" ]; then
+        if [ -n "$MC_PID" ] && kill -0 "$MC_PID" 2>/dev/null; then
+            echo -e "${CYAN}  ║   $T_MC_SERVER: $T_RUNNING (PID: $MC_PID)    ║${NC}"
+        else
+            echo -e "${CYAN}  ║   $T_MC_SERVER: $T_SKIPPED               ║${NC}"
+        fi
     else
-        echo -e "${CYAN}  ║   $T_MC_SERVER: $T_SKIPPED               ║${NC}"
+        echo -e "${CYAN}  ║   模式: 客户端 (请自行启动 Minecraft)   ║${NC}"
     fi
     
     echo -e "${CYAN}  ║   $T_PRESS_CTRL               ║${NC}"
@@ -541,6 +596,9 @@ main() {
     # Check if already installed
     detect_installation
     
+    # Select run mode
+    select_mode
+    
     # Step 1: Check Python
     check_python
     
@@ -559,11 +617,13 @@ main() {
     # Step 6: Create data directories
     init_data
     
-    # Step 7: Setup MC server (auto-download if needed)
-    setup_mc_server || true
-    
-    # Step 8: Start MC server (background)
-    start_mc_server || true
+    # Step 7: Setup & Start MC server (if server mode)
+    if [ "$RUN_MODE" = "server" ]; then
+        setup_mc_server || true
+        start_mc_server || true
+    else
+        warn "$T_MC_SKIP_NOJAR"
+    fi
     
     # Step 9: Show summary
     show_summary

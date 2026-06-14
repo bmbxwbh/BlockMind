@@ -60,6 +60,13 @@ set "T_REINSTALL_READY=已卸载，准备重新安装..."
 set "T_INVALID_CHOICE=无效选择，默认启动"
 set "T_SKIP_DEPS=跳过依赖安装 (启动模式)"
 set "T_FORCE_REINSTALL=强制重新安装依赖..."
+set "T_SELECT_MODE=选择运行模式"
+set "T_MODE_SERVER=服务端模式 — 自动下载安装 MC 服务端"
+set "T_MODE_CLIENT=客户端模式 — 使用本地 Minecraft 客户端"
+set "T_CLIENT_HINT=请先从 PCL2 或官方启动器安装 Minecraft"
+set "T_CLIENT_HINT2=安装 BlockMind Mod 后放入 mods/ 目录"
+set "T_CLIENT_WEBUI=启动后访问 http://localhost:19951 控制"
+set "T_PCL2_URL=PCL2 下载: https://github.com/TCM-Corp/PCL/releases"
 goto :start_run
 
 :lang_en
@@ -107,6 +114,13 @@ set "T_REINSTALL_READY=Uninstalled, ready to reinstall..."
 set "T_INVALID_CHOICE=Invalid choice, default to start"
 set "T_SKIP_DEPS=Skipping dependency installation (Start mode)"
 set "T_FORCE_REINSTALL=Force reinstalling dependencies..."
+set "T_SELECT_MODE=Select run mode"
+set "T_MODE_SERVER=Server mode — auto-download MC server"
+set "T_MODE_CLIENT=Client mode — use local Minecraft client"
+set "T_CLIENT_HINT=Install Minecraft via PCL2 or official launcher first"
+set "T_CLIENT_HINT2=Put BlockMind Mod into mods/ directory"
+set "T_CLIENT_WEBUI=Access http://localhost:19951 to control"
+set "T_PCL2_URL=PCL2 download: https://github.com/TCM-Corp/PCL/releases"
 goto :start_run
 
 :start_run
@@ -174,6 +188,39 @@ if %INSTALLED%==1 (
         set MODE=start
     )
 )
+
+:: ── Mode Selection ──
+set RUN_MODE=server
+if "%MODE%"=="start" if exist mc-server (
+    set RUN_MODE=server
+    goto :skip_mode_select
+)
+
+echo.
+echo   ╔══════════════════════════════════════╗
+echo   ║   %T_SELECT_MODE%
+echo   ╚══════════════════════════════════════╝
+echo.
+echo     1^) %T_MODE_SERVER%
+echo     2^) %T_MODE_CLIENT%
+echo.
+set /p MODE_CHOICE="  [1/2]: "
+if "%MODE_CHOICE%"=="2" set RUN_MODE=client
+if "%MODE_CHOICE%"=="2" goto :client_mode
+if "%MODE_CHOICE%"=="client" set RUN_MODE=client
+if "%MODE_CHOICE%"=="Client" set RUN_MODE=client
+goto :skip_mode_select
+
+:client_mode
+echo.
+echo   %T_CLIENT_HINT%
+echo   %T_CLIENT_HINT2%
+echo   %T_PCL2_URL%
+echo   %T_CLIENT_WEBUI%
+echo.
+pause
+
+:skip_mode_select
 
 :: ── Environment Check ──
 echo   %T_ENV_CHECK%
@@ -283,86 +330,92 @@ if not exist data\backups mkdir data\backups
 echo.
 
 :: ── Minecraft Server Setup ──
-echo   %T_MC_SETUP%
-echo   ──────────────────────────────────────
+if "%RUN_MODE%"=="server" (
+    echo   %T_MC_SETUP%
+    echo   ──────────────────────────────────────
 
-set MC_DIR=
-set MC_JAR=
-set JAVA_OK=0
+    set MC_DIR=
+    set MC_JAR=
+    set JAVA_OK=0
 
-:: Check if Java is available
-java -version >nul 2>&1
-if %errorlevel% equ 0 set JAVA_OK=1
+    :: Check if Java is available
+    java -version >nul 2>&1
+    if %errorlevel% equ 0 set JAVA_OK=1
 
-:: Detect existing MC server
-if exist "%~dp0mc-server\fabric-server-launch.jar" (
-    set MC_DIR=%~dp0mc-server
-    set MC_JAR=fabric-server-launch.jar
-    echo   %T_MC_DETECTED%: %MC_DIR%
-) else if exist "%~dp0mc-server\server.jar" (
-    set MC_DIR=%~dp0mc-server
-    set MC_JAR=server.jar
-    echo   %T_MC_DETECTED%: %MC_DIR%
-) else if exist "%~dp0server\fabric-server-launch.jar" (
-    set MC_DIR=%~dp0server
-    set MC_JAR=fabric-server-launch.jar
-    echo   %T_MC_DETECTED%: %MC_DIR%
-) else if exist "%~dp0minecraft-server\fabric-server-launch.jar" (
-    set MC_DIR=%~dp0minecraft-server
-    set MC_JAR=fabric-server-launch.jar
-    echo   %T_MC_DETECTED%: %MC_DIR%
-)
-
-:: If no MC server found and Java is available, offer to install
-if not defined MC_DIR (
-    if %JAVA_OK%==1 (
-        echo.
-        set /p INSTALL_MC="  %T_MC_INSTALL% "
-        if /i "!INSTALL_MC!"=="y" (
-            echo   %T_MC_INSTALLING%
-            set MC_DIR=%~dp0mc-server
-            if not exist "%MC_DIR%" mkdir "%MC_DIR%"
-            
-            :: Download Fabric installer
-            if not exist "%MC_DIR%\fabric-installer.jar" (
-                set FABRIC_VERSION=0.15.3
-                set INSTALLER_URL=https://maven.fabricmc.net/net/fabricmc/fabric-installer/!FABRIC_VERSION!/fabric-installer-!FABRIC_VERSION!.jar
-                curl --version >nul 2>&1
-                if %errorlevel% equ 0 (
-                    curl -L -o "%MC_DIR%\fabric-installer.jar" "!INSTALLER_URL!"
-                ) else (
-                    powershell -Command "Invoke-WebRequest -Uri '!INSTALLER_URL!' -OutFile '%MC_DIR%\fabric-installer.jar'"
-                )
-            )
-            
-            :: Install Fabric server
-            if not exist "%MC_DIR%\fabric-server-launch.jar" (
-                java -jar "%MC_DIR%\fabric-installer.jar" server -dir "%MC_DIR%" -mcversion 1.20.4 -loader 0.15.3 -downloadMinecraft
-            )
-            
-            :: Download BlockMind mod
-            set MODS_DIR=%MC_DIR%\mods
-            if not exist "%MODS_DIR%" mkdir "%MODS_DIR%"
-            dir /b "%MODS_DIR%\blockmind-mod-*.jar" >nul 2>&1
-            if %errorlevel% neq 0 (
-                curl --version >nul 2>&1
-                if %errorlevel% equ 0 (
-                    curl -sL "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest" | findstr "browser_download_url" | findstr "blockmind-mod" > "%TEMP%\bm_url.txt"
-                    for /f "tokens=2 delims=\" %%u" in ('type "%TEMP%\bm_url.txt"') do (
-                        curl -L -o "%MODS_DIR%\blockmind-mod.jar" "%%u"
-                    )
-                    del "%TEMP%\bm_url.txt" >nul 2>&1
-                )
-            )
-            
-            set MC_JAR=fabric-server-launch.jar
-            echo   %T_MC_DONE%
-        ) else (
-            echo   %T_MC_SKIP%
-        )
-    ) else (
-        echo   %T_MC_SKIP% (Java not available)
+    :: Detect existing MC server
+    if exist "%~dp0mc-server\fabric-server-launch.jar" (
+        set MC_DIR=%~dp0mc-server
+        set MC_JAR=fabric-server-launch.jar
+        echo   %T_MC_DETECTED%: %MC_DIR%
+    ) else if exist "%~dp0mc-server\server.jar" (
+        set MC_DIR=%~dp0mc-server
+        set MC_JAR=server.jar
+        echo   %T_MC_DETECTED%: %MC_DIR%
+    ) else if exist "%~dp0server\fabric-server-launch.jar" (
+        set MC_DIR=%~dp0server
+        set MC_JAR=fabric-server-launch.jar
+        echo   %T_MC_DETECTED%: %MC_DIR%
+    ) else if exist "%~dp0minecraft-server\fabric-server-launch.jar" (
+        set MC_DIR=%~dp0minecraft-server
+        set MC_JAR=fabric-server-launch.jar
+        echo   %T_MC_DETECTED%: %MC_DIR%
     )
+
+    :: If no MC server found and Java is available, offer to install
+    if not defined MC_DIR (
+        if %JAVA_OK%==1 (
+            echo.
+            set /p INSTALL_MC="  %T_MC_INSTALL% "
+            if /i "!INSTALL_MC!"=="y" (
+                echo   %T_MC_INSTALLING%
+                set MC_DIR=%~dp0mc-server
+                if not exist "%MC_DIR%" mkdir "%MC_DIR%"
+                
+                :: Download Fabric installer
+                if not exist "%MC_DIR%\fabric-installer.jar" (
+                    set FABRIC_VERSION=0.15.3
+                    set INSTALLER_URL=https://maven.fabricmc.net/net/fabricmc/fabric-installer/!FABRIC_VERSION!/fabric-installer-!FABRIC_VERSION!.jar
+                    curl --version >nul 2>&1
+                    if %errorlevel% equ 0 (
+                        curl -L -o "%MC_DIR%\fabric-installer.jar" "!INSTALLER_URL!"
+                    ) else (
+                        powershell -Command "Invoke-WebRequest -Uri '!INSTALLER_URL!' -OutFile '%MC_DIR%\fabric-installer.jar'"
+                    )
+                )
+                
+                :: Install Fabric server
+                if not exist "%MC_DIR%\fabric-server-launch.jar" (
+                    java -jar "%MC_DIR%\fabric-installer.jar" server -dir "%MC_DIR%" -mcversion 1.20.4 -loader 0.15.3 -downloadMinecraft
+                )
+                
+                :: Download BlockMind mod
+                set MODS_DIR=%MC_DIR%\mods
+                if not exist "%MODS_DIR%" mkdir "%MODS_DIR%"
+                dir /b "%MODS_DIR%\blockmind-mod-*.jar" >nul 2>&1
+                if %errorlevel% neq 0 (
+                    curl --version >nul 2>&1
+                    if %errorlevel% equ 0 (
+                        curl -sL "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest" | findstr "browser_download_url" | findstr "blockmind-mod" > "%TEMP%\bm_url.txt"
+                        for /f "tokens=2 delims=\" %%u" in ('type "%TEMP%\bm_url.txt"') do (
+                            curl -L -o "%MODS_DIR%\blockmind-mod.jar" "%%u"
+                        )
+                        del "%TEMP%\bm_url.txt" >nul 2>&1
+                    )
+                )
+                
+                set MC_JAR=fabric-server-launch.jar
+                echo   %T_MC_DONE%
+            ) else (
+                echo   %T_MC_SKIP%
+            )
+        ) else (
+            echo   %T_MC_SKIP% (Java not available)
+        )
+    )
+) else (
+    echo   %T_MC_SETUP%
+    echo   ──────────────────────────────────────
+    echo   %T_MC_SKIP%
 )
 
 echo.
@@ -371,11 +424,19 @@ echo.
 echo   %T_SUMMARY%
 echo   ──────────────────────────────────────
 
-if defined MC_DIR (
-    echo   • MC Server: %MC_DIR% (%MC_JAR%)
-    echo   • MC Server will start in new window
+if "%RUN_MODE%"=="server" (
+    echo   • %T_MODE_SERVER%
 ) else (
-    echo   • MC Server: Not configured
+    echo   • %T_MODE_CLIENT%
+)
+
+if "%RUN_MODE%"=="server" (
+    if defined MC_DIR (
+        echo   • MC Server: %MC_DIR% (%MC_JAR%)
+        echo   • MC Server will start in new window
+    ) else (
+        echo   • MC Server: Not configured
+    )
 )
 echo   • BlockMind: Current window
 echo   • WebUI: http://localhost:19951
@@ -383,10 +444,12 @@ echo   • %T_PRESS_STOP%
 echo.
 
 :: ── Start MC Server in New Window ──
-if defined MC_DIR (
-    echo   %T_MC_WINDOW%
-    start "Minecraft Server" cmd /c "cd /d \"%MC_DIR%\" && java -Xms512M -Xmx2G -jar %MC_JAR% nogui"
-    timeout /t 3 /nobreak >nul
+if "%RUN_MODE%"=="server" (
+    if defined MC_DIR (
+        echo   %T_MC_WINDOW%
+        start "Minecraft Server" cmd /c "cd /d \"%MC_DIR%\" && java -Xms512M -Xmx2G -jar %MC_JAR% nogui"
+        timeout /t 3 /nobreak >nul
+    )
 )
 
 :: ── Start BlockMind in Current Window ──
