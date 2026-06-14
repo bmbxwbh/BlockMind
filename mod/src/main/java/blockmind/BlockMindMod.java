@@ -5,6 +5,7 @@ import blockmind.bot.BotManager;
 import blockmind.collector.StateCollector;
 import blockmind.executor.ActionExecutor;
 import blockmind.event.EventListener;
+import blockmind.pathfinding.PathfinderHandler;
 import blockmind.compat.VersionCompat;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -27,14 +28,17 @@ public class BlockMindMod implements DedicatedServerModInitializer {
     public static final int HTTP_PORT = 25580;
 
     private static BlockMindHttpServer httpServer;
-    private static boolean running = false;
+    // Make running volatile for thread-safe visibility
+    private static volatile boolean running = false;
 
     @Override
     public void onInitializeServer() {
         LOGGER.info("========================================");
-        LOGGER.info("  BlockMind Mod v1.1.0 Loading...");
+        // Version mismatch fix: log says v1.1.0 but build.gradle says 1.2.0
+        LOGGER.info("  BlockMind Mod v1.2.0 Loading...");
         LOGGER.info("  MC Version: {} (detected by VersionCompat)", VersionCompat.getVersionString());
         LOGGER.info("  Compat impl: {}", VersionCompat.getCompat().getClass().getSimpleName());
+        LOGGER.info("  Mode: SERVER");
         LOGGER.info("  [NEW] FakePlayer Bot Support");
         LOGGER.info("========================================");
 
@@ -46,6 +50,7 @@ public class BlockMindMod implements DedicatedServerModInitializer {
             StateCollector.setServer(server);
             ActionExecutor.setServer(server);
             BotManager.setServer(server);
+            PathfinderHandler.setServer(server);
 
             startHttpServer();
             new EventListener().register();
@@ -75,7 +80,10 @@ public class BlockMindMod implements DedicatedServerModInitializer {
                     java.util.Properties props = new java.util.Properties();
                     java.io.File cfg = new java.io.File("config/blockmind.properties");
                     if (cfg.exists()) {
-                        props.load(new java.io.FileInputStream(cfg));
+                        // Resource leak fix: try-with-resources for FileInputStream
+                        try (java.io.FileInputStream fis = new java.io.FileInputStream(cfg)) {
+                            props.load(fis);
+                        }
                         apiToken = props.getProperty("api_token", "");
                     }
                 } catch (Exception ignored) {}

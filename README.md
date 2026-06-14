@@ -6,9 +6,9 @@
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org)
 [![Fabric](https://img.shields.io/badge/Fabric-0.92+-yellow.svg)](https://fabricmc.net)
 [![MC](https://img.shields.io/badge/Minecraft-1.20.x--26.x-green.svg)](https://minecraft.net)
-[![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT--NC-purple.svg)](LICENSE)
 
-**一句话概括：** Fabric Mod 提供精准游戏接口 + Python 后端驱动 AI 决策 + 记忆系统跨会话学习，实现 7×24 小时自主生存的 Minecraft 智能玩伴。
+**一句话概括：** Fabric Mod 提供精准游戏接口 + Python 后端驱动 AI 决策 + 记忆系统跨会话学习，实现 7×24 小时自主生存的 Minecraft 智能玩伴。支持服务端和客户端双模式运行。
 
 🌐 **中文** | [English](README-en.md) | [日本語](README-ja.md) | [한국어](README-ko.md) | [العربية](README-ar.md) | [Deutsch](README-de.md) | [Español](README-es.md) | [Français](README-fr.md) | [Bahasa Indonesia](README-id.md) | [Italiano](README-it.md) | [Português](README-pt.md) | [Русский](README-ru.md) | [ภาษาไทย](README-th.md) | [Türkçe](README-tr.md) | [Tiếng Việt](README-vi.md)
 ---
@@ -618,7 +618,7 @@ market:
   mc_versions: ["1.20.x"]      # 兼容版本
   description_long: |          # 详细描述
     自动前往钻石层挖钻石...
-  license: MIT                 # 许可
+  license: MIT-NC              # 许可（禁止商用）
   rating: 4.7                  # 评分
   download_count: 234          # 下载量
 ```
@@ -699,4 +699,4 @@ A: 约 200MB，基于 python:3.11-slim 多阶段构建。
 
 ## 📄 许可证
 
-MIT License. 详见 [LICENSE](LICENSE)。
+MIT License with Non-Commercial Restriction. 禁止商用，详见 [LICENSE](LICENSE)。

@@ -9,9 +9,12 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -30,6 +33,7 @@ public class BlockMindHttpServer {
     private final int port;
     private final String apiToken;
     private com.sun.net.httpserver.HttpServer server;
+    private ExecutorService executorService;
 
     public BlockMindHttpServer(int port, String apiToken) {
         this.port = port;
@@ -39,7 +43,8 @@ public class BlockMindHttpServer {
     public void start() throws IOException {
         staticApiToken = this.apiToken;
         server = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(port), 0);
-        server.setExecutor(Executors.newFixedThreadPool(4));
+        executorService = Executors.newFixedThreadPool(4);
+        server.setExecutor(executorService);
 
         // ── 基础 API（无需认证）──
         server.createContext("/health", new HealthHandler());
@@ -80,16 +85,29 @@ public class BlockMindHttpServer {
         if (server != null) {
             server.stop(0);
         }
+        // M6 fix: shutdown the thread pool executor
+        if (executorService != null) {
+            executorService.shutdown();
+        }
     }
 
     // ─── 辅助方法 ─────────────────────────────────────
 
-    private static String staticApiToken;
+    // T4 fix: volatile for thread-safe visibility
+    private static volatile String staticApiToken;
 
     static boolean checkAuth(HttpExchange exchange) throws IOException {
         if (staticApiToken == null || staticApiToken.isEmpty()) return true;
         String auth = exchange.getRequestHeaders().getFirst("Authorization");
-        if (auth != null && auth.equals("Bearer " + staticApiToken)) return true;
+        if (auth != null && auth.startsWith("Bearer ")) {
+            String token = auth.substring(7);
+            // S7 fix: constant-time comparison via MessageDigest.isEqual()
+            if (MessageDigest.isEqual(
+                    token.getBytes(StandardCharsets.UTF_8),
+                    staticApiToken.getBytes(StandardCharsets.UTF_8))) {
+                return true;
+            }
+        }
         sendResponse(exchange, 401, "{\"error\":\"Unauthorized\",\"message\":\"需要有效的 API Token\"}");
         return false;
     }
@@ -97,15 +115,33 @@ public class BlockMindHttpServer {
     static void sendResponse(HttpExchange exchange, int statusCode, String json) throws IOException {
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
         byte[] response = json.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(statusCode, response.length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(response);
-        os.close();
+        // Resource leak fix: try-with-resources for OutputStream
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response);
+        }
     }
 
+    // S4 fix: limit request body to 64KB
     static String readBody(HttpExchange exchange) throws IOException {
-        return new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        final int MAX_BODY_SIZE = 64 * 1024; // 64KB
+        try (InputStream is = exchange.getRequestBody()) {
+            byte[] buffer = new byte[4096];
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            int totalRead = 0;
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                totalRead += bytesRead;
+                if (totalRead > MAX_BODY_SIZE) {
+                    throw new IOException("Request body too large (max 64KB)");
+                }
+                baos.write(buffer, 0, bytesRead);
+            }
+            return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        }
     }
 
     // ─── 状态查询 Handlers ────────────────────────────
@@ -143,9 +179,11 @@ public class BlockMindHttpServer {
         }
     }
 
+    // S3 fix: add auth check to EntitiesHandler and BlocksHandler
     static class EntitiesHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             int radius = parseQueryParam(exchange, "radius", 32);
             sendResponse(exchange, 200, StateCollector.getEntities(radius).toString());
         }
@@ -154,6 +192,7 @@ public class BlockMindHttpServer {
     static class BlocksHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (!checkAuth(exchange)) return;
             int radius = parseQueryParam(exchange, "radius", 16);
             String type = parseQueryStr(exchange, "type");
             sendResponse(exchange, 200, StateCollector.getBlocks(radius, type).toString());
@@ -252,10 +291,6 @@ public class BlockMindHttpServer {
 
     // ─── 智能导航 Handlers ───────────────────────────
 
-    /**
-     * 导航到目标位置（带排除区域）
-     * POST /api/navigate/goto
-     */
     static class NavigateGotoHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -265,10 +300,6 @@ public class BlockMindHttpServer {
         }
     }
 
-    /**
-     * 停止当前导航
-     * POST /api/navigate/stop
-     */
     static class NavigateStopHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -278,10 +309,6 @@ public class BlockMindHttpServer {
         }
     }
 
-    /**
-     * 获取寻路引擎状态
-     * GET /api/navigate/status
-     */
     static class NavigateStatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -290,9 +317,25 @@ public class BlockMindHttpServer {
         }
     }
 
+    // ─── 事件广播 ─────────────────────────────────────
+
+    public void broadcastEvent(JsonObject event) {
+        // Placeholder for WebSocket/SSE event broadcasting to connected clients
+        BlockMindMod.LOGGER.debug("[BlockMind] Event: {}", event);
+    }
+
     // ─── 工具方法 ─────────────────────────────────────
 
     static boolean checkMethod(HttpExchange exchange, String method) throws IOException {
+        // OPTIONS preflight handling for CORS
+        if ("OPTIONS".equals(exchange.getRequestMethod())) {
+            exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+            return false;
+        }
         if (!method.equals(exchange.getRequestMethod())) {
             sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
             return false;
