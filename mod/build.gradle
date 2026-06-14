@@ -42,6 +42,7 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
+// Version-specific source sets
 if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v26/java'
 } else if (mcVersion.startsWith('1.21')) {
@@ -50,7 +51,14 @@ if (mcVersion.startsWith('26')) {
     sourceSets.main.java.srcDir 'src/v1_20/java'
 }
 
-// Exclude client-only code from server builds
+// Client-only source set
+sourceSets.client {
+    java {
+        srcDir 'src/client/java'
+    }
+}
+
+// Exclude client code from main compilation (server-only)
 sourceSets.main.java.exclude 'blockmind/client/**'
 
 dependencies {
@@ -59,6 +67,10 @@ dependencies {
     def modImpl = mcVersion.startsWith('26') ? 'implementation' : 'modImplementation'
     "${modImpl}" "net.fabricmc.fabric-api:fabric-api:${vi.fabricApi}"
     "${modImpl}" "net.fabricmc:fabric-loader:${vi.loader}"
+
+    // Client source set needs Minecraft client classpath
+    clientCompileOnly "com.mojang:minecraft:${mcVersion}"
+    if (vi.yarn != null) { clientImplementation "net.fabricmc:yarn:${vi.yarn}" }
 }
 
 java {
@@ -68,8 +80,19 @@ java {
 
 tasks.withType(JavaCompile).configureEach { options.encoding = "UTF-8" }
 
+// Build client classes task
+tasks.register('compileClient', JavaCompile) {
+    source = sourceSets.client.java
+    classpath = sourceSets.client.compileClasspath
+    destinationDirectory = layout.buildDirectory.dir('classes/java/client')
+}
+
+// Include client classes in the JAR
 jar {
     from("LICENSE") { rename { "${it}_${base.archivesName.get()}" } }
+    from(sourceSets.client.output) {
+        include 'blockmind/client/**'
+    }
     manifest {
         attributes("Implementation-Version": project.version, "Minecraft-Version": mcVersion, "Fabric-API": vi.fabricApi)
     }
