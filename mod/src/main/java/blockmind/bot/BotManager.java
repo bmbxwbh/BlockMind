@@ -43,6 +43,12 @@ public class BotManager {
         }
 
         if (name != null && !name.isEmpty()) {
+            // Name validation: 3-16 chars, alphanumeric + underscore
+            if (!name.matches("^[a-zA-Z0-9_]{3,16}$")) {
+                result.addProperty("success", false);
+                result.addProperty("error", "Invalid name: must be 3-16 alphanumeric/underscore characters");
+                return result;
+            }
             botName = name;
         }
 
@@ -55,6 +61,27 @@ public class BotManager {
 
             // 使用 MinecraftCompat 创建玩家（版本无关）
             Object player = compat.createPlayer(server, world, profile);
+
+            // F5 fix: register bot with server's PlayerManager
+            try {
+                Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
+                // Try common method names for adding a player
+                String[] addMethods = {"onPlayerConnect", "addPlayer", "add"};
+                boolean registered = false;
+                for (String method : addMethods) {
+                    try {
+                        playerManager.getClass().getMethod(method, player.getClass()).invoke(playerManager, player);
+                        registered = true;
+                        BlockMindMod.LOGGER.debug("[BlockMind] Bot registered via PlayerManager.{}", method);
+                        break;
+                    } catch (NoSuchMethodException ignored) {}
+                }
+                if (!registered) {
+                    BlockMindMod.LOGGER.warn("[BlockMind] Could not register bot with PlayerManager (non-critical)");
+                }
+            } catch (Exception e) {
+                BlockMindMod.LOGGER.warn("[BlockMind] Failed to register bot with PlayerManager: {}", e.getMessage());
+            }
 
             // 包装为 BotPlayer
             botPlayer = new BotPlayer(player, compat);
@@ -97,6 +124,22 @@ public class BotManager {
         try {
             String name = botName;
             MinecraftCompat compat = VersionCompat.getCompat();
+
+            // Remove bot from PlayerManager before discarding
+            try {
+                Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
+                Object player = botPlayer.getHandle();
+                String[] removeMethods = {"remove", "onPlayerDisconnect"};
+                for (String method : removeMethods) {
+                    try {
+                        playerManager.getClass().getMethod(method, player.getClass()).invoke(playerManager, player);
+                        break;
+                    } catch (NoSuchMethodException ignored) {}
+                }
+            } catch (Exception e) {
+                BlockMindMod.LOGGER.debug("[BlockMind] Could not remove bot from PlayerManager: {}", e.getMessage());
+            }
+
             compat.discard(botPlayer.getHandle());
             botPlayer = null;
             BlockMindMod.LOGGER.info("[BlockMind] Bot '{}' despawned", name);
@@ -158,13 +201,7 @@ public class BotManager {
 
     // ── Reflection helpers for version-specific server/world methods ──
 
-    /**
-     * Get the overworld from the server.
-     * MC 1.20.x/1.21.x (Yarn): server.getOverworld()
-     * MC 26.x (Mojang): server.overworld() or server.getOverworld()
-     */
     private static Object getOverworld(Object server) {
-        // Try common method names
         String[] methods = {"getOverworld", "overworld"};
         for (String method : methods) {
             try {
@@ -174,10 +211,6 @@ public class BotManager {
         throw new RuntimeException("Cannot get overworld from server");
     }
 
-    /**
-     * Get spawn position from the world.
-     * Returns int[3] {x, y, z}.
-     */
     private static int[] getSpawnPos(Object world) {
         try {
             Object spawnPos = world.getClass().getMethod("getSpawnPos").invoke(world);
@@ -186,7 +219,6 @@ public class BotManager {
             int z = (int) spawnPos.getClass().getMethod("getZ").invoke(spawnPos);
             return new int[]{x, y, z};
         } catch (Exception e) {
-            // Fallback: default spawn
             BlockMindMod.LOGGER.warn("[BlockMind] Could not get spawn pos, using (0, 64, 0)");
             return new int[]{0, 64, 0};
         }

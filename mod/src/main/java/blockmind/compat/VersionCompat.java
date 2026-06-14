@@ -122,7 +122,8 @@ public class VersionCompat {
      * 实现类由 build.gradle source set 机制确保只编译对应版本的代码。
      * 如果版本特定实现不可用（如 main 源码直接编译），回退到反射模式。
      */
-    public static MinecraftCompat getCompat() {
+    // T3 fix: synchronized to prevent lazy init race
+    public static synchronized MinecraftCompat getCompat() {
         if (compatInstance != null) return compatInstance;
         compatInstance = createCompat();
         return compatInstance;

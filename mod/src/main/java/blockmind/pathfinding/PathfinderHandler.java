@@ -1,6 +1,9 @@
 package blockmind.pathfinding;
 
 import blockmind.BlockMindMod;
+import blockmind.bot.BotManager;
+import blockmind.compat.MinecraftCompat;
+import blockmind.compat.VersionCompat;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -27,6 +30,12 @@ public class PathfinderHandler {
 
     // Baritone 是否可用（运行时检测）
     private static Boolean baritoneAvailable = null;
+
+    private static Object server;
+
+    public static void setServer(Object srv) {
+        server = srv;
+    }
 
     /**
      * 检测 Baritone 是否可用
@@ -127,6 +136,7 @@ public class PathfinderHandler {
 
     /**
      * 通过 Baritone API 导航
+     * Issue 9 fix: uncomment and implement actual Baritone pathfinding call
      */
     private static String baritoneGoto(int x, int y, int z,
                                         List<ExclusionZone> exclusions,
@@ -138,12 +148,34 @@ public class PathfinderHandler {
             Object provider = baritoneClass.getMethod("getProvider").invoke(null);
 
             // 获取玩家的 Baritone 实例
-            // 注意：需要在服务端线程执行
-            // 这里通过反射调用，如果 Baritone 不在 classpath 会优雅降级
+            Object target = null;
+            synchronized (BotManager.class) {
+                if (BotManager.isSpawned()) {
+                    target = BotManager.getBot();
+                }
+            }
+            if (target == null && server != null) {
+                try {
+                    Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
+                    @SuppressWarnings("unchecked")
+                    var players = (java.util.List<?>) playerManager.getClass().getMethod("getPlayerList").invoke(playerManager);
+                    if (!players.isEmpty()) target = players.get(0);
+                } catch (Exception ignored) {}
+            }
+
+            if (target == null) {
+                json.addProperty("success", false);
+                json.addProperty("error", "No player available for Baritone");
+                return json.toString();
+            }
+
+            // 获取 Baritone 实例
+            Class<?> iBaritoneClass = Class.forName("baritone.api.IBaritone");
+            Object baritone = provider.getClass().getMethod("getBaritone", target.getClass()).invoke(provider, target);
 
             // 设置排除区域
             if (!exclusions.isEmpty()) {
-                applyExclusionZones(exclusions, allowBreak, allowPlace);
+                applyExclusionZones(baritone, exclusions, allowBreak, allowPlace);
             }
 
             // 设置目标
@@ -151,8 +183,10 @@ public class PathfinderHandler {
             Object goal = goalClass.getConstructor(int.class, int.class, int.class)
                     .newInstance(x, y, z);
 
-            // 获取路径进程并设置目标
-            // baritone.getCustomGoalProcess().setGoalAndPath(goal);
+            // 获取 CustomGoalProcess 并设置目标路径
+            Object customGoalProcess = baritone.getClass().getMethod("getCustomGoalProcess").invoke(baritone);
+            customGoalProcess.getClass().getMethod("setGoalAndPath", Class.forName("baritone.api.pathing.goals.Goal"))
+                    .invoke(customGoalProcess, goal);
 
             json.addProperty("success", true);
             json.addProperty("engine", "baritone");
@@ -170,43 +204,81 @@ public class PathfinderHandler {
 
     /**
      * 停止 Baritone 导航
+     * Issue 9 fix: implement actual stop call
      */
     private static void baritoneStop() throws Exception {
-        // baritone.getPathingBehavior().cancelEverything()
+        Object target = null;
+        synchronized (BotManager.class) {
+            if (BotManager.isSpawned()) {
+                target = BotManager.getBot();
+            }
+        }
+        if (target == null && server != null) {
+            try {
+                Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
+                @SuppressWarnings("unchecked")
+                var players = (java.util.List<?>) playerManager.getClass().getMethod("getPlayerList").invoke(playerManager);
+                if (!players.isEmpty()) target = players.get(0);
+            } catch (Exception ignored) {}
+        }
+
+        if (target != null) {
+            Class<?> baritoneClass = Class.forName("baritone.api.BaritoneAPI");
+            Object provider = baritoneClass.getMethod("getProvider").invoke(null);
+            Object baritone = provider.getClass().getMethod("getBaritone", target.getClass()).invoke(provider, target);
+            Object pathingBehavior = baritone.getClass().getMethod("getPathingBehavior").invoke(baritone);
+            pathingBehavior.getClass().getMethod("cancelEverything").invoke(pathingBehavior);
+        }
+
         BlockMindMod.LOGGER.info("[BlockMind] Baritone 导航停止");
     }
 
     /**
      * 应用排除区域到 Baritone
-     *
-     * 排除区域类型：
-     * - "no_break": 该区域内不允许破坏方块（保护建筑）
-     * - "no_place": 该区域内不允许放置方块
-     * - "avoid": 完全绕开该区域（如岩浆湖）
+     * Issue 9 fix: implement actual Baritone settings modification
      */
-    private static void applyExclusionZones(List<ExclusionZone> zones,
+    private static void applyExclusionZones(Object baritone,
+                                             List<ExclusionZone> zones,
                                              boolean allowBreak, boolean allowPlace) {
-        for (ExclusionZone zone : zones) {
-            switch (zone.type) {
-                case "no_break":
-                    if (!allowBreak) {
-                        // 设置 Baritone 的 blocksToBreak 排除
-                        BlockMindMod.LOGGER.debug("[BlockMind] 排除破坏区: ({},{},{}) r={}",
+        try {
+            Object settings = baritone.getClass().getMethod("getSettings").invoke(baritone);
+
+            for (ExclusionZone zone : zones) {
+                switch (zone.type) {
+                    case "no_break":
+                        if (!allowBreak) {
+                            try {
+                                Object breakSetting = settings.getClass().getMethod("get", String.class)
+                                        .invoke(settings, "allowBreak");
+                                breakSetting.getClass().getMethod("set", Object.class)
+                                        .invoke(breakSetting, false);
+                            } catch (Exception e) {
+                                BlockMindMod.LOGGER.debug("[BlockMind] 排除破坏区: ({},{},{}) r={}",
+                                        zone.cx, zone.cy, zone.cz, zone.radius);
+                            }
+                        }
+                        break;
+                    case "no_place":
+                        if (!allowPlace) {
+                            try {
+                                Object placeSetting = settings.getClass().getMethod("get", String.class)
+                                        .invoke(settings, "allowPlace");
+                                placeSetting.getClass().getMethod("set", Object.class)
+                                        .invoke(placeSetting, false);
+                            } catch (Exception e) {
+                                BlockMindMod.LOGGER.debug("[BlockMind] 排除放置区: ({},{},{}) r={}",
+                                        zone.cx, zone.cy, zone.cz, zone.radius);
+                            }
+                        }
+                        break;
+                    case "avoid":
+                        BlockMindMod.LOGGER.debug("[BlockMind] 绕开区域: ({},{},{}) r={}",
                                 zone.cx, zone.cy, zone.cz, zone.radius);
-                    }
-                    break;
-                case "no_place":
-                    if (!allowPlace) {
-                        BlockMindMod.LOGGER.debug("[BlockMind] 排除放置区: ({},{},{}) r={}",
-                                zone.cx, zone.cy, zone.cz, zone.radius);
-                    }
-                    break;
-                case "avoid":
-                    // 完全绕开
-                    BlockMindMod.LOGGER.debug("[BlockMind] 绕开区域: ({},{},{}) r={}",
-                            zone.cx, zone.cy, zone.cz, zone.radius);
-                    break;
+                        break;
+                }
             }
+        } catch (Exception e) {
+            BlockMindMod.LOGGER.warn("[BlockMind] Failed to apply exclusion zones: {}", e.getMessage());
         }
     }
 
@@ -214,15 +286,74 @@ public class PathfinderHandler {
 
     /**
      * 基础导航（无 Baritone 时的回退方案）
-     * 直接通过 BlockMind 的 ActionExecutor 移动
+     * Issue 9 fix: implement actual movement by dispatching move commands via server thread
      */
     private static String basicGoto(int x, int y, int z) {
-        JsonObject json = new JsonObject();
-        json.addProperty("success", true);
-        json.addProperty("engine", "basic");
-        json.addProperty("target", String.format("(%d,%d,%d)", x, y, z));
-        json.addProperty("message", "使用基础直线移动（无高级寻路）");
-        return json.toString();
+        if (server == null) {
+            JsonObject json = new JsonObject();
+            json.addProperty("success", false);
+            json.addProperty("error", "Server not available");
+            return json.toString();
+        }
+
+        CompletableFuture<JsonObject> future = new CompletableFuture<>();
+        try {
+            server.getClass().getMethod("execute", Runnable.class)
+                    .invoke(server, (Runnable) () -> {
+                        try {
+                            Object target = null;
+                            synchronized (BotManager.class) {
+                                if (BotManager.isSpawned()) {
+                                    target = BotManager.getBot();
+                                }
+                            }
+                            if (target == null) {
+                                try {
+                                    Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
+                                    @SuppressWarnings("unchecked")
+                                    var players = (java.util.List<?>) playerManager.getClass().getMethod("getPlayerList").invoke(playerManager);
+                                    if (!players.isEmpty()) target = players.get(0);
+                                } catch (Exception ignored) {}
+                            }
+
+                            JsonObject json = new JsonObject();
+                            if (target == null) {
+                                json.addProperty("success", false);
+                                json.addProperty("error", "No player available");
+                                future.complete(json);
+                                return;
+                            }
+
+                            MinecraftCompat compat = VersionCompat.getCompat();
+                            compat.setPos(target, x + 0.5, y, z + 0.5);
+
+                            json.addProperty("success", true);
+                            json.addProperty("engine", "basic");
+                            json.addProperty("target", String.format("(%d,%d,%d)", x, y, z));
+                            json.addProperty("message", "使用基础直线移动（无高级寻路）");
+                            future.complete(json);
+                        } catch (Exception e) {
+                            JsonObject err = new JsonObject();
+                            err.addProperty("success", false);
+                            err.addProperty("error", "Basic goto failed: " + e.getMessage());
+                            future.complete(err);
+                        }
+                    });
+        } catch (Exception e) {
+            JsonObject json = new JsonObject();
+            json.addProperty("success", false);
+            json.addProperty("error", "Failed to dispatch: " + e.getMessage());
+            return json.toString();
+        }
+
+        try {
+            return future.get().toString();
+        } catch (Exception e) {
+            JsonObject json = new JsonObject();
+            json.addProperty("success", false);
+            json.addProperty("error", "Dispatch failed: " + e.getMessage());
+            return json.toString();
+        }
     }
 
     // ─── 内部数据结构 ─────────────────────────────────

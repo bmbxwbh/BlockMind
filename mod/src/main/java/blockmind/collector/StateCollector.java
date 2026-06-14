@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 游戏状态采集器
@@ -24,225 +25,251 @@ public class StateCollector {
     }
 
     /**
+     * Run a task on the server thread, blocking the HTTP thread until complete.
+     * Thread safety (issue 8, T2): all game operations run on the tick thread.
+     */
+    private static JsonObject dispatchToServer(java.util.function.Supplier<JsonObject> task) {
+        if (server == null) {
+            JsonObject err = new JsonObject();
+            err.addProperty("error", "Server not ready");
+            return err;
+        }
+        CompletableFuture<JsonObject> future = new CompletableFuture<>();
+        try {
+            server.getClass().getMethod("execute", Runnable.class)
+                    .invoke(server, (Runnable) () -> {
+                        try {
+                            future.complete(task.get());
+                        } catch (Exception e) {
+                            JsonObject err = new JsonObject();
+                            err.addProperty("error", "Server error: " + e.getMessage());
+                            future.complete(err);
+                        }
+                    });
+        } catch (Exception e) {
+            JsonObject err = new JsonObject();
+            err.addProperty("error", "Failed to dispatch to server: " + e.getMessage());
+            return err;
+        }
+        try {
+            return future.get();
+        } catch (Exception e) {
+            JsonObject err = new JsonObject();
+            err.addProperty("error", "Dispatch failed: " + e.getMessage());
+            return err;
+        }
+    }
+
+    /**
      * 获取目标玩家：优先 Bot，回退到第一个在线玩家
+     * T2 fix: synchronized on BotManager for atomic check-then-act
      */
     private static Object getTarget() {
-        MinecraftCompat compat = VersionCompat.getCompat();
-        if (BotManager.isSpawned()) {
-            Object bot = BotManager.getBot();
-            if (bot != null && compat.isAlive(bot)) return bot;
+        synchronized (BotManager.class) {
+            MinecraftCompat compat = VersionCompat.getCompat();
+            if (BotManager.isSpawned()) {
+                Object bot = BotManager.getBot();
+                if (bot != null && compat.isAlive(bot)) return bot;
+            }
+            return getFirstPlayer();
         }
-        return getFirstPlayer();
     }
 
     /**
      * 获取玩家状态
      */
     public static JsonObject getStatus() {
-        JsonObject json = new JsonObject();
-        if (server == null) {
-            json.addProperty("error", "Server not ready");
+        return dispatchToServer(() -> {
+            JsonObject json = new JsonObject();
+
+            Object target = getTarget();
+            if (target == null) {
+                json.addProperty("connected", false);
+                json.addProperty("bot_spawned", BotManager.isSpawned());
+                return json;
+            }
+
+            MinecraftCompat compat = VersionCompat.getCompat();
+
+            json.addProperty("connected", true);
+            json.addProperty("target", BotManager.isSpawned() ? "bot" : "player");
+            json.addProperty("name", compat.getPlayerName(target));
+            json.addProperty("health", compat.getHealth(target));
+            json.addProperty("hunger", compat.getFoodLevel(target));
+            json.addProperty("saturation", compat.getSaturationLevel(target));
+
+            JsonObject pos = new JsonObject();
+            pos.addProperty("x", compat.getX(target));
+            pos.addProperty("y", compat.getY(target));
+            pos.addProperty("z", compat.getZ(target));
+            json.add("position", pos);
+
+            JsonObject rotation = new JsonObject();
+            rotation.addProperty("yaw", compat.getYaw(target));
+            rotation.addProperty("pitch", compat.getPitch(target));
+            json.add("rotation", rotation);
+
+            json.addProperty("experience", compat.getTotalExperience(target));
+            json.addProperty("level", compat.getExperienceLevel(target));
+            json.addProperty("dimension", compat.getDimension(target));
+            json.addProperty("time_of_day", compat.getWorldTimeOfDay(target));
+            json.addProperty("weather", getWeather(target, compat));
+
             return json;
-        }
-
-        Object target = getTarget();
-        if (target == null) {
-            json.addProperty("connected", false);
-            json.addProperty("bot_spawned", BotManager.isSpawned());
-            return json;
-        }
-
-        MinecraftCompat compat = VersionCompat.getCompat();
-
-        json.addProperty("connected", true);
-        json.addProperty("target", BotManager.isSpawned() ? "bot" : "player");
-        json.addProperty("name", compat.getPlayerName(target));
-        json.addProperty("health", compat.getHealth(target));
-        json.addProperty("hunger", compat.getFoodLevel(target));
-        json.addProperty("saturation", compat.getSaturationLevel(target));
-
-        // 位置
-        JsonObject pos = new JsonObject();
-        pos.addProperty("x", compat.getX(target));
-        pos.addProperty("y", compat.getY(target));
-        pos.addProperty("z", compat.getZ(target));
-        json.add("position", pos);
-
-        // 朝向
-        JsonObject rotation = new JsonObject();
-        rotation.addProperty("yaw", compat.getYaw(target));
-        rotation.addProperty("pitch", compat.getPitch(target));
-        json.add("rotation", rotation);
-
-        // 经验
-        json.addProperty("experience", compat.getTotalExperience(target));
-        json.addProperty("level", compat.getExperienceLevel(target));
-
-        // 维度
-        json.addProperty("dimension", compat.getDimension(target));
-
-        // 世界时间
-        json.addProperty("time_of_day", compat.getWorldTimeOfDay(target));
-
-        // 天气
-        json.addProperty("weather", getWeather(target, compat));
-
-        return json;
+        });
     }
 
     /**
      * 获取世界状态
      */
     public static JsonObject getWorld() {
-        JsonObject json = new JsonObject();
-        if (server == null) return json;
+        return dispatchToServer(() -> {
+            JsonObject json = new JsonObject();
 
-        Object target = getTarget();
-        if (target == null) return json;
+            Object target = getTarget();
+            if (target == null) return json;
 
-        MinecraftCompat compat = VersionCompat.getCompat();
+            MinecraftCompat compat = VersionCompat.getCompat();
 
-        json.addProperty("dimension", compat.getDimension(target));
-        json.addProperty("time_of_day", compat.getWorldTimeOfDay(target));
-        json.addProperty("weather", getWeather(target, compat));
+            json.addProperty("dimension", compat.getDimension(target));
+            json.addProperty("time_of_day", compat.getWorldTimeOfDay(target));
+            json.addProperty("weather", getWeather(target, compat));
 
-        try {
-            Object world = getWorldObj(target);
-            String difficulty = (String) world.getClass().getMethod("getDifficulty").invoke(world)
-                    .getClass().getMethod("getName").invoke(world.getClass().getMethod("getDifficulty").invoke(world));
-            json.addProperty("difficulty", difficulty);
-        } catch (Exception ignored) {}
+            try {
+                Object world = getWorldObj(target);
+                String difficulty = (String) world.getClass().getMethod("getDifficulty").invoke(world)
+                        .getClass().getMethod("getName").invoke(world.getClass().getMethod("getDifficulty").invoke(world));
+                json.addProperty("difficulty", difficulty);
+            } catch (Exception ignored) {}
 
-        json.addProperty("day_count", compat.getWorldTimeOfDay(target) / 24000L);
+            json.addProperty("day_count", compat.getWorldTimeOfDay(target) / 24000L);
 
-        return json;
+            return json;
+        });
     }
 
     /**
      * 获取背包
      */
     public static JsonObject getInventory() {
-        JsonObject json = new JsonObject();
-        if (server == null) return json;
+        return dispatchToServer(() -> {
+            JsonObject json = new JsonObject();
 
-        Object target = getTarget();
-        if (target == null) return json;
+            Object target = getTarget();
+            if (target == null) return json;
 
-        try {
-            Object inventory = target.getClass().getMethod("getInventory").invoke(target);
-            int size = (int) inventory.getClass().getMethod("size").invoke(inventory);
+            try {
+                Object inventory = target.getClass().getMethod("getInventory").invoke(target);
+                int size = (int) inventory.getClass().getMethod("size").invoke(inventory);
 
-            JsonArray items = new JsonArray();
-            int emptySlots = 0;
+                JsonArray items = new JsonArray();
+                int emptySlots = 0;
 
-            for (int i = 0; i < size; i++) {
-                Object stack = inventory.getClass().getMethod("getStack", int.class).invoke(inventory, i);
-                boolean isEmpty = (boolean) stack.getClass().getMethod("isEmpty").invoke(stack);
-                if (isEmpty) {
-                    emptySlots++;
-                    continue;
+                for (int i = 0; i < size; i++) {
+                    Object stack = inventory.getClass().getMethod("getStack", int.class).invoke(inventory, i);
+                    boolean isEmpty = (boolean) stack.getClass().getMethod("isEmpty").invoke(stack);
+                    if (isEmpty) {
+                        emptySlots++;
+                        continue;
+                    }
+
+                    JsonObject item = new JsonObject();
+                    item.addProperty("name", stack.getClass().getMethod("getItem").invoke(stack).toString());
+                    item.addProperty("slot", i);
+                    item.addProperty("count", (int) stack.getClass().getMethod("getCount").invoke(stack));
+                    int maxDamage = (int) stack.getClass().getMethod("getMaxDamage").invoke(stack);
+                    int damage = (int) stack.getClass().getMethod("getDamage").invoke(stack);
+                    item.addProperty("durability", maxDamage - damage);
+                    item.addProperty("max_durability", maxDamage);
+                    items.add(item);
                 }
 
-                JsonObject item = new JsonObject();
-                item.addProperty("name", stack.getClass().getMethod("getItem").invoke(stack).toString());
-                item.addProperty("slot", i);
-                item.addProperty("count", (int) stack.getClass().getMethod("getCount").invoke(stack));
-                int maxDamage = (int) stack.getClass().getMethod("getMaxDamage").invoke(stack);
-                int damage = (int) stack.getClass().getMethod("getDamage").invoke(stack);
-                item.addProperty("durability", maxDamage - damage);
-                item.addProperty("max_durability", maxDamage);
-                items.add(item);
+                json.add("items", items);
+                json.addProperty("empty_slots", emptySlots);
+                json.addProperty("is_full", emptySlots == 0);
+            } catch (Exception e) {
+                json.addProperty("error", "Failed to read inventory: " + e.getMessage());
             }
 
-            json.add("items", items);
-            json.addProperty("empty_slots", emptySlots);
-            json.addProperty("is_full", emptySlots == 0);
-        } catch (Exception e) {
-            json.addProperty("error", "Failed to read inventory: " + e.getMessage());
-        }
-
-        return json;
+            return json;
+        });
     }
 
     /**
      * 获取附近实体
      */
     public static JsonObject getEntities(int radius) {
-        JsonObject json = new JsonObject();
-        JsonArray entities = new JsonArray();
+        return dispatchToServer(() -> {
+            JsonObject json = new JsonObject();
+            JsonArray entities = new JsonArray();
 
-        if (server == null) {
-            json.add("entities", entities);
-            return json;
-        }
+            Object target = getTarget();
+            if (target == null) {
+                json.add("entities", entities);
+                return json;
+            }
 
-        Object target = getTarget();
-        if (target == null) {
-            json.add("entities", entities);
-            return json;
-        }
+            MinecraftCompat compat = VersionCompat.getCompat();
 
-        MinecraftCompat compat = VersionCompat.getCompat();
+            try {
+                Object world = getWorldObj(target);
+                Class<?> entityClass = Class.forName("net.minecraft.entity.Entity");
+                Class<?> boxClass = Class.forName("net.minecraft.util.math.Box");
 
-        try {
-            Object world = getWorldObj(target);
-            Class<?> entityClass = Class.forName("net.minecraft.entity.Entity");
-            Class<?> boxClass = Class.forName("net.minecraft.util.math.Box");
+                double px = compat.getX(target);
+                double py = compat.getY(target);
+                double pz = compat.getZ(target);
 
-            double px = compat.getX(target);
-            double py = compat.getY(target);
-            double pz = compat.getZ(target);
+                Object box = boxClass.getConstructor(
+                                double.class, double.class, double.class,
+                                double.class, double.class, double.class)
+                        .newInstance(px - radius, py - radius, pz - radius,
+                                px + radius, py + radius, pz + radius);
 
-            Object box = boxClass.getConstructor(
-                    double.class, double.class, double.class,
-                    double.class, double.class, double.class)
-                    .newInstance(px - radius, py - radius, pz - radius,
-                                 px + radius, py + radius, pz + radius);
+                @SuppressWarnings("unchecked")
+                List<?> entityList = (List<?>) world.getClass()
+                        .getMethod("getEntitiesByClass", Class.class, boxClass, entityClass)
+                        .invoke(world, entityClass, box, null);
 
-            @SuppressWarnings("unchecked")
-            List<?> entityList = (List<?>) world.getClass()
-                    .getMethod("getEntitiesByClass", Class.class, boxClass, entityClass)
-                    .invoke(world, entityClass, box, null);
+                for (Object entity : entityList) {
+                    if (entity == target) continue;
 
-            for (Object entity : entityList) {
-                if (entity == target) continue;
+                    double distance = (double) entity.getClass().getMethod("distanceTo", entityClass)
+                            .invoke(entity, target);
+                    if (distance > radius) continue;
 
-                double distance = (double) entity.getClass().getMethod("distanceTo", entityClass)
-                        .invoke(entity, target);
-                if (distance > radius) continue;
+                    JsonObject ent = new JsonObject();
+                    ent.addProperty("id", (int) entity.getClass().getMethod("getId").invoke(entity));
+                    ent.addProperty("type", entity.getClass().getMethod("getType").invoke(entity).toString());
+                    ent.addProperty("distance", Math.round(distance * 10.0) / 10.0);
 
-                JsonObject ent = new JsonObject();
-                ent.addProperty("id", (int) entity.getClass().getMethod("getId").invoke(entity));
-                ent.addProperty("type", entity.getClass().getMethod("getType").invoke(entity).toString());
-                ent.addProperty("distance", Math.round(distance * 10.0) / 10.0);
+                    JsonObject pos = new JsonObject();
+                    pos.addProperty("x", (double) entity.getClass().getMethod("getX").invoke(entity));
+                    pos.addProperty("y", (double) entity.getClass().getMethod("getY").invoke(entity));
+                    pos.addProperty("z", (double) entity.getClass().getMethod("getZ").invoke(entity));
+                    ent.add("position", pos);
 
-                JsonObject pos = new JsonObject();
-                pos.addProperty("x", (double) entity.getClass().getMethod("getX").invoke(entity));
-                pos.addProperty("y", (double) entity.getClass().getMethod("getY").invoke(entity));
-                pos.addProperty("z", (double) entity.getClass().getMethod("getZ").invoke(entity));
-                ent.add("position", pos);
-
-                // Check if hostile
-                try {
-                    Class<?> hostileClass = Class.forName("net.minecraft.entity.mob.HostileEntity");
-                    if (hostileClass.isInstance(entity)) {
-                        ent.addProperty("hostile", true);
-                        ent.addProperty("health", (float) entity.getClass().getMethod("getHealth").invoke(entity));
-                    } else {
+                    try {
+                        Class<?> hostileClass = Class.forName("net.minecraft.entity.mob.HostileEntity");
+                        if (hostileClass.isInstance(entity)) {
+                            ent.addProperty("hostile", true);
+                            ent.addProperty("health", (float) entity.getClass().getMethod("getHealth").invoke(entity));
+                        } else {
+                            ent.addProperty("hostile", false);
+                        }
+                    } catch (Exception e) {
                         ent.addProperty("hostile", false);
                     }
-                } catch (Exception e) {
-                    ent.addProperty("hostile", false);
+
+                    entities.add(ent);
                 }
-
-                entities.add(ent);
+            } catch (Exception e) {
+                // Silently return empty on error
             }
-        } catch (Exception e) {
-            // Silently return empty on error
-        }
 
-        json.add("entities", entities);
-        return json;
+            json.add("entities", entities);
+            return json;
+        });
     }
 
     /**
@@ -253,69 +280,66 @@ public class StateCollector {
     }
 
     public static JsonObject getBlocks(int radius, String type, int maxBlocks) {
-        JsonObject json = new JsonObject();
-        JsonArray blocks = new JsonArray();
+        return dispatchToServer(() -> {
+            JsonObject json = new JsonObject();
+            JsonArray blocks = new JsonArray();
 
-        if (server == null) {
-            json.add("blocks", blocks);
-            return json;
-        }
+            Object target = getTarget();
+            if (target == null) {
+                json.add("blocks", blocks);
+                return json;
+            }
 
-        Object target = getTarget();
-        if (target == null) {
-            json.add("blocks", blocks);
-            return json;
-        }
+            MinecraftCompat compat = VersionCompat.getCompat();
 
-        MinecraftCompat compat = VersionCompat.getCompat();
+            try {
+                int[] playerPos = compat.getBlockPos(target);
+                Object world = getWorldObj(target);
 
-        try {
-            int[] playerPos = compat.getBlockPos(target);
-            Object world = getWorldObj(target);
+                Class<?> blockPosClass = Class.forName("net.minecraft.util.math.BlockPos");
 
-            Class<?> blockPosClass = Class.forName("net.minecraft.util.math.BlockPos");
+                int count = 0;
+                boolean limitReached = false;
+                for (int x = -radius; x <= radius && !limitReached; x++) {
+                    for (int y = -radius; y <= radius && !limitReached; y++) {
+                        for (int z = -radius; z <= radius && !limitReached; z++) {
+                            Object pos = blockPosClass.getConstructor(int.class, int.class, int.class)
+                                    .newInstance(playerPos[0] + x, playerPos[1] + y, playerPos[2] + z);
+                            Object blockState = world.getClass().getMethod("getBlockState", blockPosClass)
+                                    .invoke(world, pos);
 
-            int count = 0;
-            boolean limitReached = false;
-            for (int x = -radius; x <= radius && !limitReached; x++) {
-                for (int y = -radius; y <= radius && !limitReached; y++) {
-                    for (int z = -radius; z <= radius && !limitReached; z++) {
-                        Object pos = blockPosClass.getConstructor(int.class, int.class, int.class)
-                                .newInstance(playerPos[0] + x, playerPos[1] + y, playerPos[2] + z);
-                        Object blockState = world.getClass().getMethod("getBlockState", blockPosClass)
-                                .invoke(world, pos);
+                            boolean isAir = (boolean) blockState.getClass().getMethod("isAir").invoke(blockState);
+                            if (isAir) continue;
 
-                        boolean isAir = (boolean) blockState.getClass().getMethod("isAir").invoke(blockState);
-                        if (isAir) continue;
+                            String blockType = blockState.getClass().getMethod("getBlock").invoke(blockState).toString();
+                            if (type != null && !blockType.contains(type)) continue;
 
-                        String blockType = blockState.getClass().getMethod("getBlock").invoke(blockState).toString();
-                        if (type != null && !blockType.contains(type)) continue;
-
-                        JsonObject block = new JsonObject();
-                        JsonObject blockPos = new JsonObject();
-                        blockPos.addProperty("x", (int) blockPosClass.getMethod("getX").invoke(pos));
-                        blockPos.addProperty("y", (int) blockPosClass.getMethod("getY").invoke(pos));
-                        blockPos.addProperty("z", (int) blockPosClass.getMethod("getZ").invoke(pos));
-                        block.add("position", blockPos);
-                        block.addProperty("type", blockType);
-                        blocks.add(block);
-                        count++;
-                        if (count >= maxBlocks) {
-                            limitReached = true;
-                            break;
+                            JsonObject block = new JsonObject();
+                            JsonObject blockPos = new JsonObject();
+                            blockPos.addProperty("x", (int) blockPosClass.getMethod("getX").invoke(pos));
+                            blockPos.addProperty("y", (int) blockPosClass.getMethod("getY").invoke(pos));
+                            blockPos.addProperty("z", (int) blockPosClass.getMethod("getZ").invoke(pos));
+                            block.add("position", blockPos);
+                            block.addProperty("type", blockType);
+                            blocks.add(block);
+                            count++;
+                            if (count >= maxBlocks) {
+                                limitReached = true;
+                                break;
+                            }
                         }
                     }
                 }
+
+                json.addProperty("count", count);
+                json.addProperty("max_blocks", maxBlocks);
+            } catch (Exception e) {
+                // Return what we have
             }
 
-            json.addProperty("count", count);
-            json.addProperty("max_blocks", maxBlocks);
-        } catch (Exception e) {
-            // Return what we have
-        }
-
-        json.add("blocks", blocks);
-        return json;
+            json.add("blocks", blocks);
+            return json;
+        });
     }
 
     // ─── 辅助方法 ─────────────────────────────────────
@@ -332,9 +356,6 @@ public class StateCollector {
         }
     }
 
-    /**
-     * 获取世界对象（兼容不同版本的方法名）
-     */
     private static Object getWorldObj(Object player) throws Exception {
         String[] methods = {"getWorld", "level", "serverLevel"};
         for (String method : methods) {

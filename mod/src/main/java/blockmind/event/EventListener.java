@@ -5,10 +5,10 @@ import blockmind.compat.VersionCompat;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -20,7 +20,8 @@ import java.util.function.Consumer;
  */
 public class EventListener {
 
-    private static final List<Consumer<JsonObject>> listeners = new ArrayList<>();
+    // Issue 11 fix: thread-safe list
+    private static final List<Consumer<JsonObject>> listeners = new CopyOnWriteArrayList<>();
     // Per-player state tracking: [lastHealth, lastHunger]
     private static final Map<UUID, float[]> playerStates = new ConcurrentHashMap<>();
 
@@ -43,14 +44,22 @@ public class EventListener {
 
         // 每 tick 检查（用于检测伤害、状态变化等）
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            // 检查玩家状态变化 — 通过反射获取玩家列表
             try {
                 Object playerManager = server.getClass().getMethod("getPlayerManager").invoke(server);
                 @SuppressWarnings("unchecked")
                 var players = (Iterable<?>) playerManager.getClass().getMethod("getPlayerList").invoke(playerManager);
+
+                // M5 fix: collect current player UUIDs for disconnect detection
+                java.util.Set<UUID> currentPlayerIds = new java.util.HashSet<>();
                 for (Object player : players) {
-                    checkPlayerStatus(player, compat);
+                    MinecraftCompat c = VersionCompat.getCompat();
+                    UUID playerId = c.getUuid(player);
+                    currentPlayerIds.add(playerId);
+                    checkPlayerStatus(player, c);
                 }
+
+                // M5 fix: clean up disconnected player states
+                playerStates.keySet().retainAll(currentPlayerIds);
             } catch (Exception e) {
                 // Silently ignore tick errors to avoid spamming logs
             }
