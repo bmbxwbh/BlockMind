@@ -16,7 +16,7 @@ public final class ClientReflect {
     // 缓存的类和方法
     private static Class<?> minecraftClientClass;
     private static Method getInstanceMethod;
-    private static Method get playerField;
+    private static java.lang.reflect.Field playerField;
 
     private ClientReflect() {}
 
