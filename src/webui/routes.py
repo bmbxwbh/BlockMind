@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 import yaml
+from src.skills.dsl_parser import DSLParser
 
 logger = logging.getLogger("blockmind.webui.routes")
 
@@ -27,7 +28,6 @@ def save_config_to_yaml(config) -> None:
     def _agent_to_dict(agent_cfg):
         return {
             "provider": agent_cfg.provider,
-            "api_key": agent_cfg.api_key,
             "model": agent_cfg.model,
             "base_url": agent_cfg.base_url or "",
             "temperature": agent_cfg.temperature,
@@ -235,13 +235,34 @@ async def update_skill_content(skill_id: str, req: SkillContentRequest, request:
         raise HTTPException(status_code=400, detail=f"YAML 解析错误: {e}")
     if not isinstance(data, dict):
         raise HTTPException(status_code=400, detail="YAML 根元素必须是字典")
-    # Store the skill content (update via skill_storage if available)
     try:
-        if hasattr(engine.skill_storage, 'update_from_yaml'):
-            engine.skill_storage.update_from_yaml(skill_id, data)
-        elif hasattr(engine.skill_storage, 'save'):
-            engine.skill_storage.save(skill_id, data)
+        parser = DSLParser()
+        skill = parser.parse_dict(data)
+        engine.skill_storage.save(skill)
         return {"success": True, "message": f"Skill {skill_id} 已更新"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/skills/{skill_id}/execute")
+async def execute_skill(skill_id: str, request: Request, _=Depends(require_auth)):
+    """执行指定的 Skill"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'skill_runtime') or not engine.skill_runtime:
+        raise HTTPException(status_code=500, detail="Skill 引擎未初始化")
+    
+    skill = engine.skill_storage.get(skill_id)
+    if not skill:
+        raise HTTPException(status_code=404, detail=f"Skill {skill_id} 不存在")
+    
+    try:
+        result = await engine.skill_runtime.execute_skill_object(skill)
+        return {
+            "success": result.success,
+            "skill_id": result.skill_id,
+            "details": result.details,
+            "duration_ms": result.duration_ms,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -587,6 +608,8 @@ async def update_model_config(req: ModelConfigUpdate, request: Request, _=Depend
         op_provider = create_provider(config.ai.get_operation_agent())
         engine.main_agent.provider = main_provider
         engine.operation_agent.provider = op_provider
+        engine.main_provider = main_provider
+        engine.op_provider = op_provider
         # 持久化到 config.yaml
         save_config_to_yaml(config)
         return {"success": True, "details": "模型配置已更新"}
@@ -687,6 +710,12 @@ async def command_panel(req: CommandPanelRequest, request: Request, _=Depends(re
         raise HTTPException(status_code=500, detail="AI 未初始化")
     try:
         result = await engine.main_agent.chat(req.message)
+        
+        # If task detected, dispatch to operation agent
+        if result.get("has_task") and result.get("task_description"):
+            import asyncio
+            asyncio.create_task(engine._dispatch_to_operation_agent(result["task_description"]))
+        
         return {"success": True, "response": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -698,8 +727,9 @@ async def command_panel(req: CommandPanelRequest, request: Request, _=Depends(re
 async def chat_history(request: Request, limit: int = 50, _=Depends(require_auth)):
     """获取对话历史"""
     engine = get_engine(request)
-    if hasattr(engine, 'chat_history'):
-        return {"history": engine.chat_history[-limit:]}
+    if hasattr(engine, 'main_agent') and engine.main_agent:
+        history = engine.main_agent.get_history()
+        return {"history": history[-limit:]}
     return {"history": []}
 
 

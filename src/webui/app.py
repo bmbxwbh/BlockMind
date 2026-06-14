@@ -1,6 +1,7 @@
 """WebUI FastAPI 应用 — BlockMind 控制面板"""
 
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -27,10 +28,22 @@ def create_app(engine=None, config=None) -> FastAPI:
     Returns:
         FastAPI 应用实例
     """
+    import time as _time
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        app.state._start_time = _time.time()
+        logger.info("WebUI 启动")
+        app.state.ws_manager.start_event_listener()
+        yield
+        app.state.ws_manager.stop()
+        logger.info("WebUI 关闭")
+
     app = FastAPI(
         title="BlockMind 控制面板",
         description="Minecraft AI 玩伴管理界面",
         version="2.0.0",
+        lifespan=lifespan,
     )
 
     # CORS
@@ -92,16 +105,5 @@ def create_app(engine=None, config=None) -> FastAPI:
                 # 客户端消息暂不处理
         except Exception:
             app.state.ws_manager.disconnect(ws)
-
-    @app.on_event("startup")
-    async def startup():
-        import time as _time
-        app.state._start_time = _time.time()
-        logger.info("WebUI 启动")
-        app.state.ws_manager.start_event_listener()
-
-    @app.on_event("shutdown")
-    async def shutdown():
-        logger.info("WebUI 关闭")
 
     return app

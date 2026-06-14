@@ -63,6 +63,8 @@
             .mx-sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 998; display: none; }
             .mx-sidebar-overlay.visible { display: block; }
         }
+        .spinner { display:inline-block; width:20px; height:20px; border:2px solid var(--mx-border); border-top-color:var(--mx-primary); border-radius:50%; animation:spin 0.6s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -153,7 +155,7 @@
             <span class="mx-nav-icon">💬</span><span class="mx-nav-label">命令面板</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('tasks',this)">
-            <span class="mx-nav-icon">📋</span><span class="mx-nav-label">任务队列</span>
+            <span class="mx-nav-icon">🔄</span><span class="mx-nav-label">任务队列</span>
         </div>
     </aside>
 
@@ -371,6 +373,12 @@
                     <h1 class="mx-page-title">记忆系统</h1>
                     <p class="mx-page-sub">空间 / 路径 / 策略三层记忆</p>
                 </div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+                    <button class="mx-btn mx-btn-sm" onclick="backupMemory()">💾 备份</button>
+                    <button class="mx-btn mx-btn-sm" onclick="cleanupMemory()">🧹 清理</button>
+                    <button class="mx-btn mx-btn-sm" onclick="exportMemory()">📤 导出</button>
+                    <button class="mx-btn mx-btn-sm" onclick="importMemoryPrompt()">📥 导入</button>
+                </div>
                 <div class="mx-stat-grid" style="margin-bottom:16px">
                     <div class="mx-stat" style="--mx-stat-accent:var(--mx-primary)">
                         <div class="mx-stat-label"><div class="mx-stat-icon" style="background:rgba(52,130,255,0.1)">🏗️</div>区域</div>
@@ -545,7 +553,7 @@
                         <div style="font-size:14px;font-weight:600">日志中心</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">实时日志流</div>
                     </div>
-                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="loadTokenStats();showPage('tokens',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
+                    <div class="mx-card" style="padding:20px;text-align:center;cursor:pointer;transition:all .2s" onclick="showPage('system',this)" onmouseover="this.style.borderColor='var(--mx-primary)'" onmouseout="this.style.borderColor=''">
                         <div style="font-size:32px;margin-bottom:8px">📊</div>
                         <div style="font-size:14px;font-weight:600">Token 统计</div>
                         <div style="font-size:11px;color:var(--mx-t3);margin-top:4px">用量 · 成本</div>
@@ -602,6 +610,18 @@
                         <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/tree')">🪓 砍树</button>
                         <button class="mx-btn mx-btn-secondary mx-btn-sm" onclick="sendQuickCmd('/sleep')">😴 睡觉</button>
                     </div>
+                </div>
+
+                <!-- Token 使用统计 -->
+                <div class="mx-card" style="margin-top:16px">
+                    <div class="mx-card-head"><span class="mx-card-title">📊 Token 使用统计</span></div>
+                    <div class="mx-card-body"><div id="tokenStats"><span class="text-secondary">加载中...</span></div></div>
+                </div>
+
+                <!-- 系统资源 -->
+                <div class="mx-card" style="margin-top:16px">
+                    <div class="mx-card-head"><span class="mx-card-title">💻 系统资源</span></div>
+                    <div class="mx-card-body"><div id="systemResources"><span class="text-secondary">加载中...</span></div></div>
                 </div>
             </div>
 
@@ -800,6 +820,7 @@ function renderSkills(list) {
         <td><span class="bm-tag bm-tag-${escapeHtml((s.task_level||'L2').toLowerCase())}">${escapeHtml(s.task_level||'L2')}</span></td>
         <td>${s.priority}</td><td>${s.usage_count}</td><td>${(s.success_rate*100).toFixed(0)}%</td>
         <td><button class="mx-btn mx-btn-ghost mx-btn-sm" onclick="editSkill('${escapeJsAttr(s.skill_id)}')" title="编辑">📝</button>
+        <button class="mx-btn mx-btn-sm" onclick="executeSkill('${escapeJsAttr(s.skill_id)}')" title="执行">▶️</button>
         <button class="mx-btn mx-btn-danger mx-btn-sm" onclick="deleteSkill('${escapeJsAttr(s.skill_id)}')">删除</button></td>
     </tr>`).join('');
 }
@@ -808,6 +829,7 @@ function filterSkills() {
     renderSkills(skills.filter(s => s.name.toLowerCase().includes(q) || s.skill_id.toLowerCase().includes(q)));
 }
 async function deleteSkill(id) {
+    if (!confirm('确定删除此 Skill？')) return;
     await api('/api/skills/'+id, {method:'DELETE'}); if(typeof MxToast!=='undefined') MxToast.success('已删除'); loadSkills();
 }
 function editSkill(id) {
@@ -1282,28 +1304,7 @@ async function checkMarketUpdates() {
     }
 }
 
-// showPage hook for marketplace
-const _origShowPage = typeof showPage === 'function' ? showPage : null;
-if (_origShowPage) {
-    window.showPage = function(pageId, el) {
-        _origShowPage(pageId, el);
-        if (pageId === 'marketplace') loadMarketplace();
-    };
-}
-
 // ══ WebSocket ══
-function connectWS() {
-    const proto = location.protocol==='https:'?'wss:':'ws:';
-    ws = new WebSocket(`${proto}//${location.host}/ws`);
-    ws.onmessage = (e) => {
-        const msg = JSON.parse(e.data);
-        const log = document.getElementById('eventLog');
-        const time = new Date().toLocaleTimeString();
-        log.innerHTML += `<div class="bm-log-entry"><span style="color:var(--mx-t3)">${time}</span> <span style="color:var(--mx-primary)">[${escapeHtml(msg.type)}]</span> ${escapeHtml(JSON.stringify(msg.data||{}))}</div>`;
-        log.scrollTop = log.scrollHeight;
-    };
-    ws.onclose = () => setTimeout(connectWS, 3000);
-}
 
 // ══ 页面切换 ══
 function showPage(id, el) {
@@ -1317,6 +1318,9 @@ function showPage(id, el) {
     if (id==='skills') loadSkills();
     if (id==='tasks') loadTaskQueue();
     if (id==='command') loadChatHistory();
+    if (id==='marketplace') loadMarketplace();
+    if (id==='safety') loadAuditLog();
+    if (id==='system') { loadTokenStats(); loadSystemResources(); }
     // Close mobile sidebar if open
     closeMobileSidebar();
 }
@@ -1415,19 +1419,150 @@ function appendLog(data) {
 }
 
 // ══ WebSocket 增强 ══
+let wsRetryDelay = 1000;
 function connectWS() {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${proto}://${location.host}/ws`);
-    ws.onopen = () => { console.log('WS connected'); };
+    if (ws && ws.readyState <= 1) return;
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsToken = localStorage.getItem('bm_token') || '';
+    ws = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(wsToken)}`);
+    ws.onopen = () => { console.log('WS connected'); wsRetryDelay = 1000; updateConnStatus(true); };
     ws.onmessage = (e) => {
         try {
             const msg = JSON.parse(e.data);
             if (msg.type === 'ping') { ws.send(JSON.stringify({type:'pong'})); return; }
             if (msg.type === 'log') { appendLog(msg.data); return; }
             if (msg.type === 'status_update') { loadDashboard(); }
+            const log = document.getElementById('eventLog');
+            if (log && msg.type !== 'ping') {
+                const time = new Date().toLocaleTimeString();
+                log.innerHTML += `<div class="bm-log-entry"><span style="color:var(--mx-t3)">${time}</span> <span style="color:var(--mx-primary)">[${escapeHtml(msg.type)}]</span> ${escapeHtml(JSON.stringify(msg.data||{}))}</div>`;
+                log.scrollTop = log.scrollHeight;
+            }
         } catch(err) {}
     };
-    ws.onclose = () => { setTimeout(connectWS, Math.min(30000, 2000)); };
+    ws.onclose = () => { updateConnStatus(false); setTimeout(connectWS, wsRetryDelay); wsRetryDelay = Math.min(wsRetryDelay * 2, 30000); };
+    ws.onerror = () => {};
+}
+function updateConnStatus(online) {
+    ['connDotD','connDotM'].forEach(id => { const el=document.getElementById(id); if(el) el.className = 'bm-status-dot '+(online?'online':'offline'); });
+    ['connTextD','connTextM'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent = online?'已连接':'未连接'; });
+}
+
+// ══ Token 统计 ══
+async function loadTokenStats() {
+    const el = document.getElementById('tokenStats');
+    if (!el) return;
+    try {
+        const r = await api('/api/stats/tokens');
+        if (!r) { el.innerHTML = '<span class="text-secondary">加载失败</span>'; return; }
+        el.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+            <div><div style="font-size:24px;font-weight:700">${(r.total_tokens||0).toLocaleString()}</div><div style="color:var(--mx-t3)">总 Token</div></div>
+            <div><div style="font-size:24px;font-weight:700">${(r.main_agent_tokens||0).toLocaleString()}</div><div style="color:var(--mx-t3)">主 Agent</div></div>
+            <div><div style="font-size:24px;font-weight:700">${(r.operation_agent_tokens||0).toLocaleString()}</div><div style="color:var(--mx-t3)">操作 Agent</div></div>
+          </div>
+        `;
+    } catch(e) { el.innerHTML = '<span style="color:var(--mx-t3)">加载失败</span>'; }
+}
+
+// ══ 系统资源 ══
+async function loadSystemResources() {
+    const el = document.getElementById('systemResources');
+    if (!el) return;
+    try {
+        const r = await api('/api/system/resources');
+        if (!r) { el.innerHTML = '<span style="color:var(--mx-t3)">加载失败</span>'; return; }
+        const cpu = r.cpu_percent || 0;
+        const mem = r.memory_percent || 0;
+        const disk = r.disk_percent || 0;
+        el.innerHTML = `
+          <div style="display:grid;gap:12px">
+            <div><div style="display:flex;justify-content:space-between"><span>CPU</span><span>${cpu.toFixed(1)}%</span></div>
+              <div style="background:var(--mx-border);border-radius:4px;height:8px;margin-top:4px"><div style="background:var(--mx-primary);width:${cpu}%;height:100%;border-radius:4px;transition:width 0.3s"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between"><span>内存</span><span>${mem.toFixed(1)}%</span></div>
+              <div style="background:var(--mx-border);border-radius:4px;height:8px;margin-top:4px"><div style="background:var(--mx-success);width:${mem}%;height:100%;border-radius:4px;transition:width 0.3s"></div></div></div>
+            <div><div style="display:flex;justify-content:space-between"><span>磁盘</span><span>${disk.toFixed(1)}%</span></div>
+              <div style="background:var(--mx-border);border-radius:4px;height:8px;margin-top:4px"><div style="background:var(--mx-warning);width:${disk}%;height:100%;border-radius:4px;transition:width 0.3s"></div></div></div>
+          </div>
+        `;
+    } catch(e) { el.innerHTML = '<span style="color:var(--mx-t3)">加载失败</span>'; }
+}
+
+// ══ 审计日志 ══
+async function loadAuditLog() {
+    const el = document.getElementById('auditLog');
+    if (!el) return;
+    try {
+        const r = await api('/api/safety/audit?limit=50');
+        if (!r || !r.entries || r.entries.length === 0) {
+            el.innerHTML = '<div style="color:var(--mx-t3);text-align:center;padding:20px">暂无审计记录</div>';
+            return;
+        }
+        el.innerHTML = r.entries.map(e => `
+          <div style="padding:8px 0;border-bottom:1px solid var(--mx-border);font-size:13px">
+            <span style="color:var(--mx-t3)">${escapeHtml(e.time || '')}</span>
+            <span style="margin:0 8px;font-weight:600;color:${e.allowed ? 'var(--mx-success)' : 'var(--mx-error)'}">${e.allowed ? '✅' : '❌'}</span>
+            <span>${escapeHtml(e.action || '')}</span>
+          </div>
+        `).join('');
+    } catch(e) { el.innerHTML = '<div style="color:var(--mx-t3)">加载失败</div>'; }
+}
+
+// ══ Skill 执行 ══
+async function executeSkill(skillId) {
+    if(typeof MxToast!=='undefined') MxToast.info('执行中...');
+    try {
+        const r = await api(`/api/skills/${skillId}/execute`, {method:'POST'});
+        if (r?.success) { if(typeof MxToast!=='undefined') MxToast.success(`执行完成: ${r.details || ''}`); }
+        else { if(typeof MxToast!=='undefined') MxToast.error(`执行失败: ${r?.details || r?.error || ''}`); }
+    } catch(e) { if(typeof MxToast!=='undefined') MxToast.error('执行失败'); }
+}
+
+// ══ 记忆管理 ══
+async function backupMemory() {
+    try {
+        const r = await api('/api/memory/backup', {method:'POST'});
+        if (r?.success) { if(typeof MxToast!=='undefined') MxToast.success('备份成功'); }
+        else { if(typeof MxToast!=='undefined') MxToast.error('备份失败: ' + (r?.error || '')); }
+    } catch(e) { if(typeof MxToast!=='undefined') MxToast.error('备份失败'); }
+}
+async function cleanupMemory() {
+    try {
+        const r = await api('/api/memory/cleanup', {method:'POST'});
+        if (r?.success) { if(typeof MxToast!=='undefined') MxToast.success('清理完成'); loadMemory(); }
+        else { if(typeof MxToast!=='undefined') MxToast.error('清理失败'); }
+    } catch(e) { if(typeof MxToast!=='undefined') MxToast.error('清理失败'); }
+}
+async function exportMemory() {
+    try {
+        const r = await api('/api/memory/export');
+        if (!r) return;
+        const blob = new Blob([JSON.stringify(r, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'blockmind-memory-export.json'; a.click();
+        URL.revokeObjectURL(url);
+        if(typeof MxToast!=='undefined') MxToast.success('导出成功');
+    } catch(e) { if(typeof MxToast!=='undefined') MxToast.error('导出失败'); }
+}
+function importMemoryPrompt() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const r = await api('/api/memory/import', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({data: data, merge: true})
+            });
+            if (r?.success) { if(typeof MxToast!=='undefined') MxToast.success('导入成功'); loadMemory(); }
+            else { if(typeof MxToast!=='undefined') MxToast.error('导入失败'); }
+        } catch(e) { if(typeof MxToast!=='undefined') MxToast.error('导入失败: 文件格式错误'); }
+    };
+    input.click();
 }
 
 // ══ 自动登录 ══
