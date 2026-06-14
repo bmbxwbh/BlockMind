@@ -4,9 +4,12 @@ import blockmind.BlockMindMod;
 import blockmind.api.BlockMindHttpServer;
 import blockmind.compat.VersionCompat;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 public class BlockMindClientMod implements ClientModInitializer {
 
@@ -22,22 +25,56 @@ public class BlockMindClientMod implements ClientModInitializer {
         LOGGER.info("  Mode: CLIENT");
         LOGGER.info("========================================");
 
-        ClientLifecycleEvents.CLIENT_STARTED.register(client -> {
-            LOGGER.info("[BlockMind-Client] Client started, launching HTTP API...");
+        registerLifecycleEvents();
+    }
 
-            startHttpServer();
-            new ClientEventListener(httpServer).register();
-            running = true;
+    private void registerLifecycleEvents() {
+        try {
+            Class<?> eventsClass = Class.forName("net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents");
 
-            LOGGER.info("[BlockMind-Client] ✅ BlockMind Client ready! API on port {}", BlockMindMod.HTTP_PORT);
-            LOGGER.info("[BlockMind-Client] Controlling local player");
-        });
+            registerFabricEvent(eventsClass, "CLIENT_STARTED", () -> {
+                LOGGER.info("[BlockMind-Client] Client started, launching HTTP API...");
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
-            LOGGER.info("[BlockMind-Client] Client stopping...");
-            stopHttpServer();
-            running = false;
-        });
+                startHttpServer();
+                new ClientEventListener(httpServer).register();
+                running = true;
+
+                LOGGER.info("[BlockMind-Client] ✅ BlockMind Client ready! API on port {}", BlockMindMod.HTTP_PORT);
+                LOGGER.info("[BlockMind-Client] Controlling local player");
+            });
+
+            registerFabricEvent(eventsClass, "CLIENT_STOPPING", () -> {
+                LOGGER.info("[BlockMind-Client] Client stopping...");
+                stopHttpServer();
+                running = false;
+            });
+        } catch (Exception e) {
+            LOGGER.warn("[BlockMind-Client] Could not register lifecycle events: {}", e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void registerFabricEvent(Class<?> eventsClass, String fieldName, Runnable handler) throws Exception {
+        Object eventObj = eventsClass.getField(fieldName).get(null);
+
+        Field typeField = eventObj.getClass().getDeclaredField("type");
+        typeField.setAccessible(true);
+        Class<?> handlerInterface = (Class<?>) typeField.get(eventObj);
+
+        Object proxy = Proxy.newProxyInstance(
+            handlerInterface.getClassLoader(),
+            new Class<?>[]{handlerInterface},
+            (p, method, args) -> {
+                if ("toString".equals(method.getName())) return "BlockMindHandler";
+                if ("hashCode".equals(method.getName())) return System.identityHashCode(p);
+                if ("equals".equals(method.getName())) return p == args[0];
+                handler.run();
+                return null;
+            }
+        );
+
+        Method registerMethod = eventObj.getClass().getMethod("register", Object.class);
+        registerMethod.invoke(eventObj, proxy);
     }
 
     private void startHttpServer() {

@@ -2,14 +2,11 @@ package blockmind.client;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Box;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Collection;
 
 public class ClientStateCollector {
@@ -17,7 +14,7 @@ public class ClientStateCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger("blockmind.client.collector");
 
     public static JsonObject getPlayerStatus() {
-        ClientPlayerEntity player = getPlayer();
+        Object player = getPlayer();
         JsonObject status = new JsonObject();
         if (player == null) {
             status.addProperty("health", 0);
@@ -28,20 +25,36 @@ public class ClientStateCollector {
             return status;
         }
 
-        status.addProperty("health", player.getHealth());
-        status.addProperty("hunger", player.getHungerManager().getFoodLevel());
+        status.addProperty("health", ClientReflect.invokeFloat(player, "getHealth"));
+        Object hungerManager = ClientReflect.invoke(player, "getHungerManager");
+        int hunger = hungerManager != null ? ClientReflect.invokeInt(hungerManager, "getFoodLevel") : 0;
+        status.addProperty("hunger", hunger);
+
         JsonObject pos = new JsonObject();
-        pos.addProperty("x", player.getX());
-        pos.addProperty("y", player.getY());
-        pos.addProperty("z", player.getZ());
+        pos.addProperty("x", ClientReflect.invokeDouble(player, "getX"));
+        pos.addProperty("y", ClientReflect.invokeDouble(player, "getY"));
+        pos.addProperty("z", ClientReflect.invokeDouble(player, "getZ"));
         status.add("position", pos);
-        status.addProperty("dimension", player.getWorld().getRegistryKey().getValue().toString());
-        status.addProperty("weather", player.getWorld().isRaining() ? "rain" : "clear");
+
+        Object world = ClientReflect.invoke(player, "getWorld");
+        String dimension = "unknown";
+        String weather = "unknown";
+        if (world != null) {
+            Object registryKey = ClientReflect.invoke(world, "getRegistryKey");
+            if (registryKey != null) {
+                Object value = ClientReflect.invoke(registryKey, "getValue");
+                if (value != null) dimension = value.toString();
+            }
+            boolean isRaining = ClientReflect.invokeBool(world, "isRaining");
+            weather = isRaining ? "rain" : "clear";
+        }
+        status.addProperty("dimension", dimension);
+        status.addProperty("weather", weather);
         return status;
     }
 
     public static JsonObject getInventory() {
-        ClientPlayerEntity player = getPlayer();
+        Object player = getPlayer();
         JsonObject inv = new JsonObject();
         if (player == null) {
             inv.addProperty("empty_slots", 36);
@@ -49,41 +62,92 @@ public class ClientStateCollector {
             return inv;
         }
 
-        JsonArray items = new JsonArray();
-        int usedSlots = 0;
-        for (int i = 0; i < player.getInventory().size(); i++) {
-            var stack = player.getInventory().getStack(i);
-            if (!stack.isEmpty()) {
-                usedSlots++;
-                JsonObject item = new JsonObject();
-                item.addProperty("slot", i);
-                item.addProperty("name", stack.getItem().toString());
-                item.addProperty("count", stack.getCount());
-                items.add(item);
+        try {
+            Object inventory = ClientReflect.invoke(player, "getInventory");
+            if (inventory == null) {
+                inv.addProperty("empty_slots", 36);
+                inv.add("items", new JsonArray());
+                return inv;
             }
+
+            JsonArray items = new JsonArray();
+            int usedSlots = 0;
+            int size = ClientReflect.invokeInt(inventory, "size");
+            for (int i = 0; i < size; i++) {
+                Object stack = ClientReflect.invoke(inventory, "getStack", new Class<?>[]{int.class}, i);
+                if (stack != null && !ClientReflect.invokeBool(stack, "isEmpty")) {
+                    usedSlots++;
+                    JsonObject item = new JsonObject();
+                    item.addProperty("slot", i);
+                    Object stackItem = ClientReflect.invoke(stack, "getItem");
+                    item.addProperty("name", stackItem != null ? stackItem.toString() : "unknown");
+                    item.addProperty("count", ClientReflect.invokeInt(stack, "getCount"));
+                    items.add(item);
+                }
+            }
+            inv.addProperty("empty_slots", 36 - usedSlots);
+            inv.add("items", items);
+        } catch (Exception e) {
+            LOGGER.debug("getInventory failed: {}", e.getMessage());
+            inv.addProperty("empty_slots", 36);
+            inv.add("items", new JsonArray());
         }
-        inv.addProperty("empty_slots", 36 - usedSlots);
-        inv.add("items", items);
         return inv;
     }
 
     public static JsonObject getEntities(int radius) {
-        ClientPlayerEntity player = getPlayer();
+        Object player = getPlayer();
         JsonObject result = new JsonObject();
         JsonArray entities = new JsonArray();
 
-        if (player != null && player.getWorld() != null) {
-            Box box = player.getBoundingBox().expand(radius);
-            Collection<Entity> nearby = player.getWorld().getEntitiesByClass(Entity.class, box, e -> e != player);
-            for (Entity e : nearby) {
-                JsonObject entity = new JsonObject();
-                entity.addProperty("id", e.getId());
-                entity.addProperty("type", e.getType().toString());
-                entity.addProperty("x", e.getX());
-                entity.addProperty("y", e.getY());
-                entity.addProperty("z", e.getZ());
-                entity.addProperty("health", e instanceof PlayerEntity pe ? pe.getHealth() : 0);
-                entities.add(entity);
+        if (player != null) {
+            try {
+                Object world = ClientReflect.invoke(player, "getWorld");
+                if (world != null) {
+                    Class<?> entityClass = Class.forName("net.minecraft.entity.Entity");
+                    Class<?> boxClass = Class.forName("net.minecraft.util.math.Box");
+                    Class<?> predicateClass = Class.forName("java.util.function.Predicate");
+
+                    Object box = ClientReflect.invoke(player, "getBoundingBox");
+                    Object expandedBox = ClientReflect.invoke(box, "expand", new Class<?>[]{double.class}, (double) radius);
+
+                    Object filter = Proxy.newProxyInstance(
+                        predicateClass.getClassLoader(),
+                        new Class<?>[]{predicateClass},
+                        (p, method, args) -> {
+                            if ("test".equals(method.getName())) return args[0] != player ? Boolean.TRUE : Boolean.FALSE;
+                            if ("toString".equals(method.getName())) return "BlockMindEntityFilter";
+                            if ("hashCode".equals(method.getName())) return System.identityHashCode(p);
+                            if ("equals".equals(method.getName())) return p == args[0];
+                            return null;
+                        }
+                    );
+
+                    Method getEntitiesMethod = world.getClass().getMethod("getEntitiesByClass", Class.class, boxClass, predicateClass);
+                    Collection<?> nearby = (Collection<?>) getEntitiesMethod.invoke(world, entityClass, expandedBox, filter);
+
+                    if (nearby != null) {
+                        for (Object e : nearby) {
+                            JsonObject entity = new JsonObject();
+                            entity.addProperty("id", ClientReflect.invokeInt(e, "getId"));
+                            Object type = ClientReflect.invoke(e, "getType");
+                            entity.addProperty("type", type != null ? type.toString() : "unknown");
+                            entity.addProperty("x", ClientReflect.invokeDouble(e, "getX"));
+                            entity.addProperty("y", ClientReflect.invokeDouble(e, "getY"));
+                            entity.addProperty("z", ClientReflect.invokeDouble(e, "getZ"));
+
+                            Class<?> playerEntityClass = Class.forName("net.minecraft.entity.player.PlayerEntity");
+                            if (playerEntityClass.isInstance(e)) {
+                                entity.addProperty("health", ClientReflect.invokeFloat(e, "getHealth"));
+                            } else {
+                                entity.addProperty("health", 0);
+                            }
+                            entities.add(entity);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.debug("getEntities failed: {}", e.getMessage());
             }
         }
 
@@ -97,8 +161,7 @@ public class ClientStateCollector {
         return result;
     }
 
-    private static ClientPlayerEntity getPlayer() {
-        MinecraftClient client = MinecraftClient.getInstance();
-        return client != null ? client.player : null;
+    private static Object getPlayer() {
+        return ClientReflect.getPlayer();
     }
 }
