@@ -291,11 +291,17 @@ if ! ls "$MODS_DIR"/blockmind-mod-*.jar >/dev/null 2>&1; then
             MOD_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": "[^"]*blockmind-mod[^"]*"' | head -1 | cut -d'"' -f4)
         fi
     fi
-    # Fallback: 直接用最新 release 的固定 URL 模式
+    # Fallback: 从 GitHub releases 页面获取最新版本（不硬编码版本号）
     if [ -z "$MOD_URL" ]; then
-        MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod-${MC_VERSION}-1.2.0.jar"
+        # 获取最新 release 的 tag
+        LATEST_TAG=$(curl -sL --connect-timeout 10 "https://api.github.com/repos/bmbxwbh/BlockMind/releases/latest" 2>/dev/null | grep -o '"tag_name": "[^"]*"' | head -1 | cut -d'"' -f4)
+        if [ -n "$LATEST_TAG" ]; then
+            MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/download/${LATEST_TAG}/blockmind-mod-${MC_VERSION}.jar"
+        else
+            MOD_URL="https://github.com/bmbxwbh/BlockMind/releases/latest/download/blockmind-mod-${MC_VERSION}.jar"
+        fi
     fi
-    curl -sL -o "$MODS_DIR/blockmind-mod-${MC_VERSION}.jar" "$MOD_URL" && \
+    curl -sL --connect-timeout 10 -o "$MODS_DIR/blockmind-mod-${MC_VERSION}.jar" "$MOD_URL" && \
     info "${T_MOD_DONE}" || \
     warn "${T_MOD_FAIL}: https://github.com/bmbxwbh/BlockMind/releases"
 else
@@ -306,12 +312,12 @@ fi
 if ! ls "$MODS_DIR"/fabric-api-*.jar >/dev/null 2>&1; then
     info "Downloading Fabric API..."
     # 从 Modrinth 获取最新兼容版本
-    FABRIC_API_URL=$(curl -sL --connect-timeout 10 \
+    FABRIC_API_URL=$(curl -sL --connect-timeout 15 \
         "https://api.modrinth.com/v2/project/P7dR8mSH/version?game_versions=%5B%22${MC_VERSION}%22%5D&loaders=%5B%22fabric%22%5D" 2>/dev/null | \
         python3 -c "import sys,json; print(json.load(sys.stdin)[0]['files'][0]['url'])" 2>/dev/null)
     if [ -n "$FABRIC_API_URL" ]; then
         FABRIC_API_FILE=$(basename "$FABRIC_API_URL" | python3 -c "import sys,urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))")
-        curl -sL -o "$MODS_DIR/$FABRIC_API_FILE" "$FABRIC_API_URL" && \
+        curl -sL --connect-timeout 15 -o "$MODS_DIR/$FABRIC_API_FILE" "$FABRIC_API_URL" && \
             info "Fabric API downloaded" || \
             warn "Fabric API download failed, install manually"
     else

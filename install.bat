@@ -89,10 +89,39 @@ if %errorlevel% neq 0 (
 )
 echo   [✓] %T_PIP_OK%
 
+:: ── 创建虚拟环境 ──
+if not exist .venv (
+    echo.
+    echo   [1/5] Creating virtual environment...
+    python -m venv .venv
+    if %errorlevel% neq 0 (
+        echo   [ERROR] Failed to create virtual environment
+        pause
+        exit /b 1
+    )
+    echo   [✓] Virtual environment created
+)
+
+:: ── Activate venv and install pip mirror ──
+call .venv\Scripts\activate.bat
+
 :: ── 安装 Python 依赖 ──
 echo.
 echo   %T_STEP1%
-pip install -r requirements.txt -q
+
+:: Try aliyun mirror first (fast in China)
+echo   Checking pip mirror...
+curl -s --connect-timeout 3 "https://mirrors.aliyun.com/pypi/simple/" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo   Using China mirror (Aliyun)
+    pip install --upgrade pip -q
+    pip install -r requirements.txt -q --index-url https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+) else (
+    echo   Using default PyPI
+    pip install --upgrade pip -q
+    pip install -r requirements.txt -q
+)
+
 if %errorlevel% neq 0 (
     echo   %T_DEPS_FAIL%
     pause

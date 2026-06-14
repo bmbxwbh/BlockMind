@@ -8,10 +8,26 @@ RED="\033[0;31m"
 GREEN="\033[0;32m"
 YELLOW="\033[1;33m"
 CYAN="\033[0;36m"
+BOLD="\033[1m"
 NC="\033[0m"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
+
+# ── Cleanup on exit ──
+MC_PID=""
+cleanup() {
+    echo ""
+    echo -e "${YELLOW}[!] Stopping...${NC}"
+    if [ -n "$MC_PID" ] && kill -0 "$MC_PID" 2>/dev/null; then
+        kill "$MC_PID" 2>/dev/null
+        wait "$MC_PID" 2>/dev/null || true
+        echo -e "${GREEN}[✓] MC server stopped${NC}"
+    fi
+    echo -e "${GREEN}[✓] BlockMind exited${NC}"
+    exit 0
+}
+trap cleanup EXIT SIGINT SIGTERM
 
 # ── Language Selection ──
 select_lang() {
@@ -111,24 +127,61 @@ else
     warn "${T_JAVA_NOT}"
 fi
 
-# ── 安装依赖（自动处理无 pip + 镜像加速） ──
-if ! $PYTHON -c "import fastapi" 2>/dev/null; then
-    # Check if we have a venv from install.sh
-    if [ -f ".venv/bin/python3" ]; then
-        PYTHON=".venv/bin/python3"
-        source .venv/bin/activate 2>/dev/null
-    fi
-    if ! $PYTHON -c "import fastapi" 2>/dev/null; then
-        info "${T_INSTALL_DEPS}"
-        PIP_OPTS=""
-        PIP_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
-        if curl -s --connect-timeout 3 "$PIP_MIRROR" >/dev/null 2>&1; then
-            PIP_OPTS="-i $PIP_MIRROR --trusted-host mirrors.aliyun.com"
+# ── Create and activate venv ──
+VENV_DIR="$SCRIPT_DIR/.venv"
+PYTHON="$SCRIPT_DIR/.venv/bin/python3"
+if [ ! -f "$PYTHON" ]; then
+    info "Creating virtual environment..."
+    # Find original Python to create venv
+    ORIG_PYTHON=""
+    for cmd in python3 python; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            ORIG_PYTHON="$cmd"
+            break
         fi
-        $PYTHON -m pip install -r requirements.txt -q $PIP_OPTS 2>/dev/null || \
-        $PYTHON -m pip install -r requirements.txt -q --break-system-packages $PIP_OPTS 2>/dev/null || \
-        $PYTHON -m pip install -r requirements.txt $PIP_OPTS
+    done
+    if [ -n "$ORIG_PYTHON" ]; then
+        $ORIG_PYTHON -m venv "$VENV_DIR" 2>/dev/null || error "Failed to create virtual environment"
+    else
+        error "Python not found to create virtual environment"
     fi
+    source "$VENV_DIR/bin/activate" 2>/dev/null
+else
+    source "$VENV_DIR/bin/activate" 2>/dev/null
+fi
+
+# ── Detect pip mirror (China vs global) ──
+detect_pip_mirror() {
+    # Try aliyun first (fast in China), fall back to default PyPI
+    if curl -s --connect-timeout 3 "https://mirrors.aliyun.com/pypi/simple/" >/dev/null 2>&1; then
+        PIP_MIRROR="--index-url https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com"
+        echo -e "${GREEN}[✓]${NC} Using China mirror (Aliyun)"
+    else
+        PIP_MIRROR=""
+        echo -e "${GREEN}[✓]${NC} Using default PyPI"
+    fi
+}
+
+# ── 安装依赖 ──
+if ! $PYTHON -c "import fastapi" 2>/dev/null; then
+    info "${T_INSTALL_DEPS}"
+    
+    # Upgrade pip first
+    $PYTHON -m pip install --upgrade pip -q 2>/dev/null || true
+    
+    # Detect mirror
+    detect_pip_mirror
+    
+    # Install with progress
+    echo -e "${CYAN}  Installing packages...${NC}"
+    $PYTHON -m pip install -r requirements.txt -q $PIP_MIRROR 2>/dev/null || \
+    $PYTHON -m pip install -r requirements.txt -q --break-system-packages $PIP_MIRROR 2>/dev/null || \
+    $PYTHON -m pip install -r requirements.txt $PIP_MIRROR || {
+        error "Failed to install dependencies. Check your network connection."
+    }
+    echo -e "${GREEN}[✓]${NC} Dependencies installed"
+else
+    echo -e "${GREEN}[✓]${NC} Dependencies already installed"
 fi
 
 # ── 初始化配置 ──
@@ -173,26 +226,19 @@ else
 fi
 
 # ══════════════════════════════════════
-# 启动 BlockMind（前台）
+# Startup Summary
 # ══════════════════════════════════════
 echo ""
-info "${T_BLOCKMIND_START}"
-info "WebUI: http://localhost:19951"
-info "${T_PRESS_CTRL}"
+echo -e "${CYAN}  ╔══════════════════════════════════════╗${NC}"
+echo -e "${CYAN}  ║   BlockMind Startup Summary          ║${NC}"
+echo -e "${CYAN}  ╠══════════════════════════════════════╣${NC}"
+echo -e "${CYAN}  ║   WebUI:  http://localhost:19951     ║${NC}"
+if [ -n "$MC_PID" ]; then
+    echo -e "${CYAN}  ║   MC Server: Running (PID: $MC_PID)      ║${NC}"
+fi
+echo -e "${CYAN}  ║   Press Ctrl+C to stop all          ║${NC}"
+echo -e "${CYAN}  ╚══════════════════════════════════════╝${NC}"
 echo ""
-
-# 优雅退出
-cleanup() {
-    echo ""
-    warn "${T_STOP}"
-    [ -n "$MC_PID" ] && kill "$MC_PID" 2>/dev/null && info "${T_MC_STOPPED}"
-    info "${T_EXITED}"
-    exit 0
-}
-trap cleanup SIGINT SIGTERM
 
 # 启动 BlockMind
 $PYTHON -m src.main
-
-# 如果 BlockMind 退出，也停止 MC
-cleanup

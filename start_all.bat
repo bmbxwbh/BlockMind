@@ -59,11 +59,13 @@ echo.
 
 :: 在新窗口启动 MC 服务端
 if exist "mc-server\fabric-server-launch.jar" (
-    start "Minecraft Server" cmd /c "cd /d "%~dp0" && call start_mc.bat"
+    cd /d "%~dp0"
+    start "Minecraft Server" cmd /c "call start_mc.bat"
     echo   %T_MC_OK%
     timeout /t 3 /nobreak >nul
 ) else if exist "mc-server\server.jar" (
-    start "Minecraft Server" cmd /c "cd /d "%~dp0" && call start_mc.bat"
+    cd /d "%~dp0"
+    start "Minecraft Server" cmd /c "call start_mc.bat"
     echo   %T_MC_OK%
     timeout /t 3 /nobreak >nul
 ) else (

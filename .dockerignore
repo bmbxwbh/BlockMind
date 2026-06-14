@@ -1,25 +1,45 @@
-.git
-.github
-__pycache__
-*.pyc
-*.pyo
-.pytest_cache
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
 venv/
-.env
-*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Docs
+*.md
+LICENSE
+CODE_REVIEW_ISSUES.md
+
+# Tests
+pytest.ini
+.pytest_cache/
 tests/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Build
+.gradle/
+mod/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scripts (not needed in container)
+*.sh
+*.bat
+install.*
+start*
 scripts/
 docs/
-.gitignore
-README.md
-LICENSE
-docker-compose.yaml
-.dockerignore
-
-# Mod source (but NOT build artifacts)
-mod/src/
-mod/gradle/
-mod/gradlew
-mod/gradlew.bat
-mod/build.gradle
-mod/settings.gradle
