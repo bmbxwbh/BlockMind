@@ -121,6 +121,14 @@ memory:
   strategy_success_threshold: 0.6
   protect_buildings: true         # 自动保护玩家建筑
 
+dynmap:
+  enabled: false
+  host: localhost
+  port: 8163
+  api_key: ""
+  update_interval: 30
+  sync_zones: true
+
 navigation:
   prefer_baritone: true           # 优先 Baritone 高级寻路
   fallback_to_basic: true         # 不可用时回退到基础 A*

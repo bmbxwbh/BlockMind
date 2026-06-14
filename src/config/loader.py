@@ -204,8 +204,8 @@ class WebUIAuthConfig(BaseModel):
 
 
 class WebUISecurityConfig(BaseModel):
-    allow_remote: bool = True
-    allowed_ips: List[str] = Field(default_factory=lambda: ["0.0.0.0/0"])
+    allow_remote: bool = True       # TODO: not enforced — IP filtering is not implemented
+    allowed_ips: List[str] = Field(default_factory=lambda: ["0.0.0.0/0"])  # TODO: not enforced
 
 
 class WebUIConfig(BaseModel):
@@ -236,6 +236,16 @@ class MemoryConfig(BaseModel):
     protect_buildings: bool = True         # 建筑保护区自动保护
 
 
+class DynmapConfig(BaseModel):
+    """Dynmap 集成配置（可选）"""
+    enabled: bool = False
+    host: str = "localhost"
+    port: int = 8163
+    api_key: str = ""
+    update_interval: int = 30              # 秒，位置更新频率
+    sync_zones: bool = True                # 同步区域标记到 Dynmap
+
+
 class NavigationConfig(BaseModel):
     """导航系统配置"""
     prefer_baritone: bool = True           # 优先使用 Baritone
@@ -258,6 +268,7 @@ class AppConfig(BaseModel):
     logging: LoggingConfig = LoggingConfig()
     memory: MemoryConfig = MemoryConfig()
     navigation: NavigationConfig = NavigationConfig()
+    dynmap: DynmapConfig = DynmapConfig()
 
 
 def load_config(path: str = "config.yaml") -> AppConfig:

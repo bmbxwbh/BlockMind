@@ -189,6 +189,9 @@ class GameMemory:
         # 容量警告回调
         self._capacity_callbacks: List = []
 
+        # 区域注册回调（用于 Dynmap 等外部集成）
+        self._zone_added_callbacks: List = []
+
         # 加载持久化数据
         self._load_all()
 
@@ -209,6 +212,13 @@ class GameMemory:
         self._save_zones()
         logger.info(f"📍 新增区域: {zone.name} ({zone.zone_type.value}) "
                      f"@ {zone.center} r={zone.radius}")
+
+        # 触发外部回调（Dynmap 标记同步等）
+        for cb in self._zone_added_callbacks:
+            try:
+                cb(zone)
+            except Exception as e:
+                logger.debug(f"Zone added callback error: {e}")
 
     def remove_zone(self, zone_id: str) -> bool:
         """移除空间区域"""
@@ -462,6 +472,18 @@ class GameMemory:
                         reverse=True)
         return candidates[0]
 
+    def check_stale_skills(self, skill_storage) -> None:
+        """检查并标记连续失败的策略"""
+        stale = []
+        for sid, s in self.strategies.items():
+            if s.fail_count >= 3 and s.success_rate < 0.2:
+                stale.append(sid)
+        for sid in stale:
+            self.strategies[sid].context_tags.append("stale")
+            logger.warning(f"策略 {sid} 标记为过期 (成功率={self.strategies[sid].success_rate:.0%})")
+        if stale:
+            self._save_strategies()
+
     def get_strategies_by_type(self, task_type: str) -> List[StrategyRecord]:
         """获取某类型的所有策略"""
         return [s for s in self.strategies.values() if s.task_type == task_type]
@@ -692,6 +714,10 @@ class GameMemory:
         """注册容量警告回调 callback(message: str)"""
         self._capacity_callbacks.append(callback)
 
+    def register_zone_added_callback(self, callback) -> None:
+        """注册区域添加回调 callback(zone: Zone) — 用于 Dynmap 等外部集成"""
+        self._zone_added_callbacks.append(callback)
+
     def _check_capacity(self) -> None:
         """检查容量，接近上限时发出警告"""
         warnings = []
@@ -827,6 +853,13 @@ class GameMemory:
                 lines.append(f"已验证策略: {len(best)} 个")
                 for s in best[:5]:
                     lines.append(f"  - [{s.task_type}] {s.description} (成功率{s.success_rate:.0%})")
+
+        # 最近失败记录
+        recent_failures = [s for s in self.strategies.values() if s.fail_count > 0 and s.last_used and (time.time() - s.last_used) < 3600]
+        if recent_failures:
+            lines.append("最近失败:")
+            for s in recent_failures[:3]:
+                lines.append(f"  - {s.description} (失败{s.fail_count}次)")
 
         return "\n".join(lines) if len(lines) > 1 else "[记忆系统] 暂无记忆"
 

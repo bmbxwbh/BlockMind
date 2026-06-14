@@ -1,6 +1,7 @@
 """BlockMind 核心引擎 — 双 Agent 架构 + 记忆系统"""
 
 import asyncio
+import json
 import logging
 from typing import Optional
 
@@ -16,6 +17,7 @@ from src.game.inventory import InventoryManager
 from src.game.chat import ChatHandler
 from src.game.pathfinding import Pathfinder
 from src.game.navigation import SmartNavigator
+from src.game.dynmap_client import DynmapClient
 from src.skills.runtime import SkillRuntime
 from src.skills.storage import SkillStorage
 from src.skills.matcher import SkillMatcher
@@ -79,6 +81,10 @@ class CompanionEngine:
         # ── 记忆系统（核心新增）──
         self.memory = GameMemory(storage_path=config.memory.storage_path)
 
+        # ── Dynmap 集成（可选）──
+        self.dynmap: Optional[DynmapClient] = None
+        self._dynmap_update_task: Optional[asyncio.Task] = None
+
         # ── 游戏层 ──
         self.state_collector = StateCollector(self.mod_client)
         self.inventory_manager = InventoryManager(self.mod_client)
@@ -112,7 +118,7 @@ class CompanionEngine:
         self.op_provider = op_provider
 
         self.main_agent = MainAgent(main_provider)
-        self.operation_agent = OperationAgent(op_provider, self.skill_storage)
+        self.operation_agent = OperationAgent(op_provider, self.skill_storage, self.skill_matcher)
 
         # ── 任务分类 ──
         self.task_classifier = TaskClassifier()
@@ -133,6 +139,7 @@ class CompanionEngine:
         self.idle_scheduler = IdleTaskScheduler(
             self.idle_detector, self.task_pool,
             self.event_bus, self.skill_runtime,
+            skill_storage=self.skill_storage,
         )
 
         # ── 紧急接管 ──
@@ -179,6 +186,10 @@ class CompanionEngine:
 
                 # 初始化世界记忆
                 await self._init_world_memory()
+
+                # 初始化 Dynmap 集成
+                self._init_dynmap()
+                await self._start_dynmap_updates()
             else:
                 self.logger.warning("⚠️ Mod API 连接失败，部分功能不可用")
 
@@ -230,6 +241,14 @@ class CompanionEngine:
         # 保存记忆
         self.logger.info(f"💾 记忆保存中... {self.memory.get_stats()}")
 
+        # 取消 Dynmap 更新任务
+        if self._dynmap_update_task and not self._dynmap_update_task.done():
+            self._dynmap_update_task.cancel()
+            try:
+                await self._dynmap_update_task
+            except asyncio.CancelledError:
+                pass
+
         await self.event_bus.emit(Event(type="engine.stopped", data={}, source="engine"))
 
         for module in [self.idle_scheduler, self.health_checker, self.ws_client]:
@@ -257,6 +276,9 @@ class CompanionEngine:
             if not message or not player:
                 return
 
+            # 通知空闲检测器有玩家活动
+            self.idle_detector.on_command_received()
+
             # 系统指令优先处理
             if message.startswith("!"):
                 return
@@ -277,24 +299,46 @@ class CompanionEngine:
             # 如果识别到任务，派发给操作 Agent
             if result["has_task"] and result["task_description"]:
                 await self._dispatch_to_operation_agent(
-                    result["task_description"], player
+                    result["task_description"], player, memory_context
                 )
 
         self.event_bus.subscribe("chat", on_player_chat)
         self.logger.info("双 Agent 指令处理已注册（含记忆注入）")
 
+    def _derive_task_type(self, task: str) -> str:
+        """从任务描述推导任务类型"""
+        keywords = {
+            "挖": "mining", "mine": "mining", "dig": "mining",
+            "砍": "chopping", "chop": "chopping", "wood": "chopping",
+            "种": "farming", "farm": "farming", "plant": "farming",
+            "建": "building", "build": "building",
+            "杀": "combat", "kill": "combat", "attack": "combat",
+            "吃": "survival", "eat": "survival",
+            "找": "exploring", "find": "exploring", "explore": "exploring",
+            "存": "storage", "store": "storage", "deposit": "storage",
+        }
+        task_lower = task.lower()
+        for kw, task_type in keywords.items():
+            if kw in task_lower:
+                return task_type
+        return "general"
+
     async def _dispatch_to_operation_agent(self, task: str,
-                                            player_name: str = "player") -> None:
+                                            player_name: str = "player",
+                                            memory_context: str = "") -> None:
         """将任务派发给操作 Agent（记忆增强版）"""
         try:
             # 获取游戏状态
             status = await self.mod_client.get_status()
+            inv = await self.mod_client.get_inventory()
+            inv_summary = f"{len(inv.items)}物品/{inv.empty_slots}空位"
             game_state = {
                 "health": status.health,
                 "hunger": status.hunger,
                 "position": status.position,
                 "dimension": status.dimension,
                 "weather": status.weather,
+                "inventory_summary": inv_summary,
             }
 
             # 获取 Skill 元数据
@@ -304,46 +348,61 @@ class CompanionEngine:
                 for s in all_skills
             ]
 
-            # 注入记忆上下文
-            memory_context = self.memory.get_ai_context()
+            # 注入历史最佳策略
+            best_strategy = self.memory.get_best_strategy(self._derive_task_type(task))
+            strategy_hint = ""
+            if best_strategy:
+                strategy_hint = f"\n[历史最佳策略] {best_strategy.description} (成功率{best_strategy.success_rate:.0%})"
+                if best_strategy.action_sequence:
+                    strategy_hint += f"\n历史动作: {json.dumps(best_strategy.action_sequence[:5])}"
+
+            op_context = memory_context + strategy_hint
 
             # 操作 Agent 决策（无状态，注入记忆）
             op_result = await self.operation_agent.execute(
-                task, game_state, skill_metadata, context=memory_context
+                task, game_state, skill_metadata, context=op_context
             )
 
             # 根据策略执行
             strategy = op_result.get("strategy")
+            derived_type = self._derive_task_type(task)
+            success = False
 
             if strategy == "cached_skill" and op_result.get("skill"):
                 result = await self.skill_runtime.execute_skill_object(op_result["skill"])
-                # 记忆学习：记录策略执行结果
+                success = result.success if hasattr(result, 'success') else True
                 self.memory.record_strategy(
-                    task_type="skill_execution",
+                    task_type=derived_type,
                     description=f"执行缓存Skill: {op_result['skill'].name}",
                     action_sequence=[{"skill": op_result["skill"].skill_id}],
-                    success=result.success if hasattr(result, 'success') else True,
+                    success=success,
                 )
+                skill_id = op_result.get("skill_id")
+                if skill_id:
+                    self.skill_storage.update_stats(skill_id, success=success)
                 reply = await self.main_agent.format_result(op_result)
                 await self.action_executor.send_chat(reply)
 
             elif strategy == "new_skill" and op_result.get("skill"):
                 result = await self.skill_runtime.execute_skill_object(op_result["skill"])
+                success = result.success if hasattr(result, 'success') else True
                 self.memory.record_strategy(
-                    task_type="skill_execution",
+                    task_type=derived_type,
                     description=f"执行新Skill: {op_result['skill'].name}",
                     action_sequence=[{"skill": op_result["skill"].skill_id}],
-                    success=result.success if hasattr(result, 'success') else True,
+                    success=success,
                 )
+                skill_id = op_result.get("skill_id")
+                if skill_id:
+                    self.skill_storage.update_stats(skill_id, success=success)
                 reply = await self.main_agent.format_result(op_result)
                 await self.action_executor.send_chat(reply)
 
             elif strategy == "action_sequence" and op_result.get("actions"):
                 results = await self.action_executor.execute_sequence(op_result["actions"])
-                # 记忆学习
                 success = all(r.get("result", {}).success for r in results if hasattr(r.get("result", {}), 'success'))
                 self.memory.record_strategy(
-                    task_type="action_sequence",
+                    task_type=derived_type,
                     description=task[:100],
                     action_sequence=op_result["actions"],
                     success=success,
@@ -352,12 +411,23 @@ class CompanionEngine:
                 await self.action_executor.send_chat(reply)
 
             else:
+                success = False
                 reply = await self.main_agent.format_result(op_result)
                 await self.action_executor.send_chat(reply)
+
+            # 反馈到主 Agent 历史（支持多轮推理）
+            self.main_agent._history.append({
+                "role": "system",
+                "content": f"[执行结果] 任务'{task}' {'成功' if success else '失败'}"
+            })
 
         except Exception as e:
             self.logger.error(f"操作 Agent 执行失败: {e}")
             await self.action_executor.send_chat(f"❌ 执行出错: {str(e)[:50]}")
+            self.main_agent._history.append({
+                "role": "system",
+                "content": f"[执行结果] 任务'{task}' 异常: {str(e)[:100]}"
+            })
 
     # ── 记忆系统集成 ─────────────────────────────────
 
@@ -405,11 +475,154 @@ class CompanionEngine:
                 await asyncio.sleep(60)  # 每60秒扫描一次
                 if self._running:
                     await self.navigator.auto_detect_and_memorize()
+                    self.memory.check_stale_skills(self.skill_storage)
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 self.logger.warning(f"自动环境检测异常: {e}")
                 await asyncio.sleep(10)
+
+    # ── Dynmap 集成（可选）──────────────────────────
+
+    def _init_dynmap(self) -> None:
+        """初始化 Dynmap 客户端（如果配置启用）"""
+        dynmap_cfg = self.config.dynmap
+        if not dynmap_cfg.enabled:
+            self.logger.info("🗺️ Dynmap 集成未启用（设置 dynmap.enabled=true 启用）")
+            return
+
+        self.dynmap = DynmapClient(
+            host=dynmap_cfg.host,
+            port=dynmap_cfg.port,
+            api_key=dynmap_cfg.api_key,
+        )
+        self.logger.info(
+            f"🗺️ Dynmap 客户端初始化: {dynmap_cfg.host}:{dynmap_cfg.port}"
+        )
+
+    async def _start_dynmap_updates(self) -> None:
+        """启动 Dynmap 位置定期更新任务"""
+        if not self.dynmap:
+            return
+
+        # 注册区域同步回调
+        self.memory.register_zone_added_callback(self._on_zone_registered)
+
+        connected = await self.dynmap.check_connection()
+        if connected:
+            self.logger.info("🗺️ Dynmap 连接成功，开始同步标记")
+            if self.config.dynmap.sync_zones:
+                await self._sync_zones_to_dynmap()
+        else:
+            self.logger.warning("🗺️ Dynmap 不可达，位置更新将跳过直到连接恢复")
+
+        self._dynmap_update_task = asyncio.create_task(self._dynmap_update_loop())
+
+    async def _dynmap_update_loop(self) -> None:
+        """定期更新 Dynmap 上的 bot 位置"""
+        while self._running and self.dynmap:
+            try:
+                interval = self.config.dynmap.update_interval
+                await asyncio.sleep(interval)
+                if not self._running or not self.dynmap:
+                    break
+
+                if self._no_mod_mode:
+                    continue
+
+                try:
+                    status = await self.mod_client.get_status()
+                    pos = status.position
+                    world = status.dimension or "world"
+
+                    bot_name = self.config.mod.bot_name or "BlockMind_Bot"
+                    await self.dynmap.update_bot_position(
+                        bot_name, world,
+                        pos.get("x", 0), pos.get("y", 0), pos.get("z", 0),
+                    )
+                except Exception as e:
+                    self.logger.debug(f"Dynmap 位置更新失败: {e}")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.logger.debug(f"Dynmap 更新循环异常: {e}")
+                await asyncio.sleep(5)
+
+    async def _sync_zones_to_dynmap(self) -> None:
+        """将记忆系统中的区域同步到 Dynmap 标记"""
+        if not self.dynmap:
+            return
+
+        connected = await self.dynmap.check_connection()
+        if not connected:
+            return
+
+        zone_type_map = {
+            "building": "protect",
+            "base": "protect",
+            "danger": "danger",
+            "resource": "resource",
+            "farm": "resource",
+            "mine": "resource",
+        }
+
+        for zone in self.memory.zones.values():
+            zone_type = zone.zone_type.value
+            marker_type = zone_type_map.get(zone_type, "info")
+            cx, cy, cz = zone.center
+
+            if not self._no_mod_mode:
+                try:
+                    status = await self.mod_client.get_status()
+                    world = status.dimension or "world"
+                except Exception:
+                    world = "world"
+            else:
+                world = "world"
+
+            await self.dynmap.add_zone_marker(
+                zone_name=zone.name,
+                world=world,
+                x=cx, y=cy, z=cz,
+                zone_type=marker_type,
+            )
+
+        self.logger.info(f"🗺️ 已同步 {len(self.memory.zones)} 个区域到 Dynmap")
+
+    async def _on_zone_registered(self, zone) -> None:
+        """区域注册时的回调 — 同步到 Dynmap"""
+        if not self.dynmap:
+            return
+
+        connected = await self.dynmap.check_connection()
+        if not connected:
+            return
+
+        zone_type_map = {
+            "building": "protect",
+            "base": "protect",
+            "danger": "danger",
+            "resource": "resource",
+            "farm": "resource",
+            "mine": "resource",
+        }
+        marker_type = zone_type_map.get(zone.zone_type.value, "info")
+        cx, cy, cz = zone.center
+
+        world = "world"
+        if not self._no_mod_mode:
+            try:
+                status = await self.mod_client.get_status()
+                world = status.dimension or "world"
+            except Exception:
+                pass
+
+        await self.dynmap.add_zone_marker(
+            zone_name=zone.name,
+            world=world,
+            x=cx, y=cy, z=cz,
+            zone_type=marker_type,
+        )
 
     # ── 系统指令 ─────────────────────────────────────
 
