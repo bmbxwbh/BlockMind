@@ -4,5 +4,55 @@
         Title="BlockMind"
         Width="1200" Height="750"
         WindowStartupLocation="CenterScreen">
-    <TextBlock Text="Hello BlockMind" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+    <Grid ColumnDefinitions="220,*">
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#111111" BorderBrush="#1F1F1F" BorderThickness="0,0,1,0">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,20">
+                    <TextBlock Text="BlockMind" FontSize="18" FontWeight="Bold" Foreground="#EDEDED"/>
+                    <TextBlock Text="Desktop v0.1" FontSize="11" Foreground="#555555" Margin="0,4,0,0"/>
+                </StackPanel>
+                <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="#1F1F1F" BorderThickness="0,1,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="#00D68F" Margin="0,0,8,0"/>
+                            <TextBlock Text="Not connected" FontSize="11" Foreground="#888888"/>
+                        </StackPanel>
+                        <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="#555555" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Border Padding="14,10" CornerRadius="6" Margin="8,1" Background="#7C5CFC">
+                            <TextBlock Text="Dashboard" FontSize="13" Foreground="#FFFFFF"/>
+                        </Border>
+                        <Border Padding="14,10" CornerRadius="6" Margin="8,1">
+                            <TextBlock Text="Map" FontSize="13" Foreground="#EDEDED"/>
+                        </Border>
+                        <Border Padding="14,10" CornerRadius="6" Margin="8,1">
+                            <TextBlock Text="AI Chat" FontSize="13" Foreground="#EDEDED"/>
+                        </Border>
+                        <Border Padding="14,10" CornerRadius="6" Margin="8,1">
+                            <TextBlock Text="Memory" FontSize="13" Foreground="#EDEDED"/>
+                        </Border>
+                        <Border Padding="14,10" CornerRadius="6" Margin="8,1">
+                            <TextBlock Text="Skills" FontSize="13" Foreground="#EDEDED"/>
+                        </Border>
+                        <Border Padding="14,10" CornerRadius="6" Margin="8,1">
+                            <TextBlock Text="Settings" FontSize="13" Foreground="#EDEDED"/>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Border Grid.Column="1" Background="#0A0A0A" Padding="24">
+            <StackPanel>
+                <TextBlock Text="Dashboard" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
+                <TextBlock Text="Welcome to BlockMind Desktop" FontSize="14" Foreground="#888888" Margin="0,12,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>
