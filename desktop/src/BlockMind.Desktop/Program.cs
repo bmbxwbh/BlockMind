@@ -15,7 +15,7 @@ class Program
         {
             File.AppendAllText(logFile, $"[{DateTime.Now}] BlockMind starting...\n");
             File.AppendAllText(logFile, $"[{DateTime.Now}] Base dir: {AppDomain.CurrentDomain.BaseDirectory}\n");
-            File.AppendAllText(logFile, $"[{DateTime Now}] Args: {string.Join(" ", args)}\n");
+            File.AppendAllText(logFile, $"[{DateTime.Now}] Args: {string.Join(" ", args)}\n");
             File.AppendAllText(logFile, $"[{DateTime.Now}] OS: {Environment.OSVersion}\n");
             File.AppendAllText(logFile, $"[{DateTime.Now}] .NET: {Environment.Version}\n");
 
