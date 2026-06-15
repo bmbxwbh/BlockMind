@@ -7,7 +7,7 @@ name = "blockmind"
 version = "3.1.0"
 description = "Minecraft AI Companion — Fabric Mod + AI 驱动 + 记忆系统"
 readme = "README.md"
-license = {text = "MIT with Non-Commercial Restriction"}
+license = {text = "AGPL-3.0-or-later"}
 requires-python = ">=3.10"
 authors = [
     {name = "BlockMind Team"},
@@ -16,7 +16,7 @@ keywords = ["minecraft", "ai", "fabric", "companion", "mod"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: Other/Nonstandard License",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
