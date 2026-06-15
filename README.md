@@ -49,6 +49,10 @@ AI 使用 Baritone 寻路（自动挖路/搭桥/游泳），但会自动绕开�
 
 用 YAML 定义可复用的 AI 技能（挖矿、种田、建房），社区共享。AI 生成的技能自动保存，下次执行零 Token。
 
+### 6. Dynmap 地图集成（可选）
+
+集成 Dynmap 地图数据，在 WebUI 中直接查看机器人位置、建筑保护区、危险区域标记。Dynmap 为可选依赖，不影响核心功能。
+
 ---
 
 ## 快速开始
@@ -57,7 +61,7 @@ AI 使用 Baritone 寻路（自动挖路/搭桥/游泳），但会自动绕开�
 
 - Python 3.10+ · Java 17+ · Minecraft 1.20.0 ~ 26.1.2
 
-### 一键启动
+### 一键启动（Linux / macOS）
 
 ```bash
 git clone https://github.com/bmbxwbh/BlockMind.git
@@ -65,13 +69,18 @@ cd BlockMind
 chmod +x start.sh && ./start.sh
 ```
 
-### Windows
+脚本会自动：
+1. 检测是否已安装 → 显示 启动/修复/卸载/重装 菜单
+2. 选择运行模式 → 服务端（自动下载 MC）或 客户端（自行安装 MC）
+3. 创建虚拟环境 + 安装依赖
+4. 启动 BlockMind + WebUI
+
+### 一键启动（Windows）
 
 ```cmd
 git clone https://github.com/bmbxwbh/BlockMind.git
 cd BlockMind
-install.bat
-start_all.bat
+start.bat
 ```
 
 ### Docker
@@ -81,6 +90,15 @@ docker pull ghcr.io/bmbxwbh/blockmind:latest
 docker run -d --name blockmind -p 19951:19951 \
   -v ./config.yaml:/app/config.yaml:ro \
   ghcr.io/bmbxwbh/blockmind:latest
+```
+
+或使用 docker-compose：
+
+```bash
+git clone https://github.com/bmbxwbh/BlockMind.git && cd BlockMind
+cp config.example.yaml config.yaml
+# 编辑 config.yaml
+docker compose up -d
 ```
 
 ### 配置
@@ -96,6 +114,10 @@ ai:
 webui:
   enabled: true
   port: 19951
+dynmap:                    # 可选：Dynmap 地图集成
+  enabled: false
+  host: localhost
+  port: 8163
 ```
 
 启动后访问 `http://localhost:19951` 进入控制面板。
@@ -121,7 +143,7 @@ webui:
 │  │ 记忆系统 · 智能导航 · Skill 引擎    │  │
 │  └────────────────┬───────────────────┘  │
 │  ┌────────────────▼───────────────────┐  │
-│  │ WebUI 控制面板 (MiuiX)             │  │
+│  │ WebUI + Dynmap 地图 (可选)         │  │
 │  └────────────────────────────────────┘  │
 └──────────────────────────────────────────┘
 ```
@@ -135,6 +157,7 @@ webui:
 | 功能 | 说明 |
 |------|------|
 | 仪表盘 | 实时状态、快捷指令、事件流 |
+| 地图 | Dynmap 地图视图、机器人位置、区域标记 |
 | Skill 管理 | 在线编辑 YAML、一键执行 |
 | Skill 市场 | 社区技能浏览、安装、导入导出 |
 | 记忆系统 | 查看/备份/清理/导入导出 |
@@ -180,7 +203,9 @@ webui:
 
 **Q: 支持哪些 AI 模型？** OpenAI 兼容格式（DeepSeek/OpenRouter/MiMo）+ Anthropic。
 
-**Q: 可以在单人游戏用吗？** 可以，将 Mod 放入客户端 `mods/` 即可。
+**Q: 可以在单人游戏用吗？** 可以，启动时选择客户端模式，将 Mod 放入客户端 `mods/` 即可。
+
+**Q: Dynmap 必须装吗？** 不必须，`dynmap.enabled: false` 时不影响任何功能。安装后可在 WebUI 地图页查看机器人位置。
 
 ---
 
