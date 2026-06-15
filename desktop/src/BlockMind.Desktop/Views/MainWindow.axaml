@@ -36,7 +36,7 @@
                             <DataTemplate>
                                 <Border Padding="14,10" CornerRadius="6" Margin="8,1" Cursor="Hand"
                                         Background="Transparent" Tag="{Binding}"
-                                        PointerPressed="NavBorder_PointerPressed">
+                                        Tapped="NavBorder_Tapped">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <ctrl:Icon IconName="{Binding IconName}" IconSize="18"/>
                                         <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
