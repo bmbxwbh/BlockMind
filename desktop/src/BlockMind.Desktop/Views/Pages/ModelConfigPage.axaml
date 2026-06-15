@@ -3,73 +3,71 @@
              x:Class="BlockMind.Desktop.Views.Pages.ModelConfigPage">
     <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
-            <TextBlock Text="Model Config" FontSize="24" FontWeight="SemiBold"/>
+            <TextBlock Text="Model Config" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
 
-            <!-- Main Agent -->
-            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Main Agent (Chat)" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="Main Agent (Chat)" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Format:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MainFormat}" Width="200"/>
+                        <TextBlock Text="Format:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding MainFormat}" Width="200" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="URL:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MainBaseUrl}" Width="400"/>
+                        <TextBlock Text="URL:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding MainBaseUrl}" Width="400" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="API Key:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MainApiKey}" Width="400" PasswordChar="*"/>
+                        <TextBlock Text="API Key:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding MainApiKey}" Width="400" PasswordChar="*" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Model:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MainModel}" Width="200"/>
+                        <TextBlock Text="Model:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding MainModel}" Width="200" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Temp:" Width="80" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding MainTemperature, StringFormat='{}{0:F1}'}" Width="40"/>
+                        <TextBlock Text="Temp:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBlock Text="{Binding MainTemperature, StringFormat='{}{0:F1}'}" Width="40" Foreground="#EDEDED"/>
                         <Slider Value="{Binding MainTemperature}" Minimum="0" Maximum="2" Width="200"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Test Connection" Command="{Binding TestMainConnectionCommand}" Padding="12,6"/>
-                        <TextBlock Text="{Binding MainTestStatus}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <Button Content="Test Connection" Command="{Binding TestMainConnectionCommand}" Padding="12,6" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+                        <TextBlock Text="{Binding MainTestStatus}" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#00D68F"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
-            <!-- Operation Agent -->
-            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Operation Agent (Execute)" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="Operation Agent (Execute)" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Format:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding OpFormat}" Width="200"/>
+                        <TextBlock Text="Format:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding OpFormat}" Width="200" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="URL:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding OpBaseUrl}" Width="400"/>
+                        <TextBlock Text="URL:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding OpBaseUrl}" Width="400" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="API Key:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding OpApiKey}" Width="400" PasswordChar="*"/>
+                        <TextBlock Text="API Key:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding OpApiKey}" Width="400" PasswordChar="*" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Model:" Width="80" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding OpModel}" Width="200"/>
+                        <TextBlock Text="Model:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBox Text="{Binding OpModel}" Width="200" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Temp:" Width="80" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding OpTemperature, StringFormat='{}{0:F1}'}" Width="40"/>
+                        <TextBlock Text="Temp:" Width="80" VerticalAlignment="Center" Foreground="#888888"/>
+                        <TextBlock Text="{Binding OpTemperature, StringFormat='{}{0:F1}'}" Width="40" Foreground="#EDEDED"/>
                         <Slider Value="{Binding OpTemperature}" Minimum="0" Maximum="2" Width="200"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Test Connection" Command="{Binding TestOpConnectionCommand}" Padding="12,6"/>
-                        <TextBlock Text="{Binding OpTestStatus}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        <Button Content="Test Connection" Command="{Binding TestOpConnectionCommand}" Padding="12,6" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+                        <TextBlock Text="{Binding OpTestStatus}" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#00D68F"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
-            <Button Content="Save Config" Command="{Binding SaveConfigCommand}" Padding="20,8"/>
+            <Button Content="Save Config" Command="{Binding SaveConfigCommand}" Padding="20,8" Background="#7C5CFC" Foreground="#FFFFFF" BorderBrush="#7C5CFC"/>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

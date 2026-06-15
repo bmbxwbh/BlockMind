@@ -4,22 +4,20 @@
     <Border Padding="24">
         <StackPanel Spacing="16">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Skills" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <Button Content="Load" Command="{Binding LoadSkillsCommand}" Padding="12,6" Margin="16,0,0,0"/>
+                <TextBlock Text="Skills" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#EDEDED"/>
+                <Button Content="Load" Command="{Binding LoadSkillsCommand}" Padding="12,6" Margin="16,0,0,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
             </StackPanel>
-
             <ListBox ItemsSource="{Binding Skills}" Background="Transparent" BorderThickness="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Padding="12" Margin="0,2" CornerRadius="6" Background="{DynamicResource BgSurface}">
-                            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                        <Border Padding="12" Margin="0,2" CornerRadius="6" Background="#111111">
+                            <Grid ColumnDefinitions="*,Auto,Auto">
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Tags}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
+                                    <TextBlock Text="{Binding Tags}" FontSize="11" Foreground="#888888"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" Text="{Binding SkillId}" FontSize="11" Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" Margin="12,0"/>
-                                <Button Grid.Column="2" Content="Run" Padding="8,4" Margin="4,0"/>
-                                <Button Grid.Column="3" Content="Delete" Padding="8,4" Margin="4,0"/>
+                                <Button Grid.Column="1" Content="Run" Padding="8,4" Margin="4,0" Background="#222222" Foreground="#00D68F" BorderBrush="#1F1F1F"/>
+                                <Button Grid.Column="2" Content="Delete" Padding="8,4" Margin="4,0" Background="#222222" Foreground="#FF3B3B" BorderBrush="#1F1F1F"/>
                             </Grid>
                         </Border>
                     </DataTemplate>

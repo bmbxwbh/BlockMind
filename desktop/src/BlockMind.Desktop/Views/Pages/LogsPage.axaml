@@ -3,12 +3,12 @@
              x:Class="BlockMind.Desktop.Views.Pages.LogsPage">
     <Border Padding="24">
         <StackPanel Spacing="16">
-            <TextBlock Text="Logs" FontSize="24" FontWeight="SemiBold"/>
-            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+            <TextBlock Text="Logs" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
+            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <ListBox ItemsSource="{Binding Logs}" Background="Transparent" BorderThickness="0" MaxHeight="500">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding}" FontSize="12" FontFamily="JetBrains Mono, Cascadia Code, monospace" Foreground="{DynamicResource TextSecondary}" Margin="0,1"/>
+                            <TextBlock Text="{Binding}" FontSize="12" FontFamily="JetBrains Mono, Cascadia Code, monospace" Foreground="#888888" Margin="0,1"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
