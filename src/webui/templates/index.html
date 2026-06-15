@@ -72,6 +72,8 @@
         .mx-logo-icon [data-lucide] { width: 24px; height: 24px; }
         .mx-card-title [data-lucide] { width: 16px; height: 16px; }
         .bm-stat-icon [data-lucide] { width: 20px; height: 20px; }
+        #mapContainer iframe { background: #1a1a2e; }
+        #mapPlaceholder { background: var(--mx-s1); }
     </style>
 </head>
 <body>
@@ -145,6 +147,9 @@
         </div>
         <div class="mx-nav-item" onclick="showPage('memory',this)">
             <span class="mx-nav-icon"><i data-lucide="brain"></i></span><span class="mx-nav-label">记忆系统</span>
+        </div>
+        <div class="mx-nav-item" onclick="showPage('map',this)">
+            <span class="mx-nav-icon"><i data-lucide="map"></i></span><span class="mx-nav-label">地图</span>
         </div>
         <div class="mx-nav-item" onclick="showPage('model',this)">
             <span class="mx-nav-icon"><i data-lucide="bot"></i></span><span class="mx-nav-label">模型配置</span>
@@ -424,6 +429,24 @@
                 </div>
             </div>
 
+            <!-- ══ 地图 ══ -->
+            <div class="mx-page" id="page-map">
+                <h1 class="mx-page-title"><i data-lucide="map"></i> 地图</h1>
+                <div style="margin-bottom:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <span style="font-size:13px;color:var(--mx-t3)">Dynmap 地图视图（需安装 Dynmap 插件）</span>
+                    <button class="mx-btn mx-btn-sm mx-btn-ghost" onclick="refreshMap()"><i data-lucide="refresh-cw"></i> 刷新</button>
+                    <button class="mx-btn mx-btn-sm mx-btn-ghost" onclick="toggleMapFullscreen()"><i data-lucide="maximize"></i> 全屏</button>
+                </div>
+                <div id="mapContainer" style="width:100%;height:calc(100vh - 200px);min-height:400px;border-radius:var(--mx-r-md);overflow:hidden;background:var(--mx-s1);position:relative">
+                    <iframe id="mapFrame" src="" style="width:100%;height:100%;border:none" allowfullscreen></iframe>
+                    <div id="mapPlaceholder" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+                        <i data-lucide="map" style="width:48px;height:48px;color:var(--mx-t3)"></i>
+                        <span style="color:var(--mx-t3)">正在检测 Dynmap 连接...</span>
+                        <span style="font-size:12px;color:var(--mx-t4)">如未安装 Dynmap，此页面不可用</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- ══ 模型配置 ══ -->
             <div class="mx-page" id="page-model">
                 <div class="mx-page-head">
@@ -683,6 +706,7 @@
             <li class="mx-btm-item" onclick="showPage('skills',this)"><span><i data-lucide="wrench"></i></span><span>Skill</span></li>
             <li class="mx-btm-item" onclick="showPage('marketplace',this)"><span><i data-lucide="shopping-bag"></i></span><span>市场</span></li>
             <li class="mx-btm-item" onclick="showPage('memory',this)"><span><i data-lucide="brain"></i></span><span>记忆</span></li>
+            <li class="mx-btm-item" onclick="showPage('map',this)"><span><i data-lucide="map"></i></span><span>地图</span></li>
             <li class="mx-btm-item" onclick="showPage('system',this)"><span><i data-lucide="settings"></i></span><span>更多</span></li>
         </ul>
     </nav>
@@ -725,7 +749,7 @@ if (typeof MxTheme !== 'undefined') {
 let token = localStorage.getItem('bm_token');
 let ws = null;
 let skills = [];
-const PAGE_NAMES = {dashboard:'仪表盘',skills:'Skill 管理',memory:'记忆系统',model:'模型配置',safety:'安全设置',logs:'日志中心',system:'系统',command:'命令面板',tasks:'任务队列'};
+const PAGE_NAMES = {dashboard:'仪表盘',skills:'Skill 管理',memory:'记忆系统',map:'地图',model:'模型配置',safety:'安全设置',logs:'日志中心',system:'系统',command:'命令面板',tasks:'任务队列'};
 
 // ══ 登录 ══
 async function doLogin() {
@@ -1333,6 +1357,7 @@ function showPage(id, el) {
     if (id==='marketplace') loadMarketplace();
     if (id==='safety') loadAuditLog();
     if (id==='system') { loadTokenStats(); loadSystemResources(); }
+    if (id==='map' && !dynmapUrl) initMap();
     // Close mobile sidebar if open
     closeMobileSidebar();
     lucide.createIcons();
@@ -1578,6 +1603,56 @@ function importMemoryPrompt() {
         } catch(e) { if(typeof MxToast!=='undefined') MxToast.error('导入失败: 文件格式错误'); }
     };
     input.click();
+}
+
+// ── Dynmap 地图 ──
+let dynmapUrl = '';
+let mapFullscreen = false;
+
+async function initMap() {
+    try {
+        const r = await api('/api/dynmap/status');
+        if (!r) return;
+        if (r.connected && r.url) {
+            dynmapUrl = r.url;
+            document.getElementById('mapFrame').src = dynmapUrl;
+            document.getElementById('mapPlaceholder').style.display = 'none';
+        } else {
+            document.getElementById('mapPlaceholder').querySelector('span').textContent = 'Dynmap 未连接';
+        }
+    } catch(e) {
+        document.getElementById('mapPlaceholder').querySelector('span').textContent = 'Dynmap 不可用';
+    }
+}
+
+function refreshMap() {
+    const frame = document.getElementById('mapFrame');
+    if (dynmapUrl) {
+        frame.src = '';
+        setTimeout(() => { frame.src = dynmapUrl; }, 100);
+    }
+}
+
+function toggleMapFullscreen() {
+    const container = document.getElementById('mapContainer');
+    if (!mapFullscreen) {
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '0';
+        container.style.width = '100vw';
+        container.style.height = '100vh';
+        container.style.zIndex = '9999';
+        container.style.borderRadius = '0';
+    } else {
+        container.style.position = '';
+        container.style.top = '';
+        container.style.left = '';
+        container.style.width = '';
+        container.style.height = '';
+        container.style.zIndex = '';
+        container.style.borderRadius = '';
+    }
+    mapFullscreen = !mapFullscreen;
 }
 
 // ══ 自动登录 ══

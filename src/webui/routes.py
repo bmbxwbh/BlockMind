@@ -372,6 +372,19 @@ async def system_resources(request: Request, _=Depends(require_auth)):
     return get_system_stats()
 
 
+# ── Dynmap 地图接口 ──
+
+@router.get("/api/dynmap/status")
+async def dynmap_status(request: Request, _=Depends(require_auth)):
+    """获取 Dynmap 连接状态"""
+    engine = get_engine(request)
+    if not hasattr(engine, 'dynmap') or not engine.dynmap:
+        return {"connected": False, "url": ""}
+    connected = await engine.dynmap.check_connection()
+    url = "http://localhost:8163" if connected else ""
+    return {"connected": connected, "url": url}
+
+
 # ── Token 统计接口 ──
 
 @router.get("/api/stats/tokens")
