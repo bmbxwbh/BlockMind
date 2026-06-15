@@ -4,8 +4,8 @@
     <Border Padding="24">
         <StackPanel Spacing="16">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Safety" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#EDEDED"/>
-                <Button Content="Load Audit Log" Command="{Binding LoadAuditLogCommand}" Padding="12,6" Margin="16,0,0,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+                <TextBlock Text="安全设置" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#EDEDED"/>
+                <Button Content="加载审计日志" Command="{Binding LoadAuditLogCommand}" Padding="12,6" Margin="16,0,0,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
             </StackPanel>
             <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <ListBox ItemsSource="{Binding AuditLog}" Background="Transparent" BorderThickness="0" MaxHeight="400">

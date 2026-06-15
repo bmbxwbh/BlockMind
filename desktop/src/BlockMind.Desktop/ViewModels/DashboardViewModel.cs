@@ -10,13 +10,14 @@ public partial class DashboardViewModel : ObservableObject
     private readonly AppService _service;
     private readonly System.Timers.Timer _pollTimer;
 
-    [ObservableProperty] private double _health = 20;
-    [ObservableProperty] private double _hunger = 20;
-    [ObservableProperty] private string _position = "0, 64, 0";
-    [ObservableProperty] private string _dimension = "";
+    [ObservableProperty] private double _health;
+    [ObservableProperty] private double _hunger;
+    [ObservableProperty] private string _position = "--";
+    [ObservableProperty] private string _dimension = "--";
     [ObservableProperty] private bool _modConnected;
     [ObservableProperty] private bool _pythonRunning;
-    [ObservableProperty] private string _statusText = "";
+    [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private bool _hasRealData;
 
     public ObservableCollection<string> RecentEvents { get; } = new();
 
@@ -57,12 +58,16 @@ public partial class DashboardViewModel : ObservableObject
 
     private void UpdateStatus()
     {
-        StatusText = PythonRunning ? Lang.T("Running") : (ModConnected ? Lang.T("Connected") : Lang.T("Not connected"));
+        StatusText = PythonRunning ? "运行中" : (ModConnected ? "已连接" : "未连接");
     }
 
     private async void PollStatusAsync()
     {
-        if (!_service.ModConnected) return;
+        if (!_service.ModConnected)
+        {
+            HasRealData = false;
+            return;
+        }
         try
         {
             var status = await _service.ModClient.GetStatusAsync();
@@ -74,8 +79,12 @@ public partial class DashboardViewModel : ObservableObject
                 var pos = s.GetProperty("position");
                 Position = $"{pos.GetProperty("x").GetDouble():F0}, {pos.GetProperty("y").GetDouble():F0}, {pos.GetProperty("z").GetDouble():F0}";
                 Dimension = s.TryGetProperty("dimension", out var d) ? d.GetString() ?? "" : "";
+                HasRealData = true;
             }
         }
-        catch { }
+        catch
+        {
+            HasRealData = false;
+        }
     }
 }

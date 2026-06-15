@@ -16,8 +16,8 @@
             </ListBox.ItemTemplate>
         </ListBox>
         <DockPanel DockPanel.Dock="Bottom">
-            <Button DockPanel.Dock="Right" Content="Send" Command="{Binding SendCommand}" Padding="16,8" Margin="8,0,0,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
-            <TextBox Text="{Binding InputText}" Watermark="Type a message..." IsEnabled="{Binding !IsBusy}" Background="#111111" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+            <Button DockPanel.Dock="Right" Content="发送" Command="{Binding SendCommand}" Padding="16,8" Margin="8,0,0,0" Background="#7C5CFC" Foreground="#FFFFFF" BorderBrush="#7C5CFC"/>
+            <TextBox Text="{Binding InputText}" Watermark="输入消息..." IsEnabled="{Binding !IsBusy}" Background="#111111" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
         </DockPanel>
     </DockPanel>
 </UserControl>

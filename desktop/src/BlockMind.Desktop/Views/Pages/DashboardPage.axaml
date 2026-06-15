@@ -4,15 +4,15 @@
              x:Class="BlockMind.Desktop.Views.Pages.DashboardPage">
     <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
-            <TextBlock Text="Dashboard" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
+            <TextBlock Text="仪表盘" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
 
-            <!-- Status Cards -->
+            <!-- 状态卡片 -->
             <WrapPanel>
                 <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ctrl:Icon IconName="heart" IconSize="16"/>
-                            <TextBlock Text="Health" FontSize="12" Foreground="#888888"/>
+                            <TextBlock Text="生命值" FontSize="12" Foreground="#888888"/>
                         </StackPanel>
                         <TextBlock Text="{Binding Health, StringFormat='{}{0:F0}/20'}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0" Foreground="#EDEDED"/>
                         <ProgressBar Value="{Binding Health}" Maximum="20" Height="4" Background="#1A1A1A" Foreground="#00D68F" Margin="0,8,0,0"/>
@@ -22,7 +22,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ctrl:Icon IconName="beef" IconSize="16"/>
-                            <TextBlock Text="Hunger" FontSize="12" Foreground="#888888"/>
+                            <TextBlock Text="饥饿值" FontSize="12" Foreground="#888888"/>
                         </StackPanel>
                         <TextBlock Text="{Binding Hunger, StringFormat='{}{0:F0}/20'}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0" Foreground="#EDEDED"/>
                         <ProgressBar Value="{Binding Hunger}" Maximum="20" Height="4" Background="#1A1A1A" Foreground="#FFAA00" Margin="0,8,0,0"/>
@@ -32,7 +32,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ctrl:Icon IconName="map-pin" IconSize="16"/>
-                            <TextBlock Text="Position" FontSize="12" Foreground="#888888"/>
+                            <TextBlock Text="位置" FontSize="12" Foreground="#888888"/>
                         </StackPanel>
                         <TextBlock Text="{Binding Position}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0" Foreground="#EDEDED"/>
                     </StackPanel>
@@ -41,28 +41,37 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <ctrl:Icon IconName="globe" IconSize="16"/>
-                            <TextBlock Text="Dimension" FontSize="12" Foreground="#888888"/>
+                            <TextBlock Text="维度" FontSize="12" Foreground="#888888"/>
                         </StackPanel>
                         <TextBlock Text="{Binding Dimension}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0" Foreground="#EDEDED"/>
                     </StackPanel>
                 </Border>
             </WrapPanel>
 
-            <!-- Server Control -->
+            <!-- 未连接提示 -->
+            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16"
+                    IsVisible="{Binding !HasRealData}">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <TextBlock Text="未连接到 Minecraft 服务器" FontSize="14" Foreground="#888888" HorizontalAlignment="Center"/>
+                    <TextBlock Text="请先启动 Minecraft 服务端或客户端，然后点击「连接 Mod」" FontSize="12" Foreground="#555555" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 服务控制 -->
             <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Server Control" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
+                    <TextBlock Text="服务控制" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
                     <StackPanel Orientation="Horizontal">
                         <Button Command="{Binding ToggleBlockMindCommand}" Padding="16,8" Margin="0,0,8,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="play" IconSize="14"/>
-                                <TextBlock Text="Start BlockMind"/>
+                                <TextBlock Text="启动 BlockMind"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding ConnectModCommand}" Padding="16,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="plug" IconSize="14"/>
-                                <TextBlock Text="Connect Mod"/>
+                                <TextBlock Text="连接 Mod"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -76,45 +85,45 @@
                 </StackPanel>
             </Border>
 
-            <!-- Quick Actions -->
+            <!-- 快捷操作 -->
             <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <StackPanel Spacing="12">
-                    <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
+                    <TextBlock Text="快捷操作" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
                     <WrapPanel>
                         <Button Padding="16,8" Margin="0,0,8,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="map-pin" IconSize="14"/>
-                                <TextBlock Text="Home"/>
+                                <TextBlock Text="回家"/>
                             </StackPanel>
                         </Button>
                         <Button Padding="16,8" Margin="0,0,8,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="pickaxe" IconSize="14"/>
-                                <TextBlock Text="Mine"/>
+                                <TextBlock Text="挖矿"/>
                             </StackPanel>
                         </Button>
                         <Button Padding="16,8" Margin="0,0,8,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="axe" IconSize="14"/>
-                                <TextBlock Text="Chop"/>
+                                <TextBlock Text="砍树"/>
                             </StackPanel>
                         </Button>
                         <Button Padding="16,8" Margin="0,0,8,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="cookie" IconSize="14"/>
-                                <TextBlock Text="Eat"/>
+                                <TextBlock Text="吃东西"/>
                             </StackPanel>
                         </Button>
                         <Button Padding="16,8" Margin="0,0,8,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="footprints" IconSize="14"/>
-                                <TextBlock Text="Patrol"/>
+                                <TextBlock Text="巡逻"/>
                             </StackPanel>
                         </Button>
                         <Button Padding="16,8" Margin="0,0,8,8" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <ctrl:Icon IconName="square" IconSize="14"/>
-                                <TextBlock Text="Stop"/>
+                                <TextBlock Text="停止"/>
                             </StackPanel>
                         </Button>
                     </WrapPanel>

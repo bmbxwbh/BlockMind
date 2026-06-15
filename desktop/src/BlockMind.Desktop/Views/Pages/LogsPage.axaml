@@ -3,7 +3,7 @@
              x:Class="BlockMind.Desktop.Views.Pages.LogsPage">
     <Border Padding="24">
         <StackPanel Spacing="16">
-            <TextBlock Text="Logs" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
+            <TextBlock Text="日志中心" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
             <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
                 <ListBox ItemsSource="{Binding Logs}" Background="Transparent" BorderThickness="0" MaxHeight="500">
                     <ListBox.ItemTemplate>

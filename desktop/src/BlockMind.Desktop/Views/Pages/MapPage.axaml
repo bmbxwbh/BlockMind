@@ -4,14 +4,14 @@
     <Border Padding="24">
         <StackPanel Spacing="16">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Map" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#EDEDED"/>
-                <Button Content="Check Dynmap" Command="{Binding CheckDynmapCommand}" Padding="12,6" Margin="16,0,0,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+                <TextBlock Text="地图" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#EDEDED"/>
+                <Button Content="检查 Dynmap" Command="{Binding CheckDynmapCommand}" Padding="12,6" Margin="16,0,0,0" Background="#222222" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
             </StackPanel>
             <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="32" MinHeight="300">
                 <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="Dynmap Map View" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#EDEDED"/>
+                    <TextBlock Text="Dynmap 地图视图" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="#EDEDED"/>
                     <TextBlock Text="{Binding DynmapUrl}" FontSize="12" Foreground="#888888" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Install Dynmap plugin to enable map view" FontSize="12" Foreground="#555555" HorizontalAlignment="Center"/>
+                    <TextBlock Text="需安装 Dynmap 插件后启用" FontSize="12" Foreground="#555555" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
         </StackPanel>

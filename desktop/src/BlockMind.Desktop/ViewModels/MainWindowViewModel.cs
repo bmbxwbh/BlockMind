@@ -27,6 +27,7 @@ public partial class MainWindowViewModel : ObservableObject
         NavItems[0].IsSelected = true;
         _selectedNav = NavItems[0];
         CurrentPage = new DashboardViewModel(service);
+        StatusText = "未连接";
     }
 
     [RelayCommand]
