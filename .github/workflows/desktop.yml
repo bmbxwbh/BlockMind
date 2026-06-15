@@ -44,7 +44,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: BlockMind-Desktop-Windows-x64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/win-x64/publish/BlockMind.exe
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/win-x64/publish/BlockMind.Desktop.exe
           retention-days: 30
 
   # ── Build macOS Intel ──
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: BlockMind-Desktop-macOS-Intel
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-x64/publish/BlockMind
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-x64/publish/BlockMind.Desktop
           retention-days: 30
 
   # ── Build macOS ARM64 ──
@@ -80,7 +80,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: BlockMind-Desktop-macOS-ARM64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-arm64/publish/BlockMind
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-arm64/publish/BlockMind.Desktop
           retention-days: 30
 
   # ── Build Linux ──
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: BlockMind-Desktop-Linux-x64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/linux-x64/publish/BlockMind
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/linux-x64/publish/BlockMind.Desktop
           retention-days: 30
 
   # ── Summary ──
