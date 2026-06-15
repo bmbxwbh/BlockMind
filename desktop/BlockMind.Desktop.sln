@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{72593784-A0FA-4FBE-AE03-1AB62E4E0A19}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockMind.Core", "src\BlockMind.Core\BlockMind.Core.csproj", "{634505BD-F77B-44AD-A828-F9D6E9BFA677}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockMind.Desktop", "src\BlockMind.Desktop\BlockMind.Desktop.csproj", "{8AD8EFDC-143E-449D-B019-034307ED9273}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{634505BD-F77B-44AD-A828-F9D6E9BFA677}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{634505BD-F77B-44AD-A828-F9D6E9BFA677}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{634505BD-F77B-44AD-A828-F9D6E9BFA677}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{634505BD-F77B-44AD-A828-F9D6E9BFA677}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AD8EFDC-143E-449D-B019-034307ED9273}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AD8EFDC-143E-449D-B019-034307ED9273}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AD8EFDC-143E-449D-B019-034307ED9273}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AD8EFDC-143E-449D-B019-034307ED9273}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{634505BD-F77B-44AD-A828-F9D6E9BFA677} = {72593784-A0FA-4FBE-AE03-1AB62E4E0A19}
+		{8AD8EFDC-143E-449D-B019-034307ED9273} = {72593784-A0FA-4FBE-AE03-1AB62E4E0A19}
+	EndGlobalSection
+EndGlobal
