@@ -39,15 +39,15 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
-          name: blockmind-desktop-win-x64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/win-x64/publish/
+          name: BlockMind-Desktop-Windows-x64
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/win-x64/publish/BlockMind.exe
           retention-days: 30
 
-  # ── Build macOS (Intel) ──
+  # ── Build macOS Intel ──
   build-macos-x64:
     name: macOS Intel
     runs-on: macos-latest
@@ -57,15 +57,15 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
-          name: blockmind-desktop-osx-x64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-x64/publish/
+          name: BlockMind-Desktop-macOS-Intel
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-x64/publish/BlockMind
           retention-days: 30
 
-  # ── Build macOS (Apple Silicon) ──
+  # ── Build macOS ARM64 ──
   build-macos-arm64:
     name: macOS ARM64
     runs-on: macos-latest
@@ -75,12 +75,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - run: dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
-          name: blockmind-desktop-osx-arm64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-arm64/publish/
+          name: BlockMind-Desktop-macOS-ARM64
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/osx-arm64/publish/BlockMind
           retention-days: 30
 
   # ── Build Linux ──
@@ -93,12 +93,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
-          name: blockmind-desktop-linux-x64
-          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/linux-x64/publish/
+          name: BlockMind-Desktop-Linux-x64
+          path: desktop/src/BlockMind.Desktop/bin/Release/net8.0/linux-x64/publish/BlockMind
           retention-days: 30
 
   # ── Summary ──
