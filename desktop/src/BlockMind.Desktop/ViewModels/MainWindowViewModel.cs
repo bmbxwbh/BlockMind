@@ -42,7 +42,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task ToggleBlockMindAsync()
     {
-        if (_pythonRunning) await _service.StopPythonAsync();
+        if (PythonRunning) await _service.StopPythonAsync();
         else await _service.StartPythonAsync();
     }
 

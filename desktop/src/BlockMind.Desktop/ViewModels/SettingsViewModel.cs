@@ -43,8 +43,7 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void ResetSettings()
     {
-        _service.Config = new BlockMind.Core.Config.AppConfig();
-        _service.SaveConfig();
+        _service.ResetConfig();
         LoadFromConfig();
     }
 }

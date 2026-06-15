@@ -51,6 +51,12 @@ public class AppService : IDisposable
         StatusChanged?.Invoke();
     }
 
+    public void ResetConfig()
+    {
+        Config = new AppConfig();
+        SaveConfig();
+    }
+
     public void SaveConfig() => ConfigLoader.Save(Config, _configPath);
 
     public void Dispose()

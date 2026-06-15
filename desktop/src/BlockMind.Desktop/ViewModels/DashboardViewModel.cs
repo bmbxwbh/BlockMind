@@ -37,7 +37,7 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand]
     private async Task ToggleBlockMindAsync()
     {
-        if (_pythonRunning)
+        if (PythonRunning)
             await _service.StopPythonAsync();
         else
             await _service.StartPythonAsync();
