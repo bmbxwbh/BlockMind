@@ -13,10 +13,10 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private double _health = 20;
     [ObservableProperty] private double _hunger = 20;
     [ObservableProperty] private string _position = "0, 64, 0";
-    [ObservableProperty] private string _dimension = "主世界";
+    [ObservableProperty] private string _dimension = "";
     [ObservableProperty] private bool _modConnected;
     [ObservableProperty] private bool _pythonRunning;
-    [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private string _statusText = "";
 
     public ObservableCollection<string> RecentEvents { get; } = new();
 
@@ -26,7 +26,7 @@ public partial class DashboardViewModel : ObservableObject
         _service.StatusChanged += OnServiceStatusChanged;
         ModConnected = _service.ModConnected;
         PythonRunning = _service.PythonRunning;
-        StatusText = ModConnected ? (PythonRunning ? "运行中" : "Mod已连接") : "未连接";
+        UpdateStatus();
 
         _pollTimer = new System.Timers.Timer(2000);
         _pollTimer.Elapsed += (s, e) => PollStatusAsync();
@@ -37,24 +37,27 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand]
     private async Task ToggleBlockMindAsync()
     {
-        if (PythonRunning)
-            await _service.StopPythonAsync();
-        else
-            await _service.StartPythonAsync();
+        if (PythonRunning) await _service.StopPythonAsync();
+        else await _service.StartPythonAsync();
     }
 
     [RelayCommand]
     private async Task ConnectModAsync()
     {
         ModConnected = await _service.ConnectToModAsync();
-        StatusText = ModConnected ? "已连接" : "未连接";
+        UpdateStatus();
     }
 
     private void OnServiceStatusChanged()
     {
         ModConnected = _service.ModConnected;
         PythonRunning = _service.PythonRunning;
-        StatusText = ModConnected ? (PythonRunning ? "运行中" : "Mod已连接") : "未连接";
+        UpdateStatus();
+    }
+
+    private void UpdateStatus()
+    {
+        StatusText = PythonRunning ? Lang.T("Running") : (ModConnected ? Lang.T("Connected") : Lang.T("Not connected"));
     }
 
     private async void PollStatusAsync()

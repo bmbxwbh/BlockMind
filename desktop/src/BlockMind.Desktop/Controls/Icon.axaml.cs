@@ -49,20 +49,33 @@ public partial class Icon : UserControl
 
         try
         {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"BlockMind.Desktop.Assets.icons.{IconName}.svg";
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream != null)
-            {
-                var bitmap = new Bitmap(stream);
-                _image.Source = bitmap;
-                _image.Width = IconSize;
-                _image.Height = IconSize;
-            }
+            // Try loading from Avalonia resources (avares://)
+            var uri = new Uri($"avares://BlockMind.Desktop/Assets/icons/{IconName}.svg");
+            var bitmap = new Bitmap(AssetLoader.Open(uri));
+            _image.Source = bitmap;
+            _image.Width = IconSize;
+            _image.Height = IconSize;
         }
         catch
         {
-            // Icon not found — show nothing
+            try
+            {
+                // Fallback: try embedded resource
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceName = $"BlockMind.Desktop.Assets.icons.{IconName}.svg";
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    var bitmap = new Bitmap(stream);
+                    _image.Source = bitmap;
+                    _image.Width = IconSize;
+                    _image.Height = IconSize;
+                }
+            }
+            catch
+            {
+                // Icon not found — show nothing
+            }
         }
     }
 }

@@ -27,7 +27,10 @@
                             <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
                         </StackPanel>
-                        <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}"/>
+                            <Button Content="{Binding LangLabel}" Command="{Binding ToggleLangCommand}" Padding="6,2" Margin="16,0,0,0" FontSize="10"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

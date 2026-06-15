@@ -13,30 +13,45 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private NavItemViewModel? _selectedNav;
     [ObservableProperty] private bool _modConnected;
     [ObservableProperty] private bool _pythonRunning;
-    [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private string _statusText = "";
+    [ObservableProperty] private string _langLabel = "EN";
 
-    public ObservableCollection<NavItemViewModel> NavItems { get; } = new()
-    {
-        new("layout-dashboard", "Dashboard", "dashboard"),
-        new("map", "Map", "map"),
-        new("message-square", "AI Chat", "chat"),
-        new("brain", "Memory", "memory"),
-        new("wrench", "Skills", "skills"),
-        new("shopping-bag", "Marketplace", "marketplace"),
-        new("bot", "Model Config", "model"),
-        new("shield", "Safety", "safety"),
-        new("refresh-cw", "Tasks", "tasks"),
-        new("file-text", "Logs", "logs"),
-        new("settings", "Settings", "settings"),
-    };
+    public ObservableCollection<NavItemViewModel> NavItems { get; } = new();
 
     public MainWindowViewModel(AppService service)
     {
         _service = service;
         _service.StatusChanged += OnServiceStatusChanged;
+        Lang.Load("zh");
+        RebuildNav();
         NavItems[0].IsSelected = true;
         _selectedNav = NavItems[0];
         CurrentPage = new DashboardViewModel(service);
+    }
+
+    [RelayCommand]
+    private void ToggleLang()
+    {
+        Lang.Toggle();
+        LangLabel = Lang.Current == "zh" ? "EN" : "中文";
+        RebuildNav();
+        StatusText = Lang.T(PythonRunning ? "Running" : (ModConnected ? "Connected" : "Not connected"));
+    }
+
+    private void RebuildNav()
+    {
+        NavItems.Clear();
+        NavItems.Add(new("layout-dashboard", Lang.T("Dashboard"), "dashboard"));
+        NavItems.Add(new("map", Lang.T("Map"), "map"));
+        NavItems.Add(new("message-square", Lang.T("AI Chat"), "chat"));
+        NavItems.Add(new("brain", Lang.T("Memory"), "memory"));
+        NavItems.Add(new("wrench", Lang.T("Skills"), "skills"));
+        NavItems.Add(new("shopping-bag", Lang.T("Marketplace"), "marketplace"));
+        NavItems.Add(new("bot", Lang.T("Model Config"), "model"));
+        NavItems.Add(new("shield", Lang.T("Safety"), "safety"));
+        NavItems.Add(new("refresh-cw", Lang.T("Tasks"), "tasks"));
+        NavItems.Add(new("file-text", Lang.T("Logs"), "logs"));
+        NavItems.Add(new("settings", Lang.T("Settings"), "settings"));
     }
 
     [RelayCommand]
@@ -50,14 +65,14 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task ConnectModAsync()
     {
         ModConnected = await _service.ConnectToModAsync();
-        StatusText = ModConnected ? "已连接" : "未连接";
+        StatusText = ModConnected ? Lang.T("Connected") : Lang.T("Not connected");
     }
 
     private void OnServiceStatusChanged()
     {
         ModConnected = _service.ModConnected;
         PythonRunning = _service.PythonRunning;
-        StatusText = PythonRunning ? "运行中" : (ModConnected ? "Mod 已连接" : "未连接");
+        StatusText = PythonRunning ? Lang.T("Running") : (ModConnected ? Lang.T("Connected") : Lang.T("Not connected"));
     }
 
     partial void OnSelectedNavChanged(NavItemViewModel? value)
