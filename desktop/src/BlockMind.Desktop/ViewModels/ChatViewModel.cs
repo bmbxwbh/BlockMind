@@ -18,40 +18,41 @@ public partial class ChatViewModel : ObservableObject
     public ChatViewModel(AppService service)
     {
         _service = service;
-        Messages.Add(new("🤖", "你好！我是 BlockMind，你的 AI 玩伴。有什么可以帮你的？", false, DateTime.Now));
+        Messages.Add(new("Bot", "Hello! I'm BlockMind, your AI companion. How can I help?", false));
     }
 
     [RelayCommand]
     private async Task SendAsync()
     {
         if (string.IsNullOrWhiteSpace(InputText)) return;
-
         var userMsg = InputText;
         InputText = "";
-        Messages.Add(new("👤", userMsg, true, DateTime.Now));
+        Messages.Add(new("You", userMsg, true));
         IsBusy = true;
 
         try
         {
             _history.Add(new() { { "role", "user" }, { "content", userMsg } });
-
-            var aiConfig = _service.Config.Ai.MainAgent;
-            var format = aiConfig.Format == "anthropic" ? Core.Api.AiFormat.Anthropic : Core.Api.AiFormat.OpenAI;
-            var reply = await _service.AiClient.ChatAsync(_history, format, aiConfig.BaseUrl, aiConfig.ApiKey, aiConfig.Model, aiConfig.Temperature, aiConfig.MaxTokens);
+            var cfg = _service.Config.Ai.MainAgent;
+            var format = cfg.Format == "anthropic"
+                ? BlockMind.Core.Api.AiFormat.Anthropic
+                : BlockMind.Core.Api.AiFormat.OpenAI;
+            var reply = await _service.AiClient.ChatAsync(
+                _history, format, cfg.BaseUrl, cfg.ApiKey, cfg.Model, cfg.Temperature, cfg.MaxTokens);
 
             if (reply != null)
             {
                 _history.Add(new() { { "role", "assistant" }, { "content", reply } });
-                Messages.Add(new("🤖", reply, false, DateTime.Now));
+                Messages.Add(new("Bot", reply, false));
             }
             else
             {
-                Messages.Add(new("🤖", "抱歉，AI 暂时无法回复。", false, DateTime.Now));
+                Messages.Add(new("Bot", "Sorry, the AI is not responding right now.", false));
             }
         }
         catch (Exception ex)
         {
-            Messages.Add(new("🤖", $"错误: {ex.Message}", false, DateTime.Now));
+            Messages.Add(new("Bot", $"Error: {ex.Message}", false));
         }
         finally
         {
@@ -60,4 +61,4 @@ public partial class ChatViewModel : ObservableObject
     }
 }
 
-public record ChatMessageViewModel(string Sender, string Text, bool IsUser, DateTime Timestamp);
+public record ChatMessageViewModel(string Sender, string Text, bool IsUser);

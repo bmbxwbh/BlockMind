@@ -1,10 +1,46 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.SettingsPage">
-    <Border Padding="24">
+    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
             <TextBlock Text="Settings" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Minecraft" FontSize="14" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Mode:" Width="100" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding McMode}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Version:" Width="100" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding McVersion}" Width="150"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Max RAM:" Width="100" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding MaxRam}" Width="100"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Dynmap" FontSize="14" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Enabled:" Width="100" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding DynmapEnabled}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Port:" Width="100" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding DynmapPort}" Width="100"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Save" Command="{Binding SaveSettingsCommand}" Padding="20,8"/>
+                <Button Content="Reset" Command="{Binding ResetSettingsCommand}" Padding="20,8" Margin="8,0,0,0"/>
+            </StackPanel>
         </StackPanel>
-    </Border>
+    </ScrollViewer>
 </UserControl>

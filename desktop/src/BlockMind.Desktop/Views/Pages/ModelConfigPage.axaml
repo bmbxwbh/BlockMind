@@ -1,10 +1,75 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.ModelConfigPage">
-    <Border Padding="24">
+    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
             <TextBlock Text="Model Config" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+
+            <!-- Main Agent -->
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Main Agent (Chat)" FontSize="14" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Format:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding MainFormat}" Width="200"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="URL:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding MainBaseUrl}" Width="400"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="API Key:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding MainApiKey}" Width="400" PasswordChar="*"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Model:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding MainModel}" Width="200"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Temp:" Width="80" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding MainTemperature, StringFormat='{}{0:F1}'}" Width="40"/>
+                        <Slider Value="{Binding MainTemperature}" Minimum="0" Maximum="2" Width="200"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Test Connection" Command="{Binding TestMainConnectionCommand}" Padding="12,6"/>
+                        <TextBlock Text="{Binding MainTestStatus}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Operation Agent -->
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Operation Agent (Execute)" FontSize="14" FontWeight="SemiBold"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Format:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding OpFormat}" Width="200"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="URL:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding OpBaseUrl}" Width="400"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="API Key:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding OpApiKey}" Width="400" PasswordChar="*"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Model:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding OpModel}" Width="200"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Temp:" Width="80" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding OpTemperature, StringFormat='{}{0:F1}'}" Width="40"/>
+                        <Slider Value="{Binding OpTemperature}" Minimum="0" Maximum="2" Width="200"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Test Connection" Command="{Binding TestOpConnectionCommand}" Padding="12,6"/>
+                        <TextBlock Text="{Binding OpTestStatus}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Button Content="Save Config" Command="{Binding SaveConfigCommand}" Padding="20,8"/>
         </StackPanel>
-    </Border>
+    </ScrollViewer>
 </UserControl>

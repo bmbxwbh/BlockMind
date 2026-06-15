@@ -3,8 +3,28 @@
              x:Class="BlockMind.Desktop.Views.Pages.SkillsPage">
     <Border Padding="24">
         <StackPanel Spacing="16">
-            <TextBlock Text="Skills" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Skills" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Content="Load" Command="{Binding LoadSkillsCommand}" Padding="12,6" Margin="16,0,0,0"/>
+            </StackPanel>
+
+            <ListBox ItemsSource="{Binding Skills}" Background="Transparent" BorderThickness="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="12" Margin="0,2" CornerRadius="6" Background="{DynamicResource BgSurface}">
+                            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Tags}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Text="{Binding SkillId}" FontSize="11" Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" Margin="12,0"/>
+                                <Button Grid.Column="2" Content="Run" Padding="8,4" Margin="4,0"/>
+                                <Button Grid.Column="3" Content="Delete" Padding="8,4" Margin="4,0"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </StackPanel>
     </Border>
 </UserControl>
