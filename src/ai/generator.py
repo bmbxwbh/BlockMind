@@ -26,6 +26,15 @@ class DSLGenerator:
         self.validator = SkillValidator()
         self.logger = logging.getLogger("blockmind.dsl_generator")
 
+    @staticmethod
+    def _strip_code_fences(text: str) -> str:
+        text = text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.endswith("```"):
+            text = text.rsplit("```", 1)[0]
+        return text.strip()
+
     async def generate_skill(self, task: str, game_state: dict) -> SkillDSL:
         """将自然语言任务转换为 Skill DSL（L1/L2 生成）"""
         prompt = PROMPTS["skill_generation"].format(
@@ -39,21 +48,20 @@ class DSLGenerator:
         for attempt in range(3):
             try:
                 yaml_text = await self.provider.chat(messages, temperature=0.3)
-                yaml_text = yaml_text.strip()
-                # 清理可能的代码块标记
-                if yaml_text.startswith("```"):
-                    yaml_text = yaml_text.split("\n", 1)[1]
-                if yaml_text.endswith("```"):
-                    yaml_text = yaml_text.rsplit("```", 1)[0]
-                yaml_text = yaml_text.strip()
+                yaml_text = self._strip_code_fences(yaml_text)
 
                 skill = self.parser.parse_yaml(yaml_text)
                 validation = self.validator.validate_all(skill)
                 if validation.passed:
                     self.logger.info(f"Skill 生成成功: {skill.skill_id} (第{attempt+1}次)")
                     return skill
+                # Add error feedback for retry
+                messages.append({"role": "assistant", "content": yaml_text})
+                messages.append({"role": "user", "content": f"校验失败: {validation.errors}\n请修复后重新输出完整 YAML。"})
                 self.logger.warning(f"校验失败 (第{attempt+1}次): {validation.errors}")
             except Exception as e:
+                messages.append({"role": "assistant", "content": yaml_text if 'yaml_text' in dir() else ''})
+                messages.append({"role": "user", "content": f"解析错误: {e}\n请输出合法 YAML。"})
                 self.logger.warning(f"生成失败 (第{attempt+1}次): {e}")
 
         raise RuntimeError(f"无法生成有效的 Skill: {task}")
@@ -66,12 +74,7 @@ class DSLGenerator:
             game_state=str(context),
         )
         result = await self.provider.chat([{"role": "user", "content": prompt}], temperature=0.2)
-        result = result.strip()
-        # 清理代码块标记
-        if result.startswith("```"):
-            result = result.split("\n", 1)[1]
-        if result.endswith("```"):
-            result = result.rsplit("```", 1)[0]
+        result = self._strip_code_fences(result)
         return json.loads(result.strip())
 
     async def fill_template(self, task: str, template: str, context: dict) -> SkillDSL:
@@ -83,11 +86,7 @@ class DSLGenerator:
             dsl_ref=DSL_SYNTAX_REFERENCE,
         )
         yaml_text = await self.provider.chat([{"role": "user", "content": prompt}], temperature=0.3)
-        yaml_text = yaml_text.strip()
-        if yaml_text.startswith("```"):
-            yaml_text = yaml_text.split("\n", 1)[1]
-        if yaml_text.endswith("```"):
-            yaml_text = yaml_text.rsplit("```", 1)[0]
+        yaml_text = self._strip_code_fences(yaml_text)
         return self.parser.parse_yaml(yaml_text.strip())
 
     async def reason_dynamic(self, task: str, context: dict) -> List[Dict]:
@@ -111,9 +110,5 @@ class DSLGenerator:
 不要包含任何解释文字。
 """
         result = await self.provider.chat([{"role": "user", "content": prompt}], temperature=0.3)
-        result = result.strip()
-        if result.startswith("```"):
-            result = result.split("\n", 1)[1]
-        if result.endswith("```"):
-            result = result.rsplit("```", 1)[0]
+        result = self._strip_code_fences(result)
         return json.loads(result.strip())

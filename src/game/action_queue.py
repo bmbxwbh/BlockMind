@@ -99,10 +99,9 @@ class ActionQueue:
 
     async def process_next(self) -> Optional[QueuedAction]:
         """处理队列中下一个动作"""
-        if len(self._running) >= self.max_concurrent:
-            return None
-
         async with self._lock:
+            if len(self._running) >= self.max_concurrent:
+                return None
             if not self._queue:
                 return None
             action = self._queue.pop(0)

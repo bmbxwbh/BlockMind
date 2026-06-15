@@ -71,8 +71,23 @@ public class PythonBridge : IDisposable
         catch { return false; }
     }
 
-    public async Task<JsonElement?> GetAsync(string path) => await _http.GetFromJsonAsync<JsonElement>($"{BaseUrl}{path}");
-    public async Task<JsonElement?> PostAsync(string path, object body) => (await _http.PostAsJsonAsync($"{BaseUrl}{path}", body)).IsSuccessStatusCode ? await (await _http.PostAsJsonAsync($"{BaseUrl}{path}", body)).Content.ReadFromJsonAsync<JsonElement>() : null;
+    public async Task<JsonElement?> GetAsync(string path)
+    {
+        try { return await _http.GetFromJsonAsync<JsonElement>($"{BaseUrl}{path}"); }
+        catch { return null; }
+    }
+
+    public async Task<JsonElement?> PostAsync(string path, object body)
+    {
+        try
+        {
+            var r = await _http.PostAsJsonAsync($"{BaseUrl}{path}", body);
+            if (r.IsSuccessStatusCode)
+                return await r.Content.ReadFromJsonAsync<JsonElement>();
+            return null;
+        }
+        catch { return null; }
+    }
 
     public void Dispose() { _process?.Dispose(); _http.Dispose(); }
 }

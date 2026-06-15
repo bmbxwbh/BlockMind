@@ -51,6 +51,7 @@ class SkillRuntime:
             state=self.state_manager,
             executor=self.action_executor,
             perception=self.perception,
+            mod_client=self.mod_client,
         )
 
         # 执行步骤

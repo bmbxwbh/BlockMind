@@ -81,6 +81,21 @@ class ActionExecutor:
         logger.info(f"聊天: {message}")
         return result
 
+    async def use_item(self, item: str, hand: str = "main") -> ActionResult:
+        """使用物品（暂不支持）"""
+        logger.warning(f"use_item 暂不支持: {item} ({hand})")
+        return ActionResult(success=False, details="use_item 暂不支持")
+
+    async def equip_item(self, item: str, slot: str = "mainhand") -> ActionResult:
+        """装备物品（暂不支持）"""
+        logger.warning(f"equip_item 暂不支持: {item} ({slot})")
+        return ActionResult(success=False, details="equip_item 暂不支持")
+
+    async def drop_item(self, item: str, count: int = 1) -> ActionResult:
+        """丢弃物品（暂不支持）"""
+        logger.warning(f"drop_item 暂不支持: {item} x{count}")
+        return ActionResult(success=False, details="drop_item 暂不支持")
+
     async def jump(self) -> ActionResult:
         """跳跃（通过短暂移动模拟）"""
         status = await self.mod_client.get_status()
@@ -114,6 +129,12 @@ class ActionExecutor:
                 r = await self.look_at(act["x"], act["y"], act["z"])
             elif action_type == "chat":
                 r = await self.send_chat(act["message"])
+            elif action_type == "use_item":
+                r = await self.use_item(act.get("item", ""), act.get("hand", "main"))
+            elif action_type == "equip_item":
+                r = await self.equip_item(act.get("item", ""), act.get("slot", "mainhand"))
+            elif action_type == "drop_item":
+                r = await self.drop_item(act.get("item", ""), act.get("count", 1))
             elif action_type == "wait":
                 import asyncio
                 await asyncio.sleep(act.get("seconds", 1))
