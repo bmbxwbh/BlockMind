@@ -59,23 +59,14 @@ public class App : Application
                 var window = new MainWindow { DataContext = vm };
                 desktop.MainWindow = window;
                 Log("MainWindow assigned");
-
-                // Force show the window
                 window.Show();
                 window.Activate();
-                window.Focus();
-                Log("MainWindow Show/Activate/Focus called");
-
-                // Force a layout pass
-                window.InvalidateMeasure();
-                window.InvalidateArrange();
-                Log("MainWindow invalidated");
+                Log("MainWindow Show/Activate called");
             }
             catch (Exception ex)
             {
                 Log($"Window creation failed: {ex.Message}");
                 Log($"Stack: {ex.StackTrace}");
-                // Create a minimal fallback window
                 try
                 {
                     var fallback = new Window
@@ -99,10 +90,6 @@ public class App : Application
                     Log($"Even fallback window failed: {ex2.Message}");
                 }
             }
-        }
-        else
-        {
-            Log($"ApplicationLifetime type: {ApplicationLifetime?.GetType().Name ?? "null"}");
         }
         base.OnFrameworkInitializationCompleted();
         Log("OnFrameworkInitializationCompleted done");
