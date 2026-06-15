@@ -55,16 +55,48 @@ public class App : Application
                 var service = Service ?? AppService.CreateSafe();
                 var vm = new MainWindowViewModel(service);
                 Log("ViewModel created");
-                desktop.MainWindow = new MainWindow { DataContext = vm };
-                Log("MainWindow created and assigned");
+                var window = new MainWindow { DataContext = vm };
+                desktop.MainWindow = window;
+                Log("MainWindow assigned");
+
+                // Force show the window
+                window.Show();
+                window.Activate();
+                window.Focus();
+                Log("MainWindow Show/Activate/Focus called");
+
+                // Force a layout pass
+                window.InvalidateMeasure();
+                window.InvalidateArrange();
+                Log("MainWindow invalidated");
             }
             catch (Exception ex)
             {
                 Log($"Window creation failed: {ex.Message}");
                 Log($"Stack: {ex.StackTrace}");
-                // Create a minimal window so the app doesn't silently exit
-                desktop.MainWindow = new MainWindow { DataContext = null };
-                Log("Created minimal fallback window");
+                // Create a minimal fallback window
+                try
+                {
+                    var fallback = new Window
+                    {
+                        Title = "BlockMind - Error",
+                        Width = 600,
+                        Height = 400,
+                        Content = new Avalonia.Controls.TextBlock
+                        {
+                            Text = $"Initialization error:\n{ex.Message}\n\nSee blockmind-debug.log for details.",
+                            Margin = new Avalonia.Thickness(20),
+                            FontSize = 14,
+                        }
+                    };
+                    desktop.MainWindow = fallback;
+                    fallback.Show();
+                    Log("Fallback window shown");
+                }
+                catch (Exception ex2)
+                {
+                    Log($"Even fallback window failed: {ex2.Message}");
+                }
             }
         }
         else

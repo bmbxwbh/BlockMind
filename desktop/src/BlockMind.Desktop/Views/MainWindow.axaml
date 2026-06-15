@@ -6,10 +6,13 @@
         Title="BlockMind"
         Width="1200" Height="750"
         MinWidth="900" MinHeight="600"
-        WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource BgBase}">
+        WindowStartupLocation="CenterScreen">
 
-    <Grid ColumnDefinitions="220,*">
+    <Window.Styles>
+        <StyleInclude Source="avares://BlockMind.Desktop/Themes/LinearDark.axaml"/>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="220,*" Background="{DynamicResource BgBase}">
 
         <!-- Sidebar -->
         <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
