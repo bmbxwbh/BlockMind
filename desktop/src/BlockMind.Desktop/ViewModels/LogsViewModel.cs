@@ -1,14 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.Collections.ObjectModel;
+using BlockMind.Desktop.Services;
 
 namespace BlockMind.Desktop.ViewModels;
 
 public partial class LogsViewModel : ObservableObject
 {
-    [ObservableProperty] private string _filterLevel = "All";
-    [ObservableProperty] private string _searchQuery = "";
-    [ObservableProperty] private bool _autoScroll = true;
-    public ObservableCollection<LogEntry> Logs { get; } = new();
-}
+    private readonly AppService _service;
 
-public record LogEntry(string Timestamp, string Level, string Source, string Message);
+    public LogsViewModel(AppService service) { _service = service; }
+}

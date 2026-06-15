@@ -1,14 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.Collections.ObjectModel;
+using BlockMind.Desktop.Services;
 
 namespace BlockMind.Desktop.ViewModels;
 
 public partial class TasksViewModel : ObservableObject
 {
-    [ObservableProperty] private int _pendingCount = 0;
-    [ObservableProperty] private int _runningCount = 0;
-    [ObservableProperty] private int _completedCount = 0;
-    public ObservableCollection<TaskItem> Tasks { get; } = new();
-}
+    private readonly AppService _service;
 
-public record TaskItem(string Id, string Description, string Status, string Timestamp);
+    public TasksViewModel(AppService service) { _service = service; }
+}

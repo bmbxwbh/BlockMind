@@ -1,13 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.Collections.ObjectModel;
+using BlockMind.Desktop.Services;
 
 namespace BlockMind.Desktop.ViewModels;
 
 public partial class MarketplaceViewModel : ObservableObject
 {
-    [ObservableProperty] private string _searchQuery = "";
-    [ObservableProperty] private string _selectedCategory = "全部";
-    public ObservableCollection<MarketItem> Items { get; } = new();
-}
+    private readonly AppService _service;
 
-public record MarketItem(string Name, string Author, string Description, int Downloads, bool IsInstalled);
+    [ObservableProperty] private string _searchQuery = "";
+
+    public MarketplaceViewModel(AppService service) { _service = service; }
+}

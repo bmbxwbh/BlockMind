@@ -1,45 +1,46 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BlockMind.Desktop.ViewModels"
         x:Class="BlockMind.Desktop.Views.MainWindow"
         Title="BlockMind"
         Width="1200" Height="750"
         MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen">
 
-    <Grid ColumnDefinitions="220,*" RowDefinitions="*">
-        
+    <Grid ColumnDefinitions="220,*">
+
         <!-- Sidebar -->
         <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
             <DockPanel>
-                <!-- Logo -->
-                <StackPanel DockPanel.Dock="Top" Margin="16,20,16,24" Spacing="8">
+                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,20">
                     <TextBlock Text="BlockMind" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="v3.4.0" FontSize="11" Foreground="{DynamicResource TextTertiary}"/>
+                    <TextBlock Text="Desktop v0.1" FontSize="11" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <!-- Nav Items -->
-                <ListBox DockPanel.Dock="Top" Background="Transparent" BorderThickness="0"
-                         ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNavItem}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border Padding="12,8" CornerRadius="6" Margin="8,1">
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="{Binding Icon}" FontSize="15" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
-                                    <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding NavItems}" x:Name="NavItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="16,10" CornerRadius="6" Margin="8,1" Cursor="Hand"
+                                        Background="Transparent" Tag="{Binding}"
+                                        PointerPressed="NavBorder_PointerPressed">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <TextBlock Text="{Binding IconText}" FontSize="15" VerticalAlignment="Center" Width="20" TextAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
+                                        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
 
-                <!-- Status Bar -->
                 <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
-                    <StackPanel Spacing="4">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}"/>
-                            <TextBlock Text="运行中" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
                         </StackPanel>
-                        <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}"/>
+                        <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </DockPanel>

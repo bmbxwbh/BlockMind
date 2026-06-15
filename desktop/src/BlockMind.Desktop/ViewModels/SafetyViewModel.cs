@@ -1,12 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using BlockMind.Desktop.Services;
 
 namespace BlockMind.Desktop.ViewModels;
 
 public partial class SafetyViewModel : ObservableObject
 {
-    [ObservableProperty] private bool _autoReply = true;
-    [ObservableProperty] private bool _commandWhitelist = false;
-    [ObservableProperty] private int _maxCommandsPerMinute = 10;
-    [ObservableProperty] private bool _logAllActions = true;
-    [ObservableProperty] private bool _confirmDangerous = true;
+    private readonly AppService _service;
+
+    public SafetyViewModel(AppService service) { _service = service; }
 }
