@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+      - run: dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true
+      - run: dotnet publish -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
@@ -75,7 +75,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true
+      - run: dotnet publish -c Release -r osx-arm64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
@@ -93,7 +93,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true
+      - run: dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
         working-directory: desktop/src/BlockMind.Desktop
       - uses: actions/upload-artifact@v4
         with:
