@@ -1,5 +1,5 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
+using Avalonia.Input;
 using BlockMind.Desktop.ViewModels;
 using System;
 using System.IO;
