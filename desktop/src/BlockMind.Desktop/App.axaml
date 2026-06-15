@@ -1,8 +1,45 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:BlockMind.Desktop.ViewModels"
+             xmlns:v="using:BlockMind.Desktop.Views.Pages"
              x:Class="BlockMind.Desktop.App"
              RequestedThemeVariant="Dark">
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+    <Application.DataTemplates>
+        <DataTemplate DataType="vm:DashboardViewModel">
+            <v:DashboardPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:ChatViewModel">
+            <v:ChatPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:MapViewModel">
+            <v:MapPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:MemoryViewModel">
+            <v:MemoryPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:SkillsViewModel">
+            <v:SkillsPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:MarketplaceViewModel">
+            <v:MarketplacePage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:ModelConfigViewModel">
+            <v:ModelConfigPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:SafetyViewModel">
+            <v:SafetyPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:TasksViewModel">
+            <v:TasksPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:LogsViewModel">
+            <v:LogsPage/>
+        </DataTemplate>
+        <DataTemplate DataType="vm:SettingsViewModel">
+            <v:SettingsPage/>
+        </DataTemplate>
+    </Application.DataTemplates>
 </Application>
