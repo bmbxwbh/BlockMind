@@ -4,14 +4,14 @@ namespace BlockMind.Desktop.ViewModels;
 
 public partial class NavItemViewModel : ObservableObject
 {
-    public string IconText { get; }
+    public string IconName { get; }
     public string Label { get; }
     public string Page { get; }
     [ObservableProperty] private bool _isSelected;
 
     public NavItemViewModel(string icon, string label, string page)
     {
-        IconText = icon;
+        IconName = icon;
         Label = label;
         Page = page;
     }

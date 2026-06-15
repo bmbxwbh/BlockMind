@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctrl="using:BlockMind.Desktop.Controls"
              x:Class="BlockMind.Desktop.Views.Pages.DashboardPage">
     <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
@@ -9,27 +10,39 @@
             <WrapPanel>
                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
                     <StackPanel>
-                        <TextBlock Text="Health" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ctrl:Icon IconName="heart" IconSize="16"/>
+                            <TextBlock Text="Health" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding Health, StringFormat='{}{0:F0}/20'}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
                         <ProgressBar Value="{Binding Health}" Maximum="20" Height="4" Background="{DynamicResource BgHover}" Foreground="{DynamicResource Success}" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
                     <StackPanel>
-                        <TextBlock Text="Hunger" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ctrl:Icon IconName="beef" IconSize="16"/>
+                            <TextBlock Text="Hunger" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding Hunger, StringFormat='{}{0:F0}/20'}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
                         <ProgressBar Value="{Binding Hunger}" Maximum="20" Height="4" Background="{DynamicResource BgHover}" Foreground="{DynamicResource Warning}" Margin="0,8,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
                     <StackPanel>
-                        <TextBlock Text="Position" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ctrl:Icon IconName="map-pin" IconSize="16"/>
+                            <TextBlock Text="Position" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding Position}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
                     <StackPanel>
-                        <TextBlock Text="Dimension" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ctrl:Icon IconName="globe" IconSize="16"/>
+                            <TextBlock Text="Dimension" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding Dimension}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
@@ -40,8 +53,18 @@
                 <StackPanel Spacing="12">
                     <TextBlock Text="Server Control" FontSize="14" FontWeight="SemiBold"/>
                     <StackPanel Orientation="Horizontal">
-                        <Button Content="Start BlockMind" Command="{Binding ToggleBlockMindCommand}" Padding="16,8" Margin="0,0,8,0"/>
-                        <Button Content="Connect Mod" Command="{Binding ConnectModCommand}" Padding="16,8"/>
+                        <Button Command="{Binding ToggleBlockMindCommand}" Padding="16,8" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="play" IconSize="14"/>
+                                <TextBlock Text="Start BlockMind"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding ConnectModCommand}" Padding="16,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="plug" IconSize="14"/>
+                                <TextBlock Text="Connect Mod"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,6,0"/>
@@ -58,12 +81,42 @@
                 <StackPanel Spacing="12">
                     <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold"/>
                     <WrapPanel>
-                        <Button Content="Home" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Mine" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Chop" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Eat" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Patrol" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Stop" Padding="16,8" Margin="0,0,8,8"/>
+                        <Button Padding="16,8" Margin="0,0,8,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="map-pin" IconSize="14"/>
+                                <TextBlock Text="Home"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Padding="16,8" Margin="0,0,8,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="pickaxe" IconSize="14"/>
+                                <TextBlock Text="Mine"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Padding="16,8" Margin="0,0,8,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="axe" IconSize="14"/>
+                                <TextBlock Text="Chop"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Padding="16,8" Margin="0,0,8,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="cookie" IconSize="14"/>
+                                <TextBlock Text="Eat"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Padding="16,8" Margin="0,0,8,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="footprints" IconSize="14"/>
+                                <TextBlock Text="Patrol"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Padding="16,8" Margin="0,0,8,8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <ctrl:Icon IconName="square" IconSize="14"/>
+                                <TextBlock Text="Stop"/>
+                            </StackPanel>
+                        </Button>
                     </WrapPanel>
                 </StackPanel>
             </Border>

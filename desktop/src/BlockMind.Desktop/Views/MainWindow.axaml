@@ -1,39 +1,26 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:BlockMind.Desktop.ViewModels"
+        xmlns:ctrl="using:BlockMind.Desktop.Controls"
         x:Class="BlockMind.Desktop.Views.MainWindow"
         Title="BlockMind"
         Width="1200" Height="750"
         MinWidth="900" MinHeight="600"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource BgBase}">
 
     <Grid ColumnDefinitions="220,*">
 
         <!-- Sidebar -->
         <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
             <DockPanel>
+                <!-- Logo -->
                 <StackPanel DockPanel.Dock="Top" Margin="20,24,20,20">
                     <TextBlock Text="BlockMind" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
                     <TextBlock Text="Desktop v0.1" FontSize="11" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding NavItems}" x:Name="NavItemsControl">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Padding="16,10" CornerRadius="6" Margin="8,1" Cursor="Hand"
-                                        Background="Transparent" Tag="{Binding}"
-                                        PointerPressed="NavBorder_PointerPressed">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <TextBlock Text="{Binding IconText}" FontSize="15" VerticalAlignment="Center" Width="20" TextAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-
+                <!-- Status Bar -->
                 <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
@@ -43,6 +30,24 @@
                         <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
+
+                <!-- Navigation -->
+                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding NavItems}" x:Name="NavItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="14,10" CornerRadius="6" Margin="8,1" Cursor="Hand"
+                                        Background="Transparent" Tag="{Binding}"
+                                        PointerPressed="NavBorder_PointerPressed">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <ctrl:Icon IconName="{Binding IconName}" IconSize="18"/>
+                                        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </DockPanel>
         </Border>
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -16,6 +16,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BlockMind.Core\BlockMind.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\icons\*.svg" />
   </ItemGroup>
 
 </Project>

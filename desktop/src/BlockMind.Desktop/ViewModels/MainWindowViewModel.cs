@@ -17,17 +17,17 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<NavItemViewModel> NavItems { get; } = new()
     {
-        new("🏠", "仪表盘", "dashboard"),
-        new("🗺", "地图", "map"),
-        new("💬", "AI 对话", "chat"),
-        new("🧠", "记忆系统", "memory"),
-        new("🛠", "技能管理", "skills"),
-        new("🛒", "技能市场", "marketplace"),
-        new("🤖", "模型配置", "model"),
-        new("🛡", "安全设置", "safety"),
-        new("🔄", "任务队列", "tasks"),
-        new("📋", "日志中心", "logs"),
-        new("⚙", "设置", "settings"),
+        new("layout-dashboard", "Dashboard", "dashboard"),
+        new("map", "Map", "map"),
+        new("message-square", "AI Chat", "chat"),
+        new("brain", "Memory", "memory"),
+        new("wrench", "Skills", "skills"),
+        new("shopping-bag", "Marketplace", "marketplace"),
+        new("bot", "Model Config", "model"),
+        new("shield", "Safety", "safety"),
+        new("refresh-cw", "Tasks", "tasks"),
+        new("file-text", "Logs", "logs"),
+        new("settings", "Settings", "settings"),
     };
 
     public MainWindowViewModel(AppService service)
