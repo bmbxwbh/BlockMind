@@ -7,29 +7,26 @@
         MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen">
 
-    <Grid ColumnDefinitions="220,*" Background="{DynamicResource BgBase}">
-
+    <Grid ColumnDefinitions="220,*">
         <!-- Sidebar -->
-        <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="#111111" BorderBrush="#1F1F1F" BorderThickness="0,0,1,0">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="20,24,20,20">
-                    <TextBlock Text="BlockMind" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="Desktop v0.1" FontSize="11" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
+                    <TextBlock Text="BlockMind" FontSize="18" FontWeight="Bold" Foreground="#EDEDED"/>
+                    <TextBlock Text="Desktop v0.1" FontSize="11" Foreground="#555555" Margin="0,4,0,0"/>
                 </StackPanel>
-
-                <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
+                <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="#1F1F1F" BorderThickness="0,1,0,0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                            <Ellipse Width="8" Height="8" Fill="#00D68F" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="#888888"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}"/>
-                            <Button Content="{Binding LangLabel}" Command="{Binding ToggleLangCommand}" Padding="6,2" Margin="16,0,0,0" FontSize="10"/>
+                            <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="#555555"/>
+                            <Button Content="{Binding LangLabel}" Command="{Binding ToggleLangCommand}" Padding="6,2" Margin="16,0,0,0" FontSize="10" Foreground="#888888" Background="#1A1A1A" BorderBrush="#1F1F1F"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
-
                 <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding NavItems}" x:Name="NavItemsControl">
                         <ItemsControl.ItemTemplate>
@@ -39,7 +36,7 @@
                                         Tapped="NavBorder_Tapped">
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <ctrl:Icon IconName="{Binding IconName}" IconSize="18"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="#EDEDED"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
