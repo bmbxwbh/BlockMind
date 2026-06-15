@@ -4,7 +4,26 @@
     <Border Padding="24">
         <StackPanel Spacing="16">
             <TextBlock Text="Marketplace" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Search" Command="{Binding SearchCommand}" Padding="12,6" Margin="8,0,0,0"/>
+                <TextBox Text="{Binding SearchQuery}" Watermark="Search skills..."/>
+            </DockPanel>
+            <ListBox ItemsSource="{Binding Items}" Background="Transparent" BorderThickness="0">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Padding="12" Margin="0,2" CornerRadius="6" Background="{DynamicResource BgSurface}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondary}" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding Rating, StringFormat='{}{0:F1}'}" FontSize="11" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Install" Padding="12,6" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </StackPanel>
     </Border>
 </UserControl>

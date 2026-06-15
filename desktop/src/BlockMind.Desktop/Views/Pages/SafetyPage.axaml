@@ -3,8 +3,19 @@
              x:Class="BlockMind.Desktop.Views.Pages.SafetyPage">
     <Border Padding="24">
         <StackPanel Spacing="16">
-            <TextBlock Text="Safety" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Safety" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Content="Load Audit Log" Command="{Binding LoadAuditLogCommand}" Padding="12,6" Margin="16,0,0,0"/>
+            </StackPanel>
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <ListBox ItemsSource="{Binding AuditLog}" Background="Transparent" BorderThickness="0" MaxHeight="400">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,2"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
         </StackPanel>
     </Border>
 </UserControl>

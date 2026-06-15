@@ -4,7 +4,15 @@
     <Border Padding="24">
         <StackPanel Spacing="16">
             <TextBlock Text="Logs" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
+                <ListBox ItemsSource="{Binding Logs}" Background="Transparent" BorderThickness="0" MaxHeight="500">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="12" FontFamily="JetBrains Mono, Cascadia Code, monospace" Foreground="{DynamicResource TextSecondary}" Margin="0,1"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
         </StackPanel>
     </Border>
 </UserControl>

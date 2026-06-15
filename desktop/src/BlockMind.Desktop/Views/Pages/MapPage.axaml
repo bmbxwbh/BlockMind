@@ -3,8 +3,17 @@
              x:Class="BlockMind.Desktop.Views.Pages.MapPage">
     <Border Padding="24">
         <StackPanel Spacing="16">
-            <TextBlock Text="Map" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Map" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Content="Check Dynmap" Command="{Binding CheckDynmapCommand}" Padding="12,6" Margin="16,0,0,0"/>
+            </StackPanel>
+            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="32" MinHeight="300">
+                <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Dynmap Map View" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding DynmapUrl}" FontSize="12" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Install Dynmap plugin to enable map view" FontSize="12" Foreground="{DynamicResource TextTertiary}" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </Border>
 </UserControl>

@@ -3,8 +3,30 @@
              x:Class="BlockMind.Desktop.Views.Pages.TasksPage">
     <Border Padding="24">
         <StackPanel Spacing="16">
-            <TextBlock Text="Tasks" FontSize="24" FontWeight="SemiBold"/>
-            <TextBlock Text="Coming soon..." FontSize="13" Foreground="{DynamicResource TextSecondary}"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Tasks" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Content="Refresh" Command="{Binding LoadTasksCommand}" Padding="12,6" Margin="16,0,0,0"/>
+            </StackPanel>
+            <WrapPanel>
+                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Pending" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="{Binding PendingCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Running" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="{Binding RunningCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                    <StackPanel>
+                        <TextBlock Text="Completed" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                        <TextBlock Text="{Binding CompletedCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
         </StackPanel>
     </Border>
 </UserControl>
