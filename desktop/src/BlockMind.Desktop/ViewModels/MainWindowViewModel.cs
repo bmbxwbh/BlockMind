@@ -100,7 +100,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 }
 
-public class NavItemViewModel : ObservableObject
+public partial class NavItemViewModel : ObservableObject
 {
     public string Label { get; }
     public string Page { get; }
