@@ -70,11 +70,11 @@ class _BlockMindAppState extends State<BlockMindApp> {
           backgroundColor: const Color(0xFF111111),
           selectedItemColor: const Color(0xFF7C5CFC),
           unselectedItemColor: const Color(0xFF888888),
-          items: const [
+          items: [
             BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: '仪表盘'),
             BottomNavigationBarItem(icon: Icon(Icons.chat), label: '对话'),
             BottomNavigationBarItem(icon: Icon(Icons.list), label: '任务'),
-            BottomNavigationBarItem(icon: Icon(Icons.brain), label: '记忆'),
+            BottomNavigationBarItem(icon: Icon(Icons.psychology), label: '记忆'),
             BottomNavigationBarItem(icon: Icon(Icons.settings), label: '设置'),
           ],
         ),
