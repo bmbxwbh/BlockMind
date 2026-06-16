@@ -1,14 +1,14 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.LogsPage">
-    <Border Padding="24">
-        <StackPanel Spacing="16">
-            <TextBlock Text="日志中心" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
-            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
+    <Border Padding="32">
+        <StackPanel Spacing="20">
+            <TextBlock Text="日志中心" FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"/>
+            <Border Background="#161616" CornerRadius="14" Padding="16">
                 <ListBox ItemsSource="{Binding Logs}" Background="Transparent" BorderThickness="0" MaxHeight="500">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding}" FontSize="12" FontFamily="JetBrains Mono, Cascadia Code, monospace" Foreground="#888888" Margin="0,1"/>
+                            <TextBlock Text="{Binding}" FontSize="13" FontFamily="JetBrains Mono, Cascadia Code, Consolas, monospace" Foreground="#888888" Margin="0,2"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

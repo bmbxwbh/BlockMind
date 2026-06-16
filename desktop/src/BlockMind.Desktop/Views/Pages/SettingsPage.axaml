@@ -1,38 +1,38 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.SettingsPage">
-    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16">
-            <TextBlock Text="设置" FontSize="24" FontWeight="SemiBold" Foreground="#EDEDED"/>
-            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Minecraft" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="版本：" Width="100" VerticalAlignment="Center" Foreground="#888888"/>
-                        <TextBox Text="{Binding McVersion}" Width="150" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+    <ScrollViewer Padding="32" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="20">
+            <TextBlock Text="设置" FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"/>
+            <Border Background="#161616" CornerRadius="14" Padding="20">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Minecraft" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="版本" Width="90" VerticalAlignment="Center" Foreground="#888888" FontSize="13"/>
+                        <TextBox Text="{Binding McVersion}" Width="150" Background="#1E1E1E" Foreground="#EDEDED" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10" Padding="10,8"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="最大内存：" Width="100" VerticalAlignment="Center" Foreground="#888888"/>
-                        <TextBox Text="{Binding MaxRam}" Width="100" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-            <Border Background="#111111" BorderBrush="#1F1F1F" BorderThickness="1" CornerRadius="6" Padding="16">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Dynmap 地图" FontSize="14" FontWeight="SemiBold" Foreground="#EDEDED"/>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="启用：" Width="100" VerticalAlignment="Center" Foreground="#888888"/>
-                        <TextBlock Text="{Binding DynmapEnabled}" VerticalAlignment="Center" Foreground="#EDEDED"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="端口：" Width="100" VerticalAlignment="Center" Foreground="#888888"/>
-                        <TextBox Text="{Binding DynmapPort}" Width="100" Background="#1A1A1A" Foreground="#EDEDED" BorderBrush="#1F1F1F"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="最大内存" Width="90" VerticalAlignment="Center" Foreground="#888888" FontSize="13"/>
+                        <TextBox Text="{Binding MaxRam}" Width="100" Background="#1E1E1E" Foreground="#EDEDED" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10" Padding="10,8"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
-            <StackPanel Orientation="Horizontal">
-                <Button Content="保存设置" Command="{Binding SaveSettingsCommand}" Padding="20,8" Background="#7C5CFC" Foreground="#FFFFFF" BorderBrush="#7C5CFC"/>
-                <Button Content="恢复默认" Command="{Binding ResetSettingsCommand}" Padding="20,8" Margin="8,0,0,0" Background="#222222" Foreground="#FF3B3B" BorderBrush="#1F1F1F"/>
+            <Border Background="#161616" CornerRadius="14" Padding="20">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="Dynmap 地图" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="启用" Width="90" VerticalAlignment="Center" Foreground="#888888" FontSize="13"/>
+                        <TextBlock Text="{Binding DynmapEnabled}" VerticalAlignment="Center" Foreground="#EDEDED" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="端口" Width="90" VerticalAlignment="Center" Foreground="#888888" FontSize="13"/>
+                        <TextBox Text="{Binding DynmapPort}" Width="100" Background="#1E1E1E" Foreground="#EDEDED" BorderBrush="#2A2A2A" BorderThickness="1" CornerRadius="10" Padding="10,8"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="保存设置" Command="{Binding SaveSettingsCommand}" Padding="24,10" CornerRadius="10" Background="#7C5CFC" Foreground="#FFFFFF" BorderThickness="0"/>
+                <Button Content="恢复默认" Command="{Binding ResetSettingsCommand}" Padding="24,10" CornerRadius="10" Background="#1E1E1E" Foreground="#FF3B3B" BorderBrush="#2A2A2A" BorderThickness="1"/>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

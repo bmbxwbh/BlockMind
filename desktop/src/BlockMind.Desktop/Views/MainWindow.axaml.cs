@@ -10,10 +10,7 @@ public partial class MainWindow : Window
 {
     public MainWindow()
     {
-        try
-        {
-            InitializeComponent();
-        }
+        try { InitializeComponent(); }
         catch (Exception ex)
         {
             var logFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "blockmind-debug.log");
@@ -25,10 +22,12 @@ public partial class MainWindow : Window
     {
         if (sender is Border border && border.Tag is NavItemViewModel item)
         {
-            if (DataContext is MainWindowViewModel vm)
-            {
-                vm.SelectedNav = item;
-            }
+            if (DataContext is MainWindowViewModel vm) vm.SelectedNav = item;
         }
+    }
+
+    private void LangTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm) vm.ToggleLangCommand.Execute(null);
     }
 }
