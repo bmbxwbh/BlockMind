@@ -44,11 +44,11 @@
 
         <!-- Main Content -->
         <Border Grid.Column="1" Background="#0A0A0A">
-            <ContentControl Content="{Binding CurrentPage}" x:Name="ContentArea">
-                <ContentControl.PageTransition>
+            <TransitioningContentControl Content="{Binding CurrentPage}" x:Name="ContentArea">
+                <TransitioningContentControl.PageTransition>
                     <CrossFade Duration="0:0:0.2"/>
-                </ContentControl.PageTransition>
-            </ContentControl>
+                </TransitioningContentControl.PageTransition>
+            </TransitioningContentControl>
         </Border>
     </Grid>
 </Window>
