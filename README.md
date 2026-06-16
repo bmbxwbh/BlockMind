@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![Java](https://img.shields.io/badge/Java-17+-orange.svg)](https://openjdk.org)
 [![MC](https://img.shields.io/badge/Minecraft-1.20~26.x-green.svg)](https://minecraft.net)
-[![License](https://img.shields.io/badge/License-MIT--NC-purple.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
 Fabric Mod 提供精准游戏接口 + Python 后端驱动 AI 决策 + 记忆系统跨会话学习。**同时支持服务端和客户端**，可在单人游戏、LAN 联机或服务器中使用。
 
@@ -211,4 +211,4 @@ dynmap:                    # 可选：Dynmap 地图集成
 
 ## 许可证
 
-MIT-NC — 禁止商用。详见 [LICENSE](LICENSE)。
+AGPL-3.0 — 强传染性开源协议，任何修改和网络服务使用必须开源回馈。贡献者需签署 [CLA](CLA.md)，项目所有者保留双重授权权利。详见 [LICENSE](LICENSE)。
