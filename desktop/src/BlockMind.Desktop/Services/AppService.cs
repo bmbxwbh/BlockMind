@@ -22,7 +22,7 @@ public class AppService : IDisposable
     {
         _configPath = configPath;
         Config = config;
-        ModClient = new ModApiClient(config.Game.ServerIp, 25580);
+        ModClient = new ModApiClient(config.Game.ServerIp, config.Game.ServerPort, config.Game.ApiToken);
         AiClient = new AiApiClient();
         PythonBridge = new PythonBridge("python", ".", config.WebUI.Port);
         if (config.Dynmap.Enabled)

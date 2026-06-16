@@ -13,9 +13,10 @@ public class AppConfig
 public class GameConfig
 {
     public string ServerIp { get; set; } = "localhost";
-    public int ServerPort { get; set; } = 25565;
+    public int ServerPort { get; set; } = 25580;
     public string Username { get; set; } = "BlockMind";
     public string Version { get; set; } = "1.20.4";
+    public string ApiToken { get; set; } = "";
 }
 
 public class AiConfig
