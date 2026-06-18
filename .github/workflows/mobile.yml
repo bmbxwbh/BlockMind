@@ -21,10 +21,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: subosito/flutter-action@v2.23.0
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true
+      - run: flutter --version
       - run: flutter pub get
         working-directory: mobile
       - run: flutter build apk --release --target-platform android-arm64
@@ -40,10 +40,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2.23.0
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true
+      - run: flutter --version
       - run: flutter pub get
         working-directory: mobile
       - run: flutter build ios --release --no-codesign
