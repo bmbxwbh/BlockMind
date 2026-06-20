@@ -9,7 +9,7 @@
         "homepage": "https://github.com/bmbxwbh/BlockMind",
         "sources": "https://github.com/bmbxwbh/BlockMind"
     },
-    "license": "MIT-NC",
+    "license": "AGPL-3.0-or-later",
     "icon": "assets/blockmind/icon.png",
     "environment": "*",
     "entrypoints": {

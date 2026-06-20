@@ -1,5 +1,7 @@
 # 🧠 BlockMind
 
+<img src="docs/blockmind-icon.svg" width="120" height="120" align="left" hspace="12" vspace="4" alt="BlockMind">
+
 > **Fabric Mod + AI + 记忆系统** · Minecraft 智能玩伴
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
