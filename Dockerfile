@@ -15,7 +15,7 @@ FROM python:3.11-slim
 LABEL maintainer="BlockMind Team"
 LABEL description="BlockMind - Minecraft AI Companion Backend"
 LABEL org.opencontainers.image.source="https://github.com/bmbxwbh/BlockMind"
-LABEL org.opencontainers.image.licenses="MIT-NC"
+LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 WORKDIR /app
 
