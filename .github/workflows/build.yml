@@ -164,7 +164,6 @@ jobs:
         include:
           - { os-name: Windows-x64,  runner: windows-latest, rid: win-x64 }
           - { os-name: Linux-x64,    runner: ubuntu-latest,  rid: linux-x64 }
-          - { os-name: macOS-Intel,  runner: macos-13,       rid: osx-x64 }
           - { os-name: macOS-ARM64,  runner: macos-latest,   rid: osx-arm64 }
     steps:
       - name: Checkout
