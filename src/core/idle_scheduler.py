@@ -20,11 +20,12 @@ class IdleTaskScheduler:
 
     def __init__(self, idle_detector: IdleDetector, task_pool: TaskPool,
                  event_bus: EventBus, skill_runtime=None,
-                 interval: int = 30):
+                 skill_storage=None, interval: int = 30):
         self.idle_detector = idle_detector
         self.task_pool = task_pool
         self.event_bus = event_bus
         self.skill_runtime = skill_runtime
+        self.skill_storage = skill_storage
         self.interval = interval
         self._running = False
         self._task: Optional[asyncio.Task] = None
@@ -79,9 +80,16 @@ class IdleTaskScheduler:
 
         try:
             if self.skill_runtime and task.skill_id:
-                result = await self.skill_runtime.execute_skill(task.skill_id)
-                status = "success" if result.success else "failed"
-                self.logger.info(f"{'✅' if result.success else '❌'} 空闲任务 {task.name}: {result.details}")
+                skill = None
+                if self.skill_storage:
+                    skill = self.skill_storage.get(task.skill_id)
+                if skill:
+                    result = await self.skill_runtime.execute_skill_object(skill)
+                    status = "success" if result.success else "failed"
+                    self.logger.info(f"{'✅' if result.success else '❌'} 空闲任务 {task.name}: {result.details}")
+                else:
+                    self.logger.warning(f"⚠️ 未找到 Skill: {task.skill_id}")
+                    status = "not_found"
             else:
                 self.logger.info(f"⏭️ 跳过任务 {task.name}（无 Skill 引擎）")
                 status = "skipped"

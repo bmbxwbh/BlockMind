@@ -19,14 +19,14 @@ class TaskPool:
 
     # 默认任务池
     DEFAULT_TASKS = [
-        IdleTask("farm_wheat", priority=5, skill_id="skill_plant_wheat_001"),
-        IdleTask("mine_resources", priority=5, skill_id="skill_mine_ore_001"),
-        IdleTask("chop_tree", priority=5, skill_id="skill_chop_tree_001"),
-        IdleTask("organize_chest", priority=5, skill_id="skill_organize_chest_001"),
-        IdleTask("repair_building", priority=4, skill_id="skill_repair_building_001"),
-        IdleTask("place_torches", priority=4, skill_id="skill_place_torches_001"),
-        IdleTask("patrol_area", priority=5, enabled=False, skill_id="skill_patrol_001"),
-        IdleTask("deposit_items", priority=5, skill_id="skill_deposit_items_001"),
+        IdleTask("farm_wheat", priority=5, skill_id="auto_farm_wheat"),
+        IdleTask("mine_resources", priority=5, skill_id="auto_mine_ore"),
+        IdleTask("chop_tree", priority=5, skill_id="auto_chop_tree"),
+        IdleTask("organize_chest", priority=5, skill_id="auto_organize_chest"),
+        IdleTask("repair_building", priority=4, skill_id="auto_repair_building"),
+        IdleTask("place_torches", priority=4, skill_id="auto_place_torches"),
+        IdleTask("patrol_area", priority=5, enabled=False, skill_id="auto_patrol_area"),
+        IdleTask("deposit_items", priority=5, skill_id="auto_deposit_items"),
     ]
 
     def __init__(self):

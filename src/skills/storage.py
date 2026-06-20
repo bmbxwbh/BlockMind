@@ -19,6 +19,7 @@ class SkillStorage:
         self.parser = DSLParser()
         self.logger = logging.getLogger("blockmind.skill_storage")
         self._cache: dict = {}  # skill_id -> SkillDSL
+        self._list_cache: Optional[List[SkillDSL]] = None
 
     def save(self, skill: SkillDSL, category: str = "custom") -> None:
         """保存 Skill 到文件"""
@@ -35,6 +36,7 @@ class SkillStorage:
             yaml.dump(data, f, allow_unicode=True, default_flow_style=False)
 
         self._cache[skill.skill_id] = skill
+        self._list_cache = None
         self.logger.info(f"💾 保存 Skill: {skill.skill_id}")
 
     def get(self, skill_id: str) -> Optional[SkillDSL]:
@@ -55,6 +57,8 @@ class SkillStorage:
 
     def list_all(self, category: str = None) -> List[SkillDSL]:
         """列出所有 Skill"""
+        if category is None and self._list_cache is not None:
+            return self._list_cache
         skills = []
         search_path = self.storage_path / category if category else self.storage_path
         for yaml_file in search_path.rglob("*.yaml"):
@@ -62,6 +66,8 @@ class SkillStorage:
                 skills.append(self.parser.parse_file(str(yaml_file)))
             except Exception as e:
                 self.logger.warning(f"解析失败: {yaml_file} -> {e}")
+        if category is None:
+            self._list_cache = skills
         return skills
 
     def delete(self, skill_id: str) -> bool:
@@ -72,6 +78,7 @@ class SkillStorage:
                 if skill.skill_id == skill_id:
                     yaml_file.unlink()
                     self._cache.pop(skill_id, None)
+                    self._list_cache = None
                     self.logger.info(f"🗑️ 删除 Skill: {skill_id}")
                     return True
             except Exception:

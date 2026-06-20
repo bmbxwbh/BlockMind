@@ -80,8 +80,13 @@ class DSLParser:
                         if_else=self._parse_do(item.get("else", [])),
                     ))
                 else:
-                    for action, args in item.items():
-                        steps.append(DoStep(action=action, args=args if isinstance(args, dict) else {"value": args}))
+                    if 'action' in item:
+                        action_name = item['action']
+                        args = item.get('args', {})
+                        steps.append(DoStep(action=action_name, args=args if isinstance(args, dict) else {'value': args}))
+                    else:
+                        for action, args in item.items():
+                            steps.append(DoStep(action=action, args=args if isinstance(args, dict) else {"value": args}))
             elif isinstance(item, str):
                 steps.append(DoStep(action=item))
         return steps

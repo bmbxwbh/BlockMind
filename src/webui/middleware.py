@@ -21,6 +21,8 @@ logger = logging.getLogger("blockmind.webui.middleware")
 
 # Per-client (IP) sliding-window counters:  {key: [timestamps …]}
 _rate_store: dict[str, list[float]] = defaultdict(list)
+_last_cleanup: float = 0.0
+_CLEANUP_INTERVAL = 300.0  # clean every 5 minutes
 
 # Limits per path prefix
 _LIMITS: list[tuple[str, int]] = [
@@ -53,6 +55,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         limit = _get_limit(path)
 
         _clean_old(key, now)
+
+        # Periodic cleanup of stale keys (older than 1 hour)
+        global _last_cleanup
+        if now - _last_cleanup > _CLEANUP_INTERVAL:
+            _last_cleanup = now
+            cutoff = now - 3600.0
+            stale_keys = [k for k, v in _rate_store.items() if not v or v[-1] < cutoff]
+            for k in stale_keys:
+                del _rate_store[k]
 
         if len(_rate_store[key]) >= limit:
             logger.warning("Rate limit exceeded for %s on %s (%d/%d)", client_ip, path, len(_rate_store[key]), limit)

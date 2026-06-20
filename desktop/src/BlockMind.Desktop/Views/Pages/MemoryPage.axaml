@@ -1,38 +1,37 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.MemoryPage">
-    <Border Padding="24">
-        <StackPanel Spacing="16">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Memory" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <Button Content="Load" Command="{Binding LoadMemoryCommand}" Padding="12,6" Margin="16,0,0,0"/>
-                <Button Content="Backup" Command="{Binding BackupMemoryCommand}" Padding="12,6" Margin="8,0,0,0"/>
-                <Button Content="Cleanup" Command="{Binding CleanupMemoryCommand}" Padding="12,6" Margin="8,0,0,0"/>
+    <Border Padding="32">
+        <StackPanel Spacing="20">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="记忆系统" FontSize="28" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                <Button Content="加载" Command="{Binding LoadMemoryCommand}" Padding="16,8" CornerRadius="10" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                <Button Content="备份" Command="{Binding BackupMemoryCommand}" Padding="16,8" CornerRadius="10" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                <Button Content="清理" Command="{Binding CleanupMemoryCommand}" Padding="16,8" CornerRadius="10" Background="#1E1E1E" Foreground="#FF3B3B" BorderBrush="#2A2A2A" BorderThickness="1"/>
             </StackPanel>
-
             <WrapPanel>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="220" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Zones" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding ZoneCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="区域" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding ZoneCount}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="220" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Paths" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding PathCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="路径" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding PathCount}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="220" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Strategies" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding StrategyCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="策略" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding StrategyCount}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="200" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="220" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Players" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding PlayerCount}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
+                        <TextBlock Text="玩家" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding PlayerCount}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </WrapPanel>

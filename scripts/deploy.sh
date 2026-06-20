@@ -9,6 +9,13 @@ SERVICE_NAME="blockmind"
 USER="blockmind"
 
 echo "🧠 BlockMind 部署开始..."
+echo ""
+echo "⚠️  请确保已准备好以下内容："
+echo "  1. AI API Key（OpenAI 或其他 provider）"
+echo "  2. WebUI 访问密码"
+echo ""
+read -rp "已准备好？继续部署？[y/N] " confirm
+[[ ! "$confirm" =~ ^[Yy] ]] && echo "已取消。" && exit 0
 
 # 1. 创建用户
 if ! id "$USER" &>/dev/null; then

@@ -39,8 +39,8 @@ fi
 
 # 检查进程
 echo -n "Python 进程: "
-if pgrep -f "src.main" > /dev/null; then
-    echo "✅ 存在 ($(pgrep -f 'src.main' | wc -l) 个)"
+if pgrep -f "python.*src\.main" > /dev/null; then
+    echo "✅ 存在 ($(pgrep -f 'python.*src\.main' | wc -l) 个)"
 else
     echo "❌ 未找到"
 fi

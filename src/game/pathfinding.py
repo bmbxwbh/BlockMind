@@ -5,6 +5,7 @@ import logging
 import math
 from typing import Optional, List, Tuple, Dict, Set
 
+from collections import OrderedDict
 from src.mod_client.client import ModClient
 from src.mod_client.models import BlockInfo
 
@@ -47,7 +48,8 @@ class Pathfinder:
     def __init__(self, mod_client: ModClient, max_search_radius: int = 64):
         self.mod_client = mod_client
         self.max_search_radius = max_search_radius
-        self._block_cache: Dict[Tuple[int, int, int], str] = {}
+        self._block_cache: OrderedDict = OrderedDict()
+        self._cache_max = 10000
 
     async def find_path(
         self,
@@ -124,21 +126,17 @@ class Pathfinder:
             neighbors.append((nx, y - 1, nz))
         return neighbors
 
-    async def _is_passable(self, pos: Tuple[int, int, int]) -> bool:
+    async def _is_passable(self, pos: Tuple[int, int, int], block_type: str = None) -> bool:
         """判断方块是否可通行"""
-        # 检查缓存
-        if pos in self._block_cache:
-            block_type = self._block_cache[pos]
+        if block_type is None:
+            block_type = self._block_cache.get(pos, "air")
+            if pos in self._block_cache:
+                self._block_cache.move_to_end(pos)
         else:
-            blocks = await self.mod_client.get_blocks(radius=1)
-            block_type = "air"  # 默认
-            for b in blocks:
-                bp = b.position
-                bp_tuple = (bp.get("x", 0), bp.get("y", 0), bp.get("z", 0))
-                if bp_tuple == pos:
-                    block_type = b.type
-                    break
             self._block_cache[pos] = block_type
+            self._block_cache.move_to_end(pos)
+            if len(self._block_cache) > self._cache_max:
+                self._block_cache.popitem(last=False)
 
         # 危险方块不可通行
         if block_type in DANGEROUS_BLOCKS:
@@ -150,11 +148,20 @@ class Pathfinder:
     def _is_solid(block_type: str) -> bool:
         """粗略判断方块是否固体"""
         non_solid = {
-            "air", "water", "lava", "torch", "flower", "grass",
-            "fern", "snow", "lever", "button", "pressure_plate",
-            "redstone", "rail", "sign", "banner", "carpet",
+            "air", "cave_air", "void_air",
+            "water", "flowing_water", "lava", "flowing_lava",
+            "torch", "wall_torch", "redstone_torch", "redstone_wall_torch",
+            "flower", "sunflower", "lilac", "rose_bush", "peony",
+            "short_grass", "tall_grass", "fern", "large_fern",
+            "dead_bush", "snow_layer",
+            "lever", "button", "stone_button", "oak_button",
+            "pressure_plate", "weighted_pressure_plate",
+            "redstone", "redstone_wire",
+            "rail", "powered_rail", "detector_rail", "activator_rail",
+            "sign", "wall_sign", "banner", "wall_banner",
+            "carpet",
         }
-        return not any(ns in block_type for ns in non_solid)
+        return block_type not in non_solid
 
     def _reconstruct_path(
         self,

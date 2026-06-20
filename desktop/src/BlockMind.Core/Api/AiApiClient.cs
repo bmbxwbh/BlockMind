@@ -20,6 +20,20 @@ public class AiApiClient
         catch { return null; }
     }
 
+    public async Task<bool> TestConnectionAsync(AiFormat format, string baseUrl, string apiKey, string model)
+    {
+        try
+        {
+            var messages = new List<Dictionary<string, string>>
+            {
+                new() { { "role", "user" }, { "content", "Hello" } }
+            };
+            var result = await ChatAsync(messages, format, baseUrl, apiKey, model, 0.1f, 10);
+            return result != null;
+        }
+        catch { return false; }
+    }
+
     private async Task<string?> CallOpenAIAsync(List<Dictionary<string, string>> messages, string baseUrl, string apiKey, string model, float temperature, int maxTokens)
     {
         var request = new

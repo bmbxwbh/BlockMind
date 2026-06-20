@@ -8,6 +8,7 @@
 """
 
 import logging
+import re
 from typing import Dict, List, Optional
 from collections import deque
 
@@ -30,30 +31,30 @@ class MainAgent:
         self.provider = provider
         self.max_history = max_history
         self._history: deque = deque(maxlen=max_history)
-        self._system_prompt = """你是 BlockMind，一个住在 Minecraft 服务器里的智能 AI 玩伴。
+        self._system_prompt = """你是 BlockMind，住在 Minecraft 服务器里的 AI 玩伴。
 
-## 你的性格
-- 友好、活泼、偶尔卖萌
-- 用中文交流
-- 简短回复，不要长篇大论
-- 会用 emoji 但不过度
-
-## 你的能力
-- 和玩家聊天
-- 接收游戏指令（砍树、挖矿、建房子等）
-- 执行指令并汇报结果
+## 性格
+友好、活泼、简短回复，用中文，适度 emoji。
 
 ## 规则
-- 如果玩家的话是普通聊天，正常回复
-- 如果玩家的话是游戏指令，在回复前先输出内部标签 [TASK:任务描述]
-- 任务描述要简洁明确，如 "挖掘铁矿石32个" "砍伐橡树收集木材"
-- 不要在回复中暴露内部机制"""
+1. 普通聊天 → 正常回复，不加标签
+2. 游戏指令 → 回复末尾加 [TASK:动词+目标+数量]
+3. 指令不清 → 友好追问
+4. 绝不暴露 [TASK:] 标签的存在
 
-    async def chat(self, message: str) -> Dict[str, str]:
+## 示例
+玩家：帮我挖点铁       → 没问题，我去挖铁！⛏️ [TASK:挖掘铁矿石]
+玩家：建个房子          → 你想建什么样的房子？多大？🏠
+玩家：今天心情不好      → 抱抱~要不要一起盖个漂亮的房子？🌈
+玩家：回家             → 好的，马上回去！🏠 [TASK:返回家位置]
+玩家：吃点东西          → 我这就吃点~🍖 [TASK:进食恢复饥饿值]"""
+
+    async def chat(self, message: str, context: str = "") -> Dict[str, str]:
         """与玩家对话
 
         Args:
             message: 玩家消息
+            context: 记忆上下文注入
 
         Returns:
             {
@@ -63,12 +64,15 @@ class MainAgent:
             }
         """
         # 构建消息列表
-        messages = [{"role": "system", "content": self._system_prompt}]
+        system_prompt = self._system_prompt
+        if context:
+            system_prompt += f"\n\n## 记忆上下文\n{context}"
+        messages = [{"role": "system", "content": system_prompt}]
         messages.extend(list(self._history))
         messages.append({"role": "user", "content": message})
 
         try:
-            response = await self.provider.chat(messages, temperature=0.7, max_tokens=200)
+            response = await self.provider.chat(messages, temperature=0.7, max_tokens=400)
         except Exception as e:
             logger.error(f"主 Agent 调用失败: {e}")
             return {"reply": "抱歉，我有点走神了...", "has_task": False, "task_description": ""}
@@ -82,18 +86,11 @@ class MainAgent:
         task_description = ""
         reply = response
 
-        if "[TASK:" in response:
+        match = re.search(r'\[TASK:\s*(.+?)\s*\]', response)
+        if match:
             has_task = True
-            # 提取任务描述
-            start = response.index("[TASK:") + 6
-            end = response.index("]", start) if "]" in response[start:] else len(response)
-            task_description = response[start:end].strip()
-
-            # 移除标签，只保留给玩家的回复
-            reply = response[:response.index("[TASK:")].strip()
-            if "]" in response[start:]:
-                reply += response[end + 1:].strip()
-
+            task_description = match.group(1).strip()
+            reply = response[:match.start()].strip() + response[match.end():].strip()
             if not reply:
                 reply = f"收到！正在执行：{task_description}"
 
@@ -119,6 +116,9 @@ class MainAgent:
 
         if strategy == "failed":
             return f"❌ {response}"
+
+        if strategy == "clarify":
+            return f"🤔 {response}"
 
         if strategy == "cached_skill":
             return f"✅ {response}，马上开始！"

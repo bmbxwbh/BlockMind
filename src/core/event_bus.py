@@ -62,7 +62,9 @@ class EventBus:
             self._history = self._history[-self._max_history:]
 
         handlers = self._subscribers.get(event.type, [])
-        for handler in handlers:
+        wildcard_handlers = self._subscribers.get("*", [])
+        all_handlers = handlers + wildcard_handlers
+        for handler in all_handlers:
             try:
                 if asyncio.iscoroutinefunction(handler):
                     await handler(event)

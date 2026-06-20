@@ -18,10 +18,12 @@ class AuthManager:
     支持密码登录和 Session Token 认证。
     """
 
-    def __init__(self, password: str = "blockmind", session_timeout: int = 3600):
+    def __init__(self, password: str = "", session_timeout: int = 3600):
         # 优先读取环境变量
         env_password = os.environ.get("BLOCKMIND_PASSWORD")
         effective_password = env_password if env_password else password
+        if not effective_password:
+            logger.warning("⚠️ WebUI 密码为空，请设置 BLOCKMIND_PASSWORD 环境变量或在配置中设置密码")
         self.password_hash = self._hash_password(effective_password)
         self.session_timeout = session_timeout
         self._sessions: dict[str, float] = {}  # token → 创建时间
@@ -49,6 +51,7 @@ class AuthManager:
 
     def verify_session(self, token: str) -> bool:
         """验证会话 Token"""
+        self.cleanup_expired()
         if token not in self._sessions:
             return False
         created = self._sessions[token]

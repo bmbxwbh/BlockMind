@@ -356,7 +356,7 @@ class SmartNavigator:
             return NavigationResult(success=False, message=str(e))
 
     async def _execute_cached_path(self, cached_path,
-                                   sprint: bool = False) -> bool:
+                                   sprint: bool = False) -> NavigationResult:
         """执行缓存路径"""
         for waypoint in cached_path.waypoints:
             try:
@@ -366,8 +366,8 @@ class SmartNavigator:
                 await asyncio.sleep(0.5)  # 等待移动完成
             except Exception as e:
                 logger.error(f"缓存路径执行失败: {e}")
-                return False
-        return True
+                return NavigationResult(success=False, message=str(e))
+        return NavigationResult(success=True)
 
     async def _execute_path(self, path: List[Tuple[int, int, int]],
                             sprint: bool = False) -> bool:
@@ -389,15 +389,27 @@ class SmartNavigator:
         clusters = []
         visited = set()
 
+        target_blocks = []
+        pos_map = {}
         for block in blocks:
-            btype = block.type
             bpos = block.position
             pos_key = (bpos.get("x", 0), bpos.get("y", 0), bpos.get("z", 0))
+            if block.type in target_types:
+                target_blocks.append(pos_key)
+                pos_map[pos_key] = block.type
 
-            if btype not in target_types or pos_key in visited:
+        adjacency = {}
+        for i, pos in enumerate(target_blocks):
+            neighbors = []
+            for j, other in enumerate(target_blocks):
+                if i != j and self._manhattan(pos, other) <= 3:
+                    neighbors.append(other)
+            adjacency[pos] = neighbors
+
+        for pos_key in target_blocks:
+            if pos_key in visited:
                 continue
 
-            # BFS 聚类
             cluster = []
             queue = [pos_key]
             while queue:
@@ -406,24 +418,18 @@ class SmartNavigator:
                     continue
                 visited.add(current)
                 cluster.append(current)
+                for neighbor in adjacency.get(current, []):
+                    if neighbor not in visited:
+                        queue.append(neighbor)
 
-                # 查找相邻的同类方块
-                for block2 in blocks:
-                    p2 = block2.position
-                    p2_key = (p2.get("x", 0), p2.get("y", 0), p2.get("z", 0))
-                    if (p2_key not in visited and block2.type in target_types
-                            and self._manhattan(current, p2_key) <= 3):
-                        queue.append(p2_key)
-
-            if len(cluster) >= 3:  # 至少3个方块才算区域
-                # 计算中心和半径
+            if len(cluster) >= 3:
                 cx = sum(p[0] for p in cluster) // len(cluster)
                 cy = sum(p[1] for p in cluster) // len(cluster)
                 cz = sum(p[2] for p in cluster) // len(cluster)
                 max_dist = max(self._manhattan((cx, cy, cz), p) for p in cluster)
                 clusters.append({
                     "center": (cx, cy, cz),
-                    "radius": max(max_dist + 2, 10),  # 加余量
+                    "radius": max(max_dist + 2, 10),
                     "count": len(cluster),
                 })
 

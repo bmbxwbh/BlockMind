@@ -40,6 +40,8 @@ class Alerter:
                 self.logger.error(f"发送告警失败: {e}")
 
         self._alert_history.append({"level": level, "message": message})
+        if len(self._alert_history) > 1000:
+            self._alert_history = self._alert_history[-1000:]
 
     async def info(self, message: str) -> None:
         """1级提示"""

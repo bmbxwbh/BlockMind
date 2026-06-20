@@ -1,52 +1,54 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:BlockMind.Desktop.ViewModels"
         x:Class="BlockMind.Desktop.Views.MainWindow"
         Title="BlockMind"
-        Width="1200" Height="750"
-        MinWidth="900" MinHeight="600"
+        Width="1280" Height="800"
+        MinWidth="960" MinHeight="640"
         WindowStartupLocation="CenterScreen">
 
-    <Grid ColumnDefinitions="220,*">
-
+    <Grid ColumnDefinitions="240,*">
         <!-- Sidebar -->
-        <Border Grid.Column="0" Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="#111111" BorderBrush="#1F1F1F" BorderThickness="0,0,1,0">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="20,24,20,20">
-                    <TextBlock Text="BlockMind" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="Desktop v0.1" FontSize="11" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
+                <StackPanel DockPanel.Dock="Top" Margin="24,28,24,24">
+                    <TextBlock Text="BlockMind" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF"/>
+                    <TextBlock Text="Minecraft AI Companion" FontSize="11" Foreground="#555555" Margin="0,4,0,0"/>
                 </StackPanel>
-
+                <Border DockPanel.Dock="Bottom" Padding="24,16" BorderBrush="#1F1F1F" BorderThickness="0,1,0,0">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="8" Height="8" Fill="#00D68F"/>
+                            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#888888"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="#555555"/>
+                            <TextBlock Text="{Binding LangLabel}" FontSize="10" Foreground="#7C5CFC" Cursor="Hand" Tapped="LangTapped"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
                 <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding NavItems}" x:Name="NavItemsControl">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="16,10" CornerRadius="6" Margin="8,1" Cursor="Hand"
+                                <Border Padding="16,12" CornerRadius="10" Margin="8,2" Cursor="Hand"
                                         Background="Transparent" Tag="{Binding}"
-                                        PointerPressed="NavBorder_PointerPressed">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <TextBlock Text="{Binding IconText}" FontSize="15" VerticalAlignment="Center" Width="20" TextAlignment="Center" Foreground="{DynamicResource TextSecondary}"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
-                                    </StackPanel>
+                                        Tapped="NavBorder_Tapped">
+                                    <TextBlock Text="{Binding Label}" FontSize="14" VerticalAlignment="Center" Foreground="#888888"/>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
-
-                <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
-                        </StackPanel>
-                        <TextBlock Text="WebUI: localhost:19951" FontSize="10" Foreground="{DynamicResource TextTertiary}" Margin="0,4,0,0"/>
-                    </StackPanel>
-                </Border>
             </DockPanel>
         </Border>
 
         <!-- Main Content -->
-        <ContentControl Grid.Column="1" Content="{Binding CurrentPage}"/>
+        <Border Grid.Column="1" Background="#0A0A0A">
+            <TransitioningContentControl Content="{Binding CurrentPage}" x:Name="ContentArea">
+                <TransitioningContentControl.PageTransition>
+                    <CrossFade Duration="0:0:0.2"/>
+                </TransitioningContentControl.PageTransition>
+            </TransitioningContentControl>
+        </Border>
     </Grid>
 </Window>

@@ -42,7 +42,7 @@ market:
     - 智能导航到目标位置
     - 自动放置火把
     - 火把用完自动停止
-  license: MIT
+  license: MIT-NC
   keywords: ["火把", "torch", "照明", "防怪", "light"]
   rating: 4.2
   download_count: 128

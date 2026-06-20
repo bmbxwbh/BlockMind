@@ -1,69 +1,86 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.DashboardPage">
-    <ScrollViewer Padding="24" VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16">
-            <TextBlock Text="Dashboard" FontSize="24" FontWeight="SemiBold"/>
+    <ScrollViewer Padding="32" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="20">
+            <TextBlock Text="仪表盘" FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"/>
 
-            <!-- Status Cards -->
+            <!-- 状态卡片 -->
             <WrapPanel>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="260" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Health" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding Health, StringFormat='{}{0:F0}/20'}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <ProgressBar Value="{Binding Health}" Maximum="20" Height="4" Background="{DynamicResource BgHover}" Foreground="{DynamicResource Success}" Margin="0,8,0,0"/>
+                        <TextBlock Text="生命值" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding Health, StringFormat='{}{0:F0}/20'}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
+                        <ProgressBar Value="{Binding Health}" Maximum="20" Height="4" Background="#222222" Foreground="#00D68F" Margin="0,10,0,0" CornerRadius="2"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="260" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Hunger" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding Hunger, StringFormat='{}{0:F0}/20'}" FontSize="28" FontWeight="Bold" Margin="0,4,0,0"/>
-                        <ProgressBar Value="{Binding Hunger}" Maximum="20" Height="4" Background="{DynamicResource BgHover}" Foreground="{DynamicResource Warning}" Margin="0,8,0,0"/>
+                        <TextBlock Text="饥饿值" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding Hunger, StringFormat='{}{0:F0}/20'}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
+                        <ProgressBar Value="{Binding Hunger}" Maximum="20" Height="4" Background="#222222" Foreground="#FFAA00" Margin="0,10,0,0" CornerRadius="2"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="260" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Position" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding Position}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                        <TextBlock Text="位置" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding Position}" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
-                <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16" Width="250" Margin="0,0,8,8">
+                <Border Background="#161616" CornerRadius="14" Padding="20,16" Width="260" Margin="0,0,12,12">
                     <StackPanel>
-                        <TextBlock Text="Dimension" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
-                        <TextBlock Text="{Binding Dimension}" FontSize="18" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                        <TextBlock Text="维度" FontSize="12" Foreground="#666666"/>
+                        <TextBlock Text="{Binding Dimension}" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </WrapPanel>
 
-            <!-- Server Control -->
-            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Server Control" FontSize="14" FontWeight="SemiBold"/>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Start BlockMind" Command="{Binding ToggleBlockMindCommand}" Padding="16,8" Margin="0,0,8,0"/>
-                        <Button Content="Connect Mod" Command="{Binding ConnectModCommand}" Padding="16,8"/>
+            <!-- 未连接提示 -->
+            <Border Background="#161616" CornerRadius="14" Padding="24"
+                    IsVisible="{Binding !HasRealData}">
+                <StackPanel HorizontalAlignment="Center" Spacing="8">
+                    <TextBlock Text="未连接到 Minecraft 服务器" FontSize="15" Foreground="#888888" HorizontalAlignment="Center"/>
+                    <TextBlock Text="请先启动 Minecraft，然后点击「连接 Mod」" FontSize="12" Foreground="#555555" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 服务控制 -->
+            <Border Background="#161616" CornerRadius="14" Padding="20">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="服务控制" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Command="{Binding ToggleBlockMindCommand}" Padding="20,10" CornerRadius="10" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1">
+                            <TextBlock Text="启动 BlockMind" FontSize="13"/>
+                        </Button>
+                        <Button Command="{Binding ConnectModCommand}" Padding="20,10" CornerRadius="10" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1">
+                            <TextBlock Text="连接 Mod" FontSize="13"/>
+                        </Button>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,6,0"/>
-                        <TextBlock Text="Mod" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,20,0"/>
-                        <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}" Margin="0,0,6,0"/>
-                        <TextBlock Text="BlockMind" FontSize="12" Foreground="{DynamicResource TextSecondary}" Margin="0,0,20,0"/>
-                        <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="{DynamicResource TextSecondary}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="20">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8" Fill="#00D68F"/>
+                            <TextBlock Text="Mod" FontSize="12" Foreground="#666666"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8" Fill="#00D68F"/>
+                            <TextBlock Text="BlockMind" FontSize="12" Foreground="#666666"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="#888888"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
 
-            <!-- Quick Actions -->
-            <Border Background="{DynamicResource BgSurface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="16">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold"/>
+            <!-- 快捷操作 -->
+            <Border Background="#161616" CornerRadius="14" Padding="20">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="快捷操作" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF"/>
                     <WrapPanel>
-                        <Button Content="Home" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Mine" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Chop" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Eat" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Patrol" Padding="16,8" Margin="0,0,8,8"/>
-                        <Button Content="Stop" Padding="16,8" Margin="0,0,8,8"/>
+                        <Button Content="回家" Padding="20,10" CornerRadius="10" Margin="0,0,8,8" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                        <Button Content="挖矿" Padding="20,10" CornerRadius="10" Margin="0,0,8,8" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                        <Button Content="砍树" Padding="20,10" CornerRadius="10" Margin="0,0,8,8" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                        <Button Content="吃东西" Padding="20,10" CornerRadius="10" Margin="0,0,8,8" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                        <Button Content="巡逻" Padding="20,10" CornerRadius="10" Margin="0,0,8,8" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                        <Button Content="停止" Padding="20,10" CornerRadius="10" Margin="0,0,8,8" Background="#1E1E1E" Foreground="#FF3B3B" BorderBrush="#2A2A2A" BorderThickness="1"/>
                     </WrapPanel>
                 </StackPanel>
             </Border>

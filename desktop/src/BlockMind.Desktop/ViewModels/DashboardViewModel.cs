@@ -10,13 +10,14 @@ public partial class DashboardViewModel : ObservableObject
     private readonly AppService _service;
     private readonly System.Timers.Timer _pollTimer;
 
-    [ObservableProperty] private double _health = 20;
-    [ObservableProperty] private double _hunger = 20;
-    [ObservableProperty] private string _position = "0, 64, 0";
-    [ObservableProperty] private string _dimension = "主世界";
+    [ObservableProperty] private double _health;
+    [ObservableProperty] private double _hunger;
+    [ObservableProperty] private string _position = "--";
+    [ObservableProperty] private string _dimension = "--";
     [ObservableProperty] private bool _modConnected;
     [ObservableProperty] private bool _pythonRunning;
     [ObservableProperty] private string _statusText = "未连接";
+    [ObservableProperty] private bool _hasRealData;
 
     public ObservableCollection<string> RecentEvents { get; } = new();
 
@@ -26,7 +27,7 @@ public partial class DashboardViewModel : ObservableObject
         _service.StatusChanged += OnServiceStatusChanged;
         ModConnected = _service.ModConnected;
         PythonRunning = _service.PythonRunning;
-        StatusText = ModConnected ? (PythonRunning ? "运行中" : "Mod已连接") : "未连接";
+        UpdateStatus();
 
         _pollTimer = new System.Timers.Timer(2000);
         _pollTimer.Elapsed += (s, e) => PollStatusAsync();
@@ -37,29 +38,36 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand]
     private async Task ToggleBlockMindAsync()
     {
-        if (_pythonRunning)
-            await _service.StopPythonAsync();
-        else
-            await _service.StartPythonAsync();
+        if (PythonRunning) await _service.StopPythonAsync();
+        else await _service.StartPythonAsync();
     }
 
     [RelayCommand]
     private async Task ConnectModAsync()
     {
         ModConnected = await _service.ConnectToModAsync();
-        StatusText = ModConnected ? "已连接" : "未连接";
+        UpdateStatus();
     }
 
     private void OnServiceStatusChanged()
     {
         ModConnected = _service.ModConnected;
         PythonRunning = _service.PythonRunning;
-        StatusText = ModConnected ? (PythonRunning ? "运行中" : "Mod已连接") : "未连接";
+        UpdateStatus();
+    }
+
+    private void UpdateStatus()
+    {
+        StatusText = PythonRunning ? "运行中" : (ModConnected ? "已连接" : "未连接");
     }
 
     private async void PollStatusAsync()
     {
-        if (!_service.ModConnected) return;
+        if (!_service.ModConnected)
+        {
+            HasRealData = false;
+            return;
+        }
         try
         {
             var status = await _service.ModClient.GetStatusAsync();
@@ -71,8 +79,12 @@ public partial class DashboardViewModel : ObservableObject
                 var pos = s.GetProperty("position");
                 Position = $"{pos.GetProperty("x").GetDouble():F0}, {pos.GetProperty("y").GetDouble():F0}, {pos.GetProperty("z").GetDouble():F0}";
                 Dimension = s.TryGetProperty("dimension", out var d) ? d.GetString() ?? "" : "";
+                HasRealData = true;
             }
         }
-        catch { }
+        catch
+        {
+            HasRealData = false;
+        }
     }
 }

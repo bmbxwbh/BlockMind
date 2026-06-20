@@ -113,7 +113,7 @@ class TaskClassifier:
         logger.debug(f"默认 L4: {task}")
         return TaskLevel.L4_DYNAMIC
 
-    def classify_with_ai(self, task: str, ai_provider) -> str:
+    async def classify_with_ai(self, task: str, ai_provider) -> str:
         """AI 辅助分类（用于关键词无法判断的情况）
 
         Args:
@@ -135,15 +135,7 @@ L4=完全动态（每次不同，如建房子、探索洞穴、打Boss）
 只回答 L1、L2、L3 或 L4："""
 
         try:
-            # 兼容同步和异步 AI provider
-            import asyncio
-            if asyncio.iscoroutinefunction(ai_provider.chat):
-                result = asyncio.get_event_loop().run_until_complete(
-                    ai_provider.chat([{"role": "user", "content": prompt}], max_tokens=10)
-                )
-            else:
-                result = ai_provider.chat([{"role": "user", "content": prompt}], max_tokens=10)
-
+            result = await ai_provider.chat([{"role": "user", "content": prompt}], max_tokens=10)
             result = result.strip().upper()
             level_map = {"L1": TaskLevel.L1_FIXED, "L2": TaskLevel.L2_PARAMETER,
                          "L3": TaskLevel.L3_TEMPLATE, "L4": TaskLevel.L4_DYNAMIC}

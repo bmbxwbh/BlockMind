@@ -2,8 +2,9 @@
 import ast
 import asyncio
 import logging
+import math
 import operator
-from typing import List, Any
+from typing import List, Any, Optional
 from src.skills.models import DoStep, LoopBlock
 
 # 允许的比较运算符
@@ -27,14 +28,111 @@ _SAFE_METHODS = {
 _SAFE_NAMES = {"self", "inventory", "world", "True", "False", "None"}
 
 
+class _PlayerAdapter:
+    """适配 StateCollector，提供 DSL 期望的 self.* 接口"""
+    def __init__(self, state):
+        self._state = state
+
+    def health(self) -> float:
+        return self._state.player_health
+
+    def hunger(self) -> float:
+        return self._state.player_hunger
+
+    def position(self):
+        pos = self._state.player_position
+        return pos if isinstance(pos, tuple) else (pos.get("x", 0), pos.get("y", 64), pos.get("z", 0))
+
+    def distance_to(self, target) -> float:
+        pos = self.position()
+        if isinstance(target, (list, tuple)) and len(target) >= 3:
+            return math.sqrt(sum((a - b) ** 2 for a, b in zip(pos, target[:3])))
+        return 0.0
+
+
+class _InventoryAdapter:
+    """适配 ModClient，提供 DSL 期望的 inventory.* 接口"""
+    def __init__(self, mod_client):
+        self._client = mod_client
+        self._cached_items = []
+        self._cached_slots = 36
+
+    async def _refresh(self):
+        try:
+            inv = await self._client.get_inventory()
+            self._cached_items = getattr(inv, "items", [])
+            self._cached_slots = getattr(inv, "empty_slots", 36 - len(self._cached_items))
+        except Exception:
+            pass
+
+    def count(self, item_name: str) -> int:
+        return sum(getattr(i, "count", 0) for i in self._cached_items
+                   if getattr(i, "name", "") == item_name)
+
+    def has(self, item_name: str) -> bool:
+        return self.count(item_name) > 0
+
+    def is_full(self) -> bool:
+        return self._cached_slots <= 0
+
+    def empty_slots(self) -> int:
+        return max(0, self._cached_slots)
+
+    def used_slots(self) -> int:
+        return len(self._cached_items)
+
+
+class _WorldAdapter:
+    """适配 StateCollector + ModClient，提供 DSL 期望的 world.* 接口"""
+    def __init__(self, state, mod_client=None):
+        self._state = state
+        self._client = mod_client
+
+    def time(self) -> int:
+        snap = self._state._current_snapshot
+        if snap:
+            return snap.world.time_of_day
+        return 0
+
+    def any_entity(self, entity_type: str = None) -> bool:
+        entities = self._state.get_entities_in_radius(32.0, entity_type=entity_type)
+        return len(entities) > 0
+
+    def block_exists(self, *args) -> bool:
+        return False
+
+    def near(self, radius: float = 16.0):
+        return self._state.get_entities_in_radius(radius)
+
+    def any_block(self, block_type: str = None) -> bool:
+        if not block_type:
+            return False
+        blocks = self._state.get_blocks_by_type(block_type, radius=32)
+        return len(blocks) > 0
+
+
 class SkillContext:
     """Skill 执行上下文"""
-    def __init__(self, state, executor, perception, variables=None):
+    def __init__(self, state, executor, perception, variables=None, mod_client=None):
         self.state = state
         self.executor = executor
         self.perception = perception
         self.variables = variables or {}
         self.interrupted = False
+        self._mod_client = mod_client
+        self._player_adapter = None
+        self._inventory_adapter = None
+        self._world_adapter = None
+
+    def get_adapters(self):
+        """获取 DSL 条件求值用的适配器对象"""
+        if self._player_adapter is None:
+            self._player_adapter = _PlayerAdapter(self.state)
+        if self._inventory_adapter is None:
+            self._inventory_adapter = _InventoryAdapter(self._mod_client) if self._mod_client else _InventoryAdapter(None)
+        if self._world_adapter is None:
+            self._world_adapter = _WorldAdapter(self.state, self._mod_client)
+        return self._player_adapter, self._inventory_adapter, self._world_adapter
 
 
 class ControlFlowScheduler:
@@ -110,8 +208,9 @@ class ControlFlowScheduler:
         # 名称引用（白名单）
         if isinstance(node, ast.Name):
             if node.id in _SAFE_NAMES:
-                return {"self": ctx.state, "inventory": ctx.state,
-                        "world": ctx.state, "True": True, "False": False,
+                player, inventory, world = ctx.get_adapters()
+                return {"self": player, "inventory": inventory,
+                        "world": world, "True": True, "False": False,
                         "None": None}.get(node.id)
             if node.id in ctx.variables:
                 return ctx.variables[node.id]
@@ -120,6 +219,11 @@ class ControlFlowScheduler:
         # 属性访问
         if isinstance(node, ast.Attribute):
             obj = self._safe_eval(node.value, ctx)
+            if node.attr not in _SAFE_METHODS and node.attr not in {
+                "health", "hunger", "position", "count", "has",
+                "is_full", "empty_slots", "used_slots", "time",
+            }:
+                raise ValueError(f"不允许的属性: {node.attr}")
             return getattr(obj, node.attr)
 
         # 方法调用
@@ -173,6 +277,11 @@ class ControlFlowScheduler:
             "attack": lambda args: ctx.executor.attack(args.get("entity_id", 0)),
             "eat": lambda args: ctx.executor.eat(args.get("item", "")),
             "look_at": lambda args: ctx.executor.look_at(**self._parse_pos(args)),
+            "chat": lambda args: ctx.executor.send_chat(args.get("message", "")),
+            "wait": lambda args: asyncio.sleep(args.get("seconds", 1)),
+            "use_item": lambda args: ctx.executor.use_item(args.get("item", ""), args.get("hand", "main")),
+            "equip_item": lambda args: ctx.executor.equip_item(args.get("item", ""), args.get("slot", "mainhand")),
+            "drop_item": lambda args: ctx.executor.drop_item(args.get("item", ""), args.get("count", 1)),
         }
         handler = action_map.get(step.action)
         if handler:

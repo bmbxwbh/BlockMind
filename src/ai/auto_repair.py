@@ -35,7 +35,7 @@ class SkillAutoRepairer:
         yaml_text = yaml_text.strip().strip("```yaml").strip("```")
         repaired = self.parser.parse_yaml(yaml_text)
         repaired.skill_id = skill.skill_id  # 保持原 ID
-        repaired.version = skill.version + 1
+        repaired.version = skill.version + 1  # 版本递增（prompt 已告知代码自动处理）
         return repaired
 
     async def validate_repair(self, original: SkillDSL, repaired: SkillDSL) -> bool:

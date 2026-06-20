@@ -66,7 +66,7 @@ market:
     - 自动补种
     - 存入附近箱子
     - 背包满自动存放
-  license: MIT
+  license: MIT-NC
   keywords: ["甘蔗", "sugar_cane", "收割", "自动化", "农业"]
   rating: 4.0
   download_count: 95
