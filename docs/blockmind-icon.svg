@@ -25,9 +25,9 @@
   <!-- 右面 -->
   <polygon points="372,180 256,240 256,376 372,316" fill="url(#rightFace)" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>
 
-  <!-- 顶面：B 字母（BlockMind） -->
-  <text x="256" y="195" font-family="Georgia, serif" font-size="56" font-weight="700"
-        fill="#6366f1" text-anchor="middle" dominant-baseline="middle">B</text>
+  <!-- 顶面：中心圆点（代表核心） -->
+  <circle cx="256" cy="180" r="8" fill="#6366f1"/>
+  <circle cx="256" cy="180" r="14" fill="none" stroke="#6366f1" stroke-width="2" stroke-opacity="0.4"/>
 
   <!-- 左面：横线（代表记忆层） -->
   <g stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5">
