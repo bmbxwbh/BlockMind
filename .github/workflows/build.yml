@@ -434,6 +434,20 @@ jobs:
           mkdir -p release/mod release/desktop release/mobile
           # Mod JARs 已在 release/ 根目录，移到 mod/
           find release/ -maxdepth 1 -name "blockmind-mod-*.jar" -exec mv {} release/mod/ \;
+          # Desktop artifacts are downloaded into subdirs named after artifact, flatten them
+          find release/desktop/ -type f -exec mv {} release/desktop/ \;
+          # Mobile artifacts are downloaded into subdirs named after artifact, flatten them
+          find release/mobile/ -type f -exec mv {} release/mobile/ \;
+          # Rename Android APK for clarity
+          if [ -f "release/mobile/app-release.apk" ]; then
+            mv release/mobile/app-release.apk release/mobile/BlockMind-Mobile-Android-arm64.apk
+          fi
+          # Rename Desktop files to include platform name
+          for f in release/desktop/BlockMind.Desktop*; do
+            [ -f "$f" ] || continue
+            # Files already have platform in name from publish, just ensure they're there
+            : # no-op, files are already named correctly
+          done
           echo "## 📦 Release Artifacts" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           find release/ -type f | sort >> $GITHUB_STEP_SUMMARY
@@ -458,7 +472,7 @@ jobs:
           tag_name: v${{ needs.auto-tag.outputs.version }}
           files: |
             release/mod/blockmind-mod-*.jar
-            release/desktop/BlockMind-Desktop-*
+            release/desktop/BlockMind.Desktop*
             release/mobile/BlockMind-Mobile-*
           body: |
             ## 🧠 BlockMind ${{ github.ref_name }}
