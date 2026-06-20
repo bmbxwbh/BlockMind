@@ -7,8 +7,8 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #0a0a1a;
-    color: #e0e0e0;
+    background: #f8fafc;
+    color: #1e293b;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     min-height: 100vh;
     padding: 40px 20px;
@@ -18,46 +18,40 @@
     font-size: 2.4rem;
     font-weight: 700;
     margin-bottom: 8px;
-    background: linear-gradient(135deg, #818cf8, #22d3ee);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #6366f1;
   }
-  .subtitle { color: #8888aa; margin-bottom: 48px; font-size: 1rem; }
+  .subtitle { color: #64748b; margin-bottom: 48px; font-size: 1rem; }
 
   .section { margin-bottom: 56px; }
   .section-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #a78bfa;
+    color: #4f46e5;
     margin-bottom: 24px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #1a1a3a;
+    border-bottom: 1px solid #e0e7ff;
   }
 
-  /* 主展示 */
   .hero {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 48px;
     padding: 48px;
-    background: linear-gradient(135deg, #12122a 0%, #0a0a1a 100%);
+    background: #ffffff;
     border-radius: 24px;
-    border: 1px solid #1a1a3a;
+    border: 1px solid #e0e7ff;
     margin-bottom: 48px;
   }
   .hero-icon { width: 200px; height: 200px; }
-  .hero-text h2 { font-size: 1.8rem; margin-bottom: 12px; color: #fff; }
-  .hero-text p { color: #8888aa; line-height: 1.6; max-width: 320px; }
+  .hero-text h2 { font-size: 1.8rem; margin-bottom: 12px; color: #1e293b; }
+  .hero-text p { color: #64748b; line-height: 1.6; max-width: 320px; }
 
-  /* 尺寸展示 */
   .sizes { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; }
   .size-item { text-align: center; }
   .size-item img { display: block; margin: 0 auto 8px; }
-  .size-label { color: #666688; font-size: 0.85rem; }
+  .size-label { color: #64748b; font-size: 0.85rem; }
 
-  /* 背景适配展示 */
   .bg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
   .bg-card {
     border-radius: 16px;
@@ -65,40 +59,37 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #1a1a3a;
+    border: 1px solid #e0e7ff;
   }
-  .bg-dark { background: #0f0f23; }
-  .bg-light { background: #f5f5f5; }
-  .bg-gradient { background: linear-gradient(135deg, #1e1b4b, #312e81); }
-  .bg-mc { background: linear-gradient(135deg, #4a7c3a, #2d5a1f); }
+  .bg-dark { background: #0f172a; }
+  .bg-light { background: #ffffff; }
+  .bg-gradient { background: linear-gradient(135deg, #eef2ff, #e0e7ff); }
+  .bg-mc { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
 
-  /* 设计说明 */
   .design-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
   .note-card {
-    background: #12122a;
-    border: 1px solid #1a1a3a;
+    background: #ffffff;
+    border: 1px solid #e0e7ff;
     border-radius: 12px;
     padding: 24px;
   }
-  .note-card h3 { color: #22d3ee; font-size: 1rem; margin-bottom: 8px; }
-  .note-card p { color: #8888aa; font-size: 0.9rem; line-height: 1.5; }
+  .note-card h3 { color: #6366f1; font-size: 1rem; margin-bottom: 8px; }
+  .note-card p { color: #64748b; font-size: 0.9rem; line-height: 1.5; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>BlockMind 图标设计</h1>
-  <p class="subtitle">Minecraft AI Companion — 方块与智能的融合</p>
+  <p class="subtitle">Minecraft AI Companion — 简约浅色风格</p>
 
-  <!-- 主展示 -->
   <div class="hero">
     <img src="../docs/blockmind-icon.svg" alt="BlockMind Icon" class="hero-icon">
     <div class="hero-text">
-      <h2>晶体大脑</h2>
-      <p>等距立方体代表 Minecraft 的方块世界，内部神经网络节点象征 AI 大脑，电路纹理代表记忆系统。</p>
+      <h2>方块 · 大脑 · 记忆</h2>
+      <p>等距立方体代表 Minecraft 方块世界，三面分别承载品牌字母、记忆层、AI 节点，简约而不失辨识度。</p>
     </div>
   </div>
 
-  <!-- 尺寸展示 -->
   <div class="section">
     <div class="section-title">多尺寸适配</div>
     <div class="sizes">
@@ -121,7 +112,6 @@
     </div>
   </div>
 
-  <!-- 背景适配 -->
   <div class="section">
     <div class="section-title">背景适配</div>
     <div class="bg-grid">
@@ -132,25 +122,24 @@
     </div>
   </div>
 
-  <!-- 设计说明 -->
   <div class="section">
     <div class="section-title">设计元素</div>
     <div class="design-notes">
       <div class="note-card">
         <h3>等距立方体</h3>
-        <p>三面等距投影，呼应 Minecraft 的方块美学。紫蓝渐变区分三面，营造立体感。</p>
+        <p>三面等距投影，呼应 Minecraft 方块美学。浅紫渐变区分三面，干净利落。</p>
       </div>
       <div class="note-card">
-        <h3>神经网络节点</h3>
-        <p>右面的青色节点和连线，象征双 Agent 架构和 AI 决策能力。</p>
+        <h3>品牌字母 B</h3>
+        <p>顶面居中放置 BlockMind 首字母，直接建立品牌识别。</p>
       </div>
       <div class="note-card">
-        <h3>电路纹理</h3>
-        <p>左面的电路路径，代表三层持久记忆系统与知识沉淀。</p>
+        <h3>记忆层横线</h3>
+        <p>左面三条横线，象征三层持久记忆系统。</p>
       </div>
       <div class="note-card">
-        <h3>核心标记</h3>
-        <p>顶面中心的青色环，象征 BlockMind 的核心引擎。</p>
+        <h3>AI 节点连接</h3>
+        <p>右面三角节点，象征双 Agent 架构的协作关系。</p>
       </div>
     </div>
   </div>

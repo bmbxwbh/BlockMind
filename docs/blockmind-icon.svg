@@ -1,94 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- 主渐变：科技蓝紫 -->
-    <linearGradient id="cubeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1"/>
-      <stop offset="100%" stop-color="#8b5cf6"/>
+    <linearGradient id="topFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e7ff"/>
     </linearGradient>
-    <!-- 顶面渐变 -->
-    <linearGradient id="topGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="leftFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c7d2fe"/>
+      <stop offset="100%" stop-color="#a5b4fc"/>
+    </linearGradient>
+    <linearGradient id="rightFace" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="100%" stop-color="#a78bfa"/>
-    </linearGradient>
-    <!-- 左面渐变 -->
-    <linearGradient id="leftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4f46e5"/>
       <stop offset="100%" stop-color="#6366f1"/>
     </linearGradient>
-    <!-- 右面渐变 -->
-    <linearGradient id="rightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5b21b6"/>
-      <stop offset="100%" stop-color="#7c3aed"/>
-    </linearGradient>
-    <!-- 神经节点发光 -->
-    <radialGradient id="nodeGlow">
-      <stop offset="0%" stop-color="#22d3ee" stop-opacity="1"/>
-      <stop offset="50%" stop-color="#22d3ee" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
-    </radialGradient>
-    <!-- 背景圆形发光 -->
-    <radialGradient id="bgGlow" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-    </radialGradient>
   </defs>
 
-  <!-- 背景圆 -->
-  <circle cx="256" cy="256" r="240" fill="#0f0f23"/>
-  <circle cx="256" cy="256" r="240" fill="url(#bgGlow)"/>
+  <!-- 背景：浅色圆角矩形 -->
+  <rect width="512" height="512" rx="96" fill="#f8fafc"/>
 
-  <!-- 外圈装饰环 -->
-  <circle cx="256" cy="256" r="230" fill="none" stroke="#6366f1" stroke-opacity="0.2" stroke-width="1"/>
-  <circle cx="256" cy="256" r="220" fill="none" stroke="#22d3ee" stroke-opacity="0.1" stroke-width="1" stroke-dasharray="4 8"/>
-
-  <!-- 等距立方体（Minecraft 方块） -->
+  <!-- 等距立方体 -->
   <!-- 顶面 -->
-  <polygon points="256,120 372,180 256,240 140,180" fill="url(#topGrad)" stroke="#a78bfa" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="256,120 372,180 256,240 140,180" fill="url(#topFace)" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>
   <!-- 左面 -->
-  <polygon points="140,180 256,240 256,376 140,316" fill="url(#leftGrad)" stroke="#6366f1" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="140,180 256,240 256,376 140,316" fill="url(#leftFace)" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>
   <!-- 右面 -->
-  <polygon points="372,180 256,240 256,376 372,316" fill="url(#rightGrad)" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="372,180 256,240 256,376 372,316" fill="url(#rightFace)" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>
 
-  <!-- 神经网络节点（右面 - 代表 AI 大脑） -->
-  <g>
-    <!-- 连线 -->
-    <line x1="310" y1="220" x2="340" y2="260" stroke="#22d3ee" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="310" y1="220" x2="290" y2="280" stroke="#22d3ee" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="340" y1="260" x2="310" y2="320" stroke="#22d3ee" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="290" y1="280" x2="310" y2="320" stroke="#22d3ee" stroke-width="1.5" stroke-opacity="0.6"/>
-    <line x1="340" y1="260" x2="290" y2="280" stroke="#22d3ee" stroke-width="1.5" stroke-opacity="0.4"/>
+  <!-- 顶面：B 字母（BlockMind） -->
+  <text x="256" y="195" font-family="Georgia, serif" font-size="56" font-weight="700"
+        fill="#6366f1" text-anchor="middle" dominant-baseline="middle">B</text>
 
-    <!-- 节点发光 -->
-    <circle cx="310" cy="220" r="12" fill="url(#nodeGlow)"/>
-    <circle cx="340" cy="260" r="12" fill="url(#nodeGlow)"/>
-    <circle cx="290" cy="280" r="12" fill="url(#nodeGlow)"/>
-    <circle cx="310" cy="320" r="12" fill="url(#nodeGlow)"/>
-
-    <!-- 节点核心 -->
-    <circle cx="310" cy="220" r="4" fill="#22d3ee"/>
-    <circle cx="340" cy="260" r="4" fill="#22d3ee"/>
-    <circle cx="290" cy="280" r="4" fill="#22d3ee"/>
-    <circle cx="310" cy="320" r="4" fill="#22d3ee"/>
+  <!-- 左面：横线（代表记忆层） -->
+  <g stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-opacity="0.5">
+    <line x1="165" y1="225" x2="225" y2="255"/>
+    <line x1="165" y1="255" x2="225" y2="285"/>
+    <line x1="165" y1="285" x2="225" y2="315"/>
   </g>
 
-  <!-- 左面电路纹理（代表记忆系统） -->
-  <g stroke="#818cf8" stroke-width="1.5" stroke-opacity="0.4" fill="none">
-    <path d="M 170 210 L 200 225 L 200 255 L 230 270"/>
-    <path d="M 170 260 L 210 280 L 210 310"/>
-    <path d="M 180 300 L 220 320"/>
+  <!-- 右面：节点连接（代表 AI） -->
+  <g fill="#6366f1">
+    <circle cx="310" cy="250" r="5"/>
+    <circle cx="345" cy="290" r="5"/>
+    <circle cx="310" cy="330" r="5"/>
   </g>
-  <g fill="#818cf8" fill-opacity="0.6">
-    <rect x="198" y="223" width="4" height="4"/>
-    <rect x="208" y="278" width="4" height="4"/>
-    <rect x="218" y="318" width="4" height="4"/>
+  <g stroke="#6366f1" stroke-width="1.5" stroke-opacity="0.4">
+    <line x1="310" y1="250" x2="345" y2="290"/>
+    <line x1="345" y1="290" x2="310" y2="330"/>
+    <line x1="310" y1="250" x2="310" y2="330"/>
   </g>
-
-  <!-- 顶面中心标记（代表核心） -->
-  <g transform="translate(256, 180)">
-    <circle r="8" fill="none" stroke="#22d3ee" stroke-width="2" stroke-opacity="0.8"/>
-    <circle r="3" fill="#22d3ee"/>
-  </g>
-
-  <!-- 底部投影 -->
-  <ellipse cx="256" cy="400" rx="100" ry="12" fill="#000000" fill-opacity="0.3"/>
 </svg>
