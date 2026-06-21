@@ -13,8 +13,8 @@
     "icon": "assets/blockmind/icon.png",
     "environment": "*",
     "entrypoints": {
-        "server": ["blockmind.BlockMindMod"],
-        "client": ["blockmind.client.BlockMindClientMod"]
+        "main": ["blockmind.BlockMindMod"],
+        "server": ["blockmind.BlockMindMod"]
     },
     "depends": {
         "fabricloader": ">=0.15.0",

@@ -7,46 +7,45 @@ import blockmind.executor.ActionExecutor;
 import blockmind.event.EventListener;
 import blockmind.pathfinding.PathfinderHandler;
 import blockmind.compat.VersionCompat;
-import net.fabricmc.api.DedicatedServerModInitializer;
+import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * BlockMind Fabric Mod 入口
- *
- * 职责：
- * 1. 启动 HTTP API 服务（端口 25580）
- * 2. 注册游戏事件监听
- * 3. 管理 Mod 生命周期
- * 4. 管理 Bot（FakePlayer）生命周期
- */
-public class BlockMindMod implements DedicatedServerModInitializer {
+public class BlockMindMod implements ModInitializer {
 
     public static final String MOD_ID = "blockmind";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final int HTTP_PORT = 25580;
 
     private static BlockMindHttpServer httpServer;
-    // Make running volatile for thread-safe visibility
     private static volatile boolean running = false;
 
     @Override
-    public void onInitializeServer() {
+    public void onInitialize() {
         LOGGER.info("========================================");
-        // Version mismatch fix: log says v1.1.0 but build.gradle says 1.2.0
         LOGGER.info("  BlockMind Mod v1.2.0 Loading...");
         LOGGER.info("  MC Version: {} (detected by VersionCompat)", VersionCompat.getVersionString());
         LOGGER.info("  Compat impl: {}", VersionCompat.getCompat().getClass().getSimpleName());
-        LOGGER.info("  Mode: SERVER");
-        LOGGER.info("  [NEW] FakePlayer Bot Support");
-        LOGGER.info("========================================");
 
-        // 注册服务器启动/停止事件
+        boolean isClient = false;
+        try {
+            Class.forName("net.minecraft.client.MinecraftClient");
+            isClient = true;
+        } catch (ClassNotFoundException e) {
+            isClient = false;
+        }
+
+        if (isClient) {
+            LOGGER.info("  Mode: CLIENT (singleplayer/LAN)");
+            initClient();
+        } else {
+            LOGGER.info("  Mode: SERVER (dedicated)");
+        }
+
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             LOGGER.info("[BlockMind] Server started, launching HTTP API...");
 
-            // 初始化所有模块
             Object srv = server;
             StateCollector.setServer(srv);
             ActionExecutor.setServer(srv);
@@ -57,31 +56,79 @@ public class BlockMindMod implements DedicatedServerModInitializer {
             new EventListener().register();
             running = true;
 
-            LOGGER.info("[BlockMind] ✅ BlockMind Mod ready! API on port {}", HTTP_PORT);
-            LOGGER.info("[BlockMind] Bot management: POST /api/bot/spawn to create a bot");
+            LOGGER.info("[BlockMind] BlockMind Mod ready! API on port {}", HTTP_PORT);
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             LOGGER.info("[BlockMind] Server stopping...");
-            // 先清理 Bot
             if (BotManager.isSpawned()) {
                 BotManager.despawn();
             }
             stopHttpServer();
             running = false;
         });
+
+        LOGGER.info("========================================");
+    }
+
+    private void initClient() {
+        try {
+            Class<?> eventsClass = Class.forName("net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents");
+
+            registerClientEvent(eventsClass, "CLIENT_STARTED", () -> {
+                LOGGER.info("[BlockMind-Client] Client started, launching HTTP API...");
+                startHttpServer();
+                try { new EventListener().register(); } catch (Exception e) { LOGGER.warn("[BlockMind-Client] Event listener failed: {}", e.getMessage()); }
+                running = true;
+                LOGGER.info("[BlockMind-Client] BlockMind Client ready! API on port {}", HTTP_PORT);
+            });
+
+            registerClientEvent(eventsClass, "CLIENT_STOPPING", () -> {
+                LOGGER.info("[BlockMind-Client] Client stopping...");
+                stopHttpServer();
+                running = false;
+            });
+
+        } catch (Exception e) {
+            LOGGER.warn("[BlockMind-Client] Client init failed: {}", e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void registerClientEvent(Class<?> eventsClass, String fieldName, Runnable handler) {
+        try {
+            Object eventObj = eventsClass.getField(fieldName).get(null);
+            java.lang.reflect.Field typeField = eventObj.getClass().getDeclaredField("type");
+            typeField.setAccessible(true);
+            Class<?> handlerInterface = (Class<?>) typeField.get(eventObj);
+
+            Object proxy = java.lang.reflect.Proxy.newProxyInstance(
+                handlerInterface.getClassLoader(),
+                new Class<?>[]{handlerInterface},
+                (p, method, args) -> {
+                    if ("toString".equals(method.getName())) return "BlockMindHandler";
+                    if ("hashCode".equals(method.getName())) return System.identityHashCode(p);
+                    if ("equals".equals(method.getName())) return p == args[0];
+                    handler.run();
+                    return null;
+                }
+            );
+
+            java.lang.reflect.Method registerMethod = eventObj.getClass().getMethod("register", Object.class);
+            registerMethod.invoke(eventObj, proxy);
+        } catch (Exception e) {
+            LOGGER.warn("[BlockMind-Client] Could not register {}: {}", fieldName, e.getMessage());
+        }
     }
 
     private void startHttpServer() {
         try {
-            // 读取 API Token（优先环境变量，其次配置文件）
             String apiToken = System.getenv("BLOCKMIND_API_TOKEN");
             if (apiToken == null || apiToken.isEmpty()) {
                 try {
                     java.util.Properties props = new java.util.Properties();
                     java.io.File cfg = new java.io.File("config/blockmind.properties");
                     if (cfg.exists()) {
-                        // Resource leak fix: try-with-resources for FileInputStream
                         try (java.io.FileInputStream fis = new java.io.FileInputStream(cfg)) {
                             props.load(fis);
                         }
