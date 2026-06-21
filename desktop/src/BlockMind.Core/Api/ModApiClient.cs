@@ -7,11 +7,13 @@ public class ModApiClient
 {
     private readonly HttpClient _http;
     private readonly string _baseUrl;
+    private readonly string _token;
     private readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
-    public ModApiClient(string host = "localhost", int port = 25580)
+    public ModApiClient(string host = "localhost", int port = 25580, string token = "")
     {
         _baseUrl = $"http://{host}:{port}";
+        _token = token;
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
     }
 
@@ -46,13 +48,30 @@ public class ModApiClient
 
     private async Task<JsonElement?> GetJsonAsync(string path)
     {
-        try { var r = await _http.GetAsync($"{_baseUrl}{path}"); return r.IsSuccessStatusCode ? await r.Content.ReadFromJsonAsync<JsonElement>() : null; }
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}{path}");
+            if (!string.IsNullOrEmpty(_token))
+                req.Headers.Add("Authorization", $"Bearer {_token}");
+            var r = await _http.SendAsync(req);
+            return r.IsSuccessStatusCode ? await r.Content.ReadFromJsonAsync<JsonElement>() : null;
+        }
         catch { return null; }
     }
 
     private async Task<JsonElement?> PostJsonAsync(string path, object body)
     {
-        try { var r = await _http.PostAsJsonAsync($"{_baseUrl}{path}", body); return r.IsSuccessStatusCode ? await r.Content.ReadFromJsonAsync<JsonElement>() : null; }
+        try
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}")
+            {
+                Content = JsonContent.Create(body)
+            };
+            if (!string.IsNullOrEmpty(_token))
+                req.Headers.Add("Authorization", $"Bearer {_token}");
+            var r = await _http.SendAsync(req);
+            return r.IsSuccessStatusCode ? await r.Content.ReadFromJsonAsync<JsonElement>() : null;
+        }
         catch { return null; }
     }
 }

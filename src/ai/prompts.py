@@ -45,6 +45,11 @@ until:                    # 结束条件（任意满足则停止）
 | scan_blocks | radius, filter?, sort_by? | 扫描方块 |
 | scan_entities | radius, filter?, sort_by? | 扫描实体 |
 | wait | seconds | 等待 |
+| smart_navigate | target | 智能导航（记忆驱动） |
+| use_item | item, hand | 使用物品 |
+| craft_item | recipe, count | 合成物品 |
+| equip_item | item, slot | 装备物品 |
+| drop_item | item, count | 丢弃物品 |
 
 ## 条件表达式可用函数
 
@@ -279,7 +284,7 @@ SAFE
 
 ## 修复规则
 1. 保持原有的 skill_id、name、tags 不变
-2. version 加 1
+2. 保持原 version，代码会自动递增
 3. 只修改导致错误的部分，不要大幅重构
 4. 修复后必须满足：
    - when 条件包含所有必要前置检查

@@ -74,7 +74,7 @@ market:
     - 自动放置火把照明
     - 遇到岩浆自动绕路
     - 血量过低自动撤退
-  license: MIT
+  license: MIT-NC
   keywords: ["钻石", "diamond", "挖矿", "Y=-59", "鱼骨"]
   rating: 4.5
   download_count: 256

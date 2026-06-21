@@ -1,14 +1,10 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Platform;
-using System.Runtime.InteropServices;
 
 namespace BlockMind.Desktop.Services;
 
-public class TrayService : IDisposable
+public class TrayService
 {
     private readonly Window _window;
-    private bool _disposed;
 
     public TrayService(Window window)
     {
@@ -31,10 +27,5 @@ public class TrayService : IDisposable
     {
         if (_window.IsVisible) MinimizeToTray();
         else RestoreFromTray();
-    }
-
-    public void Dispose()
-    {
-        _disposed = true;
     }
 }

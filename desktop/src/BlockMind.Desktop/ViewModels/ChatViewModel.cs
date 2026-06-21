@@ -18,7 +18,7 @@ public partial class ChatViewModel : ObservableObject
     public ChatViewModel(AppService service)
     {
         _service = service;
-        Messages.Add(new("Bot", "Hello! I'm BlockMind, your AI companion. How can I help?", false));
+        Messages.Add(new("Bot", "你好！我是 BlockMind，你的 AI 玩伴。有什么可以帮你的？", false));
     }
 
     [RelayCommand]
@@ -27,7 +27,7 @@ public partial class ChatViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(InputText)) return;
         var userMsg = InputText;
         InputText = "";
-        Messages.Add(new("You", userMsg, true));
+        Messages.Add(new("你", userMsg, true));
         IsBusy = true;
 
         try
@@ -47,12 +47,12 @@ public partial class ChatViewModel : ObservableObject
             }
             else
             {
-                Messages.Add(new("Bot", "Sorry, the AI is not responding right now.", false));
+                Messages.Add(new("Bot", "抱歉，AI 暂时无法回复。请检查模型配置。", false));
             }
         }
         catch (Exception ex)
         {
-            Messages.Add(new("Bot", $"Error: {ex.Message}", false));
+            Messages.Add(new("Bot", $"错误：{ex.Message}", false));
         }
         finally
         {

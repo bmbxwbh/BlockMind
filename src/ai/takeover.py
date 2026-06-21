@@ -22,7 +22,7 @@ class EmergencyTakeover:
     async def generate_actions(self, context: dict) -> List[Dict]:
         """AI 生成紧急动作"""
         prompt = PROMPTS["emergency_takeover"].format(context_snapshot=str(context))
-        result = await self.provider.chat([{"role": "user", "content": prompt}], max_tokens=500)
+        result = await self.provider.chat([{"role": "user", "content": prompt}], temperature=0.1, max_tokens=500)
 
         if "SAFE" in result:
             return [{"action": "safe", "details": "已安全"}]
@@ -35,6 +35,18 @@ class EmergencyTakeover:
                 actions.append({"action": "walk_to", "args": line})
             elif line.startswith("eat"):
                 actions.append({"action": "eat", "args": line})
+            elif line.startswith("move"):
+                actions.append({"action": "move", "args": line})
+            elif line.startswith("attack"):
+                actions.append({"action": "attack", "args": line})
+            elif line.startswith("place"):
+                actions.append({"action": "place", "args": line})
+            elif line.startswith("look"):
+                actions.append({"action": "look", "args": line})
+            elif line.startswith("dig"):
+                actions.append({"action": "dig", "args": line})
+            elif line.startswith("chat"):
+                actions.append({"action": "chat", "args": line})
         return actions
 
     async def deactivate(self) -> None:

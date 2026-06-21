@@ -2,8 +2,9 @@
 """BlockMind 项目完整性检查"""
 import os, sys, py_compile, json
 
-sys.path.insert(0, "/root/projects/BlockMind")
-os.chdir("/root/projects/BlockMind")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PROJECT_ROOT)
+os.chdir(PROJECT_ROOT)
 
 report = {"errors": [], "warnings": [], "missing": [], "stats": {}}
 
@@ -81,7 +82,7 @@ for dp, dn, fn in os.walk("."):
             try:
                 with open(os.path.join(dp, f)) as fh:
                     total_lines += sum(1 for _ in fh)
-            except:
+            except (IOError, OSError):
                 pass
 report["stats"] = {"python_files": py_count, "java_files": java_count, "total_code_lines": total_lines}
 

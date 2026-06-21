@@ -25,7 +25,7 @@ class ConfigError(BlockMindError):
     hint = "Check your config file for invalid or missing values"
 
 
-class ConnectionError(BlockMindError):
+class BlockMindConnectionError(BlockMindError):
     """连接相关错误（Minecraft 服务器、外部服务等）"""
 
     code = "CONNECTION_ERROR"

@@ -450,7 +450,7 @@ class SkillMarketplace:
             "description": skill.description,
             "author": skill.author,
             "version": skill.version,
-            "when": {"all": skill.when.all},
+            "when": {"all": skill.when.all, "any": skill.when.any},
             "do": self._steps_to_do(skill.do_steps),
             "until": {"any": skill.until.any},
         }

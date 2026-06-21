@@ -26,7 +26,11 @@ class CircuitBreaker:
         self._trip_count += 1
         self.logger.error(f"🔴 熔断器触发！(第 {self._trip_count} 次)")
 
-        # 定时尝试恢复
+        # 定时尝试恢复（非阻塞）
+        asyncio.create_task(self._delayed_half_open())
+
+    async def _delayed_half_open(self) -> None:
+        """延迟后进入半开状态"""
         await asyncio.sleep(self.reset_timeout)
         if self.state == CircuitState.OPEN:
             self.state = CircuitState.HALF_OPEN

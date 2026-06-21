@@ -196,7 +196,7 @@
 ```
 ┌─────────────────────────────────────────────┐
 │  GitHub  Releases  English  中文             │  ← 弱化链接
-│  MIT License · Built with ❤️                │
+│  MIT-NC License · Non-Commercial Use Only   │
 └─────────────────────────────────────────────┘
 ```
 

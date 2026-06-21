@@ -1,25 +1,23 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="BlockMind.Desktop.Views.Pages.SkillsPage">
-    <Border Padding="24">
-        <StackPanel Spacing="16">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Skills" FontSize="24" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <Button Content="Load" Command="{Binding LoadSkillsCommand}" Padding="12,6" Margin="16,0,0,0"/>
+    <Border Padding="32">
+        <StackPanel Spacing="20">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="技能管理" FontSize="28" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                <Button Content="加载" Command="{Binding LoadSkillsCommand}" Padding="16,8" CornerRadius="10" Background="#1E1E1E" Foreground="#FFFFFF" BorderBrush="#2A2A2A" BorderThickness="1"/>
             </StackPanel>
-
             <ListBox ItemsSource="{Binding Skills}" Background="Transparent" BorderThickness="0">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Padding="12" Margin="0,2" CornerRadius="6" Background="{DynamicResource BgSurface}">
-                            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                        <Border Padding="16,12" Margin="0,2" CornerRadius="12" Background="#161616">
+                            <Grid ColumnDefinitions="*,Auto,Auto">
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding Tags}" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                                    <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="{Binding Tags}" FontSize="12" Foreground="#666666" Margin="0,3,0,0"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="1" Text="{Binding SkillId}" FontSize="11" Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center" Margin="12,0"/>
-                                <Button Grid.Column="2" Content="Run" Padding="8,4" Margin="4,0"/>
-                                <Button Grid.Column="3" Content="Delete" Padding="8,4" Margin="4,0"/>
+                                <Button Grid.Column="1" Content="执行" Padding="12,6" Margin="6,0" CornerRadius="8" Background="#1E1E1E" Foreground="#00D68F" BorderBrush="#2A2A2A" BorderThickness="1"/>
+                                <Button Grid.Column="2" Content="删除" Padding="12,6" Margin="6,0" CornerRadius="8" Background="#1E1E1E" Foreground="#FF3B3B" BorderBrush="#2A2A2A" BorderThickness="1"/>
                             </Grid>
                         </Border>
                     </DataTemplate>

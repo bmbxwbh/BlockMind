@@ -55,7 +55,10 @@ async def main():
 
     # 等待任一任务完成（优雅退出时）
     try:
-        await asyncio.gather(engine_task, webui_task)
+        tasks = [engine_task]
+        if webui_task is not None:
+            tasks.append(webui_task)
+        await asyncio.gather(*tasks)
     except (KeyboardInterrupt, asyncio.CancelledError):
         logger.info("🛑 收到退出信号...")
     finally:

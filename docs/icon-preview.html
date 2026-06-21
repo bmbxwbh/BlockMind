@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockMind 图标设计</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #f8fafc;
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #6366f1;
+  }
+  .subtitle { color: #64748b; margin-bottom: 48px; font-size: 1rem; }
+
+  .section { margin-bottom: 56px; }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-bottom: 24px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e7ff;
+  }
+
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    padding: 48px;
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1px solid #e0e7ff;
+    margin-bottom: 48px;
+  }
+  .hero-icon { width: 200px; height: 200px; }
+  .hero-text h2 { font-size: 1.8rem; margin-bottom: 12px; color: #1e293b; }
+  .hero-text p { color: #64748b; line-height: 1.6; max-width: 320px; }
+
+  .sizes { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; }
+  .size-item { text-align: center; }
+  .size-item img { display: block; margin: 0 auto 8px; }
+  .size-label { color: #64748b; font-size: 0.85rem; }
+
+  .bg-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .bg-card {
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e7ff;
+  }
+  .bg-dark { background: #0f172a; }
+  .bg-light { background: #ffffff; }
+  .bg-gradient { background: linear-gradient(135deg, #eef2ff, #e0e7ff); }
+  .bg-mc { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
+
+  .design-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .note-card {
+    background: #ffffff;
+    border: 1px solid #e0e7ff;
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .note-card h3 { color: #6366f1; font-size: 1rem; margin-bottom: 8px; }
+  .note-card p { color: #64748b; font-size: 0.9rem; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>BlockMind 图标设计</h1>
+  <p class="subtitle">Minecraft AI Companion — 简约浅色风格</p>
+
+  <div class="hero">
+    <img src="../docs/blockmind-icon.svg" alt="BlockMind Icon" class="hero-icon">
+    <div class="hero-text">
+      <h2>方块 · 大脑 · 记忆</h2>
+      <p>等距立方体代表 Minecraft 方块世界，三面分别承载品牌字母、记忆层、AI 节点，简约而不失辨识度。</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">多尺寸适配</div>
+    <div class="sizes">
+      <div class="size-item">
+        <img src="../docs/blockmind-icon.svg" width="128" height="128">
+        <div class="size-label">128px</div>
+      </div>
+      <div class="size-item">
+        <img src="../docs/blockmind-icon.svg" width="64" height="64">
+        <div class="size-label">64px</div>
+      </div>
+      <div class="size-item">
+        <img src="../docs/blockmind-icon.svg" width="32" height="32">
+        <div class="size-label">32px</div>
+      </div>
+      <div class="size-item">
+        <img src="../docs/blockmind-icon.svg" width="16" height="16">
+        <div class="size-label">16px</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">背景适配</div>
+    <div class="bg-grid">
+      <div class="bg-card bg-dark"><img src="../docs/blockmind-icon.svg" width="80" height="80"></div>
+      <div class="bg-card bg-light"><img src="../docs/blockmind-icon.svg" width="80" height="80"></div>
+      <div class="bg-card bg-gradient"><img src="../docs/blockmind-icon.svg" width="80" height="80"></div>
+      <div class="bg-card bg-mc"><img src="../docs/blockmind-icon.svg" width="80" height="80"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">设计元素</div>
+    <div class="design-notes">
+      <div class="note-card">
+        <h3>等距立方体</h3>
+        <p>三面等距投影，呼应 Minecraft 方块美学。浅紫渐变区分三面，干净利落。</p>
+      </div>
+      <div class="note-card">
+        <h3>核心圆点</h3>
+        <p>顶面中心圆点，象征 BlockMind 的核心引擎。</p>
+      </div>
+      <div class="note-card">
+        <h3>记忆层横线</h3>
+        <p>左面三条横线，象征三层持久记忆系统。</p>
+      </div>
+      <div class="note-card">
+        <h3>AI 节点连接</h3>
+        <p>右面三角节点，象征双 Agent 架构的协作关系。</p>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

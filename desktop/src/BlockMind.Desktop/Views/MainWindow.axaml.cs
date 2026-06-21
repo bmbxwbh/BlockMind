@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using BlockMind.Desktop.ViewModels;
+using System;
+using System.IO;
 
 namespace BlockMind.Desktop.Views;
 
@@ -8,17 +10,24 @@ public partial class MainWindow : Window
 {
     public MainWindow()
     {
-        InitializeComponent();
+        try { InitializeComponent(); }
+        catch (Exception ex)
+        {
+            var logFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "blockmind-debug.log");
+            File.AppendAllText(logFile, $"[{DateTime.Now}] [MainWindow] ERROR: {ex}\n");
+        }
     }
 
-    private void NavBorder_PointerPressed(object? sender, PointerPressedEventArgs e)
+    private void NavBorder_Tapped(object? sender, TappedEventArgs e)
     {
         if (sender is Border border && border.Tag is NavItemViewModel item)
         {
-            if (DataContext is MainWindowViewModel vm)
-            {
-                vm.SelectedNav = item;
-            }
+            if (DataContext is MainWindowViewModel vm) vm.SelectedNav = item;
         }
+    }
+
+    private void LangTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm) vm.ToggleLangCommand.Execute(null);
     }
 }
